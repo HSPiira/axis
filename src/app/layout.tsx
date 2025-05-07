@@ -24,8 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

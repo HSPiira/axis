@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useState } from "react";
 
 interface CompanyLogoProps {
   logo?: string;
-  companyName: string;
+  companyName?: string;
   className?: string;
   size?: "sm" | "md" | "lg";
   alt?: string;
@@ -22,9 +23,10 @@ export function CompanyLogo({
   size = "md",
   alt = "Company Logo",
 }: CompanyLogoProps) {
-  const initial = companyName?.charAt(0).toUpperCase() || "?";
+  const initial = companyName && companyName.charAt(0).toUpperCase();
+  const [imgError, setImgError] = useState(false);
 
-  if (logo) {
+  if (logo && !imgError) {
     return (
       <div className={cn("relative", sizeClasses[size], className)}>
         <Image
@@ -33,6 +35,12 @@ export function CompanyLogo({
           fill
           sizes="(max-width: 768px) 100vw, 40px"
           className="rounded-full object-cover"
+          onError={(e) => {
+            // Fallback to initial if image fails to load
+            const imgElement = e.currentTarget as HTMLImageElement;
+            imgElement.style.display = "none"; // Prevent infinite loop
+            setImgError(true); // Clear the src to avoid showing broken image
+          }}
         />
       </div>
     );
@@ -46,6 +54,8 @@ export function CompanyLogo({
         className
       )}
       title={companyName}
+      aria-label={`${companyName} logo`}
+      role="img"
     >
       {initial}
     </div>

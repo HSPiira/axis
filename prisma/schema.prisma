@@ -37,15 +37,15 @@ model Account {
   type              String // Account type ('oauth', 'oidc', etc).
   provider          String // Provider name (e.g. 'microsoft').
   providerAccountId String // User ID on the provider side.
-  refresh_token     String? @db.Text // OAuth refresh token.
-  access_token      String? @db.Text // OAuth access token.
+  refresh_token     String? // OAuth refresh token.
+  access_token      String? // OAuth access token.
   expires_at        Int? // Expiry timestamp (UNIX).
   token_type        String? // Type of token (Bearer, etc).
   scope             String? // OAuth scopes.
-  id_token          String? @db.Text // ID token (JWT).
+  id_token          String? // ID token (JWT).
   session_state     String? // Used for OIDC session management.
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)  // Relation to User.
 
   @@unique([provider, providerAccountId]) // Prevents duplicates per provider+user combo.
 }

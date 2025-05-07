@@ -1,26 +1,14 @@
 import React, { useState } from "react";
 import { Button, ThemeToggle } from "@/components/ui";
 import { Bell, LogIn, LogOut, MessageCircle } from "lucide-react";
-
-// Authentication hook for managing login state
-function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const handleLogin = () => {
-    // Implement actual login logic here
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    // Implement actual logout logic here
-    setIsAuthenticated(false);
-  };
-
-  return { isAuthenticated, handleLogin, handleLogout };
-}
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export function AdminHeader({ title }: { title: string }) {
-  const { isAuthenticated, handleLogin, handleLogout } = useAuth();
+  const { data: session } = useSession();
+  const isAuthenticated = !!session?.user;
+  const handleLogin = () => signIn("microsoft-entra-id");
+  const handleLogout = () => signOut();
+
   return (
     <header className="h-16 border-b flex items-center justify-between px-4">
       {/* React escapes text by default, so this is safe */}
