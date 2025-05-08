@@ -13,11 +13,11 @@ import { COMPANY_NAME } from "@/lib/constants";
 import { AuthGuard, AuthProvider } from "@/components/auth";
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const menuItems: MenuItem[] = [
-    { title: "Dashboard", href: "/", icon: HomeIcon },
+    { title: "Dashboard", href: "/dashboard", icon: HomeIcon },
     { icon: Users, title: "Clients", href: "/clients" },
   ];
   return (
-    <AuthProvider session={null}>
+    <AuthProvider>
       <AuthGuard>
         <div className="flex h-screen min-h-screen bg-background text-foreground">
           <AdminSidebar menuItems={menuItems} title={COMPANY_NAME} />

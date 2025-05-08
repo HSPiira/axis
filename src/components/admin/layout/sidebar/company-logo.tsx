@@ -53,8 +53,8 @@ export function CompanyLogo({
         sizeClasses[size],
         className
       )}
-      title={companyName}
-      aria-label={`${companyName} logo`}
+      title={companyName || "Company"}
+      aria-label={`${companyName || "Company"} logo`}
       role="img"
     >
       {initial}

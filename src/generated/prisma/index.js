@@ -210,7 +210,7 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../../.env",
+    "rootEnvPath": null,
     "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../../../prisma",
@@ -220,11 +220,12 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": "postgresql://cdslss:xau_Pr9F3HdPr1O2Xnuso93yKdZSmcgbXaJW1@eu-central-1.sql.xata.sh/axis:dev?sslmode=require"
+        "value": null
       }
     }
   },
