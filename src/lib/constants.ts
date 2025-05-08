@@ -1,1 +1,1 @@
-export const COMPANY_NAME = 'flexgrid';
+export const COMPANY_NAME = 'careAxis';

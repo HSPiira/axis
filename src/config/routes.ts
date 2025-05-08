@@ -5,9 +5,9 @@ export const DEFAULT_LOGIN_REDIRECT = "/dashboard";
 
 // All routes that require authentication
 export const protectedRoutes = [
-    "/dashboard",
-    "/clients",
-    "/settings",
-    "/profile",
-    // Add any other protected routes here
+  "/dashboard",
+  "/clients",
+  "/settings",
+  "/profile",
+  // Add any other protected routes here
 ];

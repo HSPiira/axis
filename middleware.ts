@@ -1,4 +1,10 @@
 import { auth } from "@/auth";
+import {
+  apiAuthPrefix,
+  authRoutes,
+  protectedRoutes,
+  publicRoutes,
+} from "@/config/routes";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
@@ -7,10 +13,10 @@ export async function middleware(request: NextRequest) {
     const session = await auth();
     const { pathname } = request.nextUrl;
 
-    const isApiAuthRoute = pathname.startsWith("/api/auth");
-    const isPublicRoute = ["/", "/login", "/register", "/forgot-password"].includes(pathname);
-    const isAuthRoute = ["/login", "/register", "/forgot-password"].includes(pathname);
-    const isProtectedRoute = ["/dashboard", "/clients", "/settings", "/profile"].some(route =>
+    const isApiAuthRoute = apiAuthPrefix.startsWith(pathname);
+    const isPublicRoute = publicRoutes.includes(pathname);
+    const isAuthRoute = authRoutes.includes(pathname);
+    const isProtectedRoute = protectedRoutes.some((route) =>
       pathname.startsWith(route)
     );
 
@@ -32,7 +38,7 @@ export async function middleware(request: NextRequest) {
 
     return NextResponse.next();
   } catch (error) {
-    console.error('Middleware error:', error);
+    console.error("Middleware error:", error);
     return NextResponse.next();
   }
 }

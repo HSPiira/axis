@@ -1,6 +1,9 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useState } from "react";
+import { BrandGradientText } from "@/components/ui/brand-gradient-text";
 
 interface CompanyLogoProps {
   logo?: string;
@@ -49,7 +52,7 @@ export function CompanyLogo({
   return (
     <div
       className={cn(
-        "bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold",
+        "bg-primary/10 rounded-full flex items-center justify-center font-bold",
         sizeClasses[size],
         className
       )}
@@ -57,7 +60,9 @@ export function CompanyLogo({
       aria-label={`${companyName || "Company"} logo`}
       role="img"
     >
-      {initial}
+      {initial && (
+        <BrandGradientText>{initial}</BrandGradientText>
+      )}
     </div>
   );
 }

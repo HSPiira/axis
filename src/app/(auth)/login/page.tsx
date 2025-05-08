@@ -81,35 +81,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 sm:p-6">
-      <div className="container max-w-md mx-auto px-4 sm:px-6 py-8 sm:py-12 relative w-full">
-        <div className="flex items-center justify-center mb-6 sm:mb-8">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-2 sm:p-4 md:p-6">
+      <div className="container max-w-md mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-12 relative w-full">
+        <div className="flex items-center justify-center mb-4 sm:mb-6 md:mb-8">
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
-              <ChevronLeft className="w-4 h-4" />
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
+              <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4" />
             </div>
             Home
           </Link>
         </div>
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-medium tracking-tight mb-2">
+        <div className="text-center mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-medium tracking-tight mb-1 sm:mb-2">
             Welcome to careAxis
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Sign in to access your account
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3 md:space-y-4">
           <div className="space-y-1">
             <label htmlFor="email" className="text-xs font-medium">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 dark:text-white/40" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-black/40 dark:text-white/40" />
               <input
                 id="email"
                 name="email"
@@ -117,11 +117,11 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Enter your email"
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-white dark:bg-[#2A2A2A] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg bg-white dark:bg-[#2A2A2A] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
               />
             </div>
             {errors.email && (
-              <p className="text-red-500 text-xs">{errors.email}</p>
+              <p className="text-red-500 text-[10px] sm:text-xs">{errors.email}</p>
             )}
           </div>
 
@@ -130,7 +130,7 @@ export default function LoginPage() {
               Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 dark:text-white/40" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-black/40 dark:text-white/40" />
               <input
                 id="password"
                 name="password"
@@ -138,7 +138,7 @@ export default function LoginPage() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
-                className="w-full pl-10 pr-12 py-2 text-sm rounded-lg bg-white dark:bg-[#2A2A2A] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                className="w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg bg-white dark:bg-[#2A2A2A] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
               />
               <button
                 type="button"
@@ -146,19 +146,19 @@ export default function LoginPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"
               >
                 {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
+                  <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 ) : (
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 )}
               </button>
             </div>
             {errors.password && (
-              <p className="text-red-500 text-xs">{errors.password}</p>
+              <p className="text-red-500 text-[10px] sm:text-xs">{errors.password}</p>
             )}
           </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <label className="flex items-center gap-2">
+          <div className="flex items-center justify-between text-[10px] sm:text-xs">
+            <label className="flex items-center gap-1.5 sm:gap-2">
               <input
                 id="remember"
                 name="remember"
@@ -167,7 +167,7 @@ export default function LoginPage() {
                 onChange={(e) =>
                   setFormData((p) => ({ ...p, remember: e.target.checked }))
                 }
-                className="h-3 w-3 rounded border-black/20 dark:border-white/20 text-black dark:text-white focus:ring-black dark:focus:ring-white"
+                className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded border-black/20 dark:border-white/20 text-black dark:text-white focus:ring-black dark:focus:ring-white"
               />
               Remember me
             </label>
@@ -180,14 +180,14 @@ export default function LoginPage() {
           </div>
 
           {errors.submit && (
-            <div className="text-red-500 text-sm text-center">
+            <div className="text-red-500 text-xs sm:text-sm text-center">
               {errors.submit}
             </div>
           )}
 
           <Button
             type="submit"
-            className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-white/80 rounded-lg py-2"
+            className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-white/80 rounded-lg py-1.5 sm:py-2 text-xs sm:text-sm"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Signing in..." : "Sign in"}
@@ -197,7 +197,7 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-black/10 dark:border-white/10" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
+            <div className="relative flex justify-center text-[10px] sm:text-xs uppercase">
               <span className="bg-background px-2 text-muted-foreground">
                 Or continue with
               </span>
@@ -206,7 +206,7 @@ export default function LoginPage() {
 
           <SignIn />
 
-          <div className="text-center text-sm">
+          <div className="text-center text-xs sm:text-sm">
             <span className="text-muted-foreground">
               Don't have an account?{" "}
             </span>

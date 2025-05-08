@@ -3,8 +3,10 @@ import { cn } from "@/lib/utils";
 import { MenuItem } from "@/types";
 import { usePathname } from "next/navigation";
 import NavItem from "./nav-item";
-import { Settings } from "lucide-react";
+import { Settings, Menu } from "lucide-react";
 import { CompanyLogo } from "./company-logo";
+import { useState } from "react";
+import { Button } from "@/components/ui";
 
 interface SidebarProps {
     className?: string;
@@ -20,33 +22,60 @@ const settingsItem: MenuItem = {
 
 export function AdminSidebar({ className, menuItems, title }: SidebarProps) {
     const pathname = usePathname();
+    const [isOpen, setIsOpen] = useState(false);
+
     return (
-        <aside
-            role="navigation"
-            aria-label="Main Navigation"
-            className={cn(
-                "w-16 bg-background flex flex-col border-r",
-                "min-h-screen",
-                "fixed md:static top-0 left-0 z-40",
-                className
-            )}
-        >
-            <div className="p-2 flex items-center justify-center">
-                <CompanyLogo
-                    companyName={title}
-                    size="lg"
-                    className="w-10 h-10"
-                    alt={`${title} logo`}
+        <>
+            {/* Mobile menu button */}
+            <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden fixed top-4 left-4 z-50"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <Menu className="h-5 w-5" />
+            </Button>
+
+            {/* Overlay for mobile */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => setIsOpen(false)}
                 />
-            </div>
-            <nav className="flex-1 flex flex-col items-center py-4 space-y-1">
-                {menuItems.map((item) => (
-                    <NavItem key={`${item.href}-${item.title}`} {...item} />
-                ))}
-            </nav>
-            <div className="p-4 flex flex-col items-center justify-center">
-                <NavItem {...settingsItem} />
-            </div>
-        </aside>
+            )}
+
+            <aside
+                role="navigation"
+                aria-label="Main Navigation"
+                className={cn(
+                    "w-16 bg-background flex flex-col border-r transition-transform duration-200",
+                    "min-h-screen",
+                    "fixed md:static top-0 left-0 z-40",
+                    isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+                    className
+                )}
+            >
+                <div className="flex items-center justify-center h-16">
+                    <CompanyLogo
+                        companyName={title}
+                        size="lg"
+                        className="w-10 h-10"
+                        alt={`${title} logo`}
+                    />
+                </div>
+                <nav className="flex-1 flex flex-col items-center py-4 space-y-1">
+                    {menuItems.map((item) => (
+                        <NavItem
+                            key={`${item.href}-${item.title}`}
+                            {...item}
+                            onClick={() => setIsOpen(false)}
+                        />
+                    ))}
+                </nav>
+                <div className="p-4 flex flex-col items-center justify-center">
+                    <NavItem {...settingsItem} onClick={() => setIsOpen(false)} />
+                </div>
+            </aside>
+        </>
     );
 }

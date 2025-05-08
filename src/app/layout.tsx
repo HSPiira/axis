@@ -21,6 +21,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "careAxis",
   description: "careAxis",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({
@@ -31,10 +37,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       suppressHydrationWarning
     >
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground`}>
         <AuthProvider>
           <ThemeProvider
             attribute="class"
