@@ -10,7 +10,7 @@ import { MenuItem } from "@/types";
 import { HomeIcon, Users } from "lucide-react";
 import { AdminHeader } from "@/components/admin/layout/header/admin-header";
 import { COMPANY_NAME } from "@/lib/constants";
-import { AuthProvider } from "@/components/auth";
+import { AuthGuard, AuthProvider } from "@/components/auth";
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const menuItems: MenuItem[] = [
     { title: "Dashboard", href: "/", icon: HomeIcon },
@@ -18,13 +18,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   ];
   return (
     <AuthProvider session={null}>
-      <div className="flex h-screen min-h-screen bg-background text-foreground">
-        <AdminSidebar menuItems={menuItems} title={COMPANY_NAME} />
-        <div className="flex-1 overflow-auto">
-          <AdminHeader title={COMPANY_NAME} />
-          <main className="p-4">{children}</main>
+      <AuthGuard>
+        <div className="flex h-screen min-h-screen bg-background text-foreground">
+          <AdminSidebar menuItems={menuItems} title={COMPANY_NAME} />
+          <div className="flex-1 overflow-auto">
+            <AdminHeader title={COMPANY_NAME} />
+            <main className="p-4">{children}</main>
+          </div>
         </div>
-      </div>
+      </AuthGuard>
     </AuthProvider>
   );
 }

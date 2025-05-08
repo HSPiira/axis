@@ -11,4 +11,3 @@ interface Props {
 export function AuthProvider({ children, session }: Props) {
   return <SessionProvider session={session}>{children}</SessionProvider>;
 }
-export default AuthProvider;

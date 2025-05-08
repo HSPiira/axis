@@ -1,5 +1,11 @@
-export { auth as middleware } from '@/auth'
+export { auth as middleware } from "@/auth";
 
 export const config = {
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
-}
+  matcher: [
+    // Match specific routes that need protection
+    "/dashboard/:path*",
+    "/settings/:path*",
+    "/profile/:path*",
+    // Exclude auth-related routes
+    "/((?!api|_next/static|_next/image|favicon.ico|login).*)"],
+};
