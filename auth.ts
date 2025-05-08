@@ -33,7 +33,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   secret: process.env["AUTH_SECRET"],
-  // pages: {
-  //   signIn: '/login', // Custom sign-in page path
-  // },
+  pages: {
+    signIn: '/login', // Custom sign-in page path
+  },
 });

@@ -3,10 +3,10 @@
 import { Button } from "@/components/ui";
 import { ChevronLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { loginSchema } from "@/lib/validations/auth";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import SignIn from "@/components/auth/sign-in";
 
 interface FormData {
@@ -21,11 +21,11 @@ interface FormErrors {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

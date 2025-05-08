@@ -1,3 +1,5 @@
+"use client";
+
 import { signInWithAzure } from "@/app/actions/auth";
 import { useState } from "react";
 
@@ -22,7 +24,7 @@ export default function SignIn() {
       disabled={isLoading}
       aria-label="Sign in with Microsoft"
       type="button"
-      className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-white/80 rounded-lg py-2 flex items-center justify-center gap-2"
+      className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-white/80 rounded-lg p-2 flex items-center justify-center gap-2"
     >
       <svg
         width="20"
