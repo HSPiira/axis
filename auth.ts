@@ -1,8 +1,10 @@
+import { prisma } from "@/lib/db";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
-
+import { PrismaAdapter } from "@auth/prisma-adapter";
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
     MicrosoftEntraID({
       clientId: process.env["AUTH_MICROSOFT_ENTRA_ID_ID"],
