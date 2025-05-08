@@ -7,14 +7,15 @@
 import { AdminSidebar } from "@/components/admin/layout/sidebar/admin-sidebar";
 import { ReactNode } from "react";
 import { MenuItem } from "@/types";
-import { HomeIcon, Users } from "lucide-react";
+import { HomeIcon, Users, CalendarIcon } from "lucide-react";
 import { AdminHeader } from "@/components/admin/layout/header/admin-header";
 import { COMPANY_NAME } from "@/lib/constants";
 import { AuthGuard, AuthProvider } from "@/components/auth";
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const menuItems: MenuItem[] = [
     { title: "Dashboard", href: "/dashboard", icon: HomeIcon },
-    { icon: Users, title: "Clients", href: "/clients" },
+    { icon: Users, title: "People", href: "/people" },
+    { icon: CalendarIcon, title: "Sessions", href: "/sessions" },
   ];
   return (
     <AuthProvider>
