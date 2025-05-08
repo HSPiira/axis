@@ -1,21 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Montserrat } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ui";
 import { AuthProvider } from "@/components/auth/session-provider";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-montserrat",
-});
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: 'swap',
+  variable: '--font-montserrat',
 });
 
 export const metadata: Metadata = {
@@ -37,10 +29,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      className={`${montserrat.variable} antialiased`}
       suppressHydrationWarning
     >
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground`}>
+      <body className={`${montserrat.variable} min-h-screen bg-background text-foreground`}>
         <AuthProvider>
           <ThemeProvider
             attribute="class"
