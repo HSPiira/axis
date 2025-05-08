@@ -10,7 +10,9 @@ export function AdminHeader({ title }: { title: string }) {
   const handleLogout = () => signOut();
 
   return (
-    <header className="h-16 border-b flex items-center justify-between px-4">
+    <header
+      className="fixed top-0 left-16 right-0 h-16 border-b flex items-center justify-between px-4 bg-background"
+      style={{ width: "calc(100% - 4rem)" }}>
       {/* React escapes text by default, so this is safe */}
       <h1 className="text-2xl font-bold">{title}</h1>
       <nav

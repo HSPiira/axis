@@ -3,15 +3,17 @@
 import { Button } from "@/components/ui";
 import { ChevronLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { loginSchema } from "@/lib/validations/auth";
-import { signIn, useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import SignIn from "@/components/auth/sign-in";
+import { ZodError } from "zod";
 
 interface FormData {
   email: string;
   password: string;
+  remember?: boolean;
 }
 
 interface FormErrors {
@@ -23,16 +25,20 @@ interface FormErrors {
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState<FormData>({ email: "", password: "" });
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+    remember: false,
+  });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (errors[name as keyof FormErrors]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const { [name as keyof FormErrors]: _, ...rest } = prev;
         return rest;
       });
@@ -48,18 +54,19 @@ export default function LoginPage() {
       setErrors({});
 
       const result = await signIn("credentials", {
-        email: parsed.email,
+        email: parsed.email, // ✅ keep only if backend expects `email`
         password: parsed.password,
         redirect: false,
+        callbackUrl: "/dashboard", // allows the server to over-ride if needed
       });
 
       if (result?.error) {
         setErrors({ submit: result.error });
       } else {
-        router.push("/dashboard");
+        router.push(result.url || "/dashboard");
       }
-    } catch (err: any) {
-      if (err?.issues) {
+    } catch (err: unknown) {
+      if (err instanceof ZodError) {
         const fieldErrors: FormErrors = {};
         err.issues.forEach((issue: any) => {
           fieldErrors[issue.path[0] as keyof FormErrors] = issue.message;
@@ -77,7 +84,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 sm:p-6">
       <div className="container max-w-md mx-auto px-4 sm:px-6 py-8 sm:py-12 relative w-full">
         <div className="flex items-center justify-center mb-6 sm:mb-8">
-          <Link href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
             <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
               <ChevronLeft className="w-4 h-4" />
             </div>
@@ -85,13 +95,19 @@ export default function LoginPage() {
           </Link>
         </div>
         <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-medium tracking-tight mb-2">Welcome to careAxis</h1>
-          <p className="text-sm text-muted-foreground">Sign in to access your account</p>
+          <h1 className="text-2xl sm:text-3xl font-medium tracking-tight mb-2">
+            Welcome to careAxis
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Sign in to access your account
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div className="space-y-1">
-            <label htmlFor="email" className="text-xs font-medium">Email</label>
+            <label htmlFor="email" className="text-xs font-medium">
+              Email
+            </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 dark:text-white/40" />
               <input
@@ -104,11 +120,15 @@ export default function LoginPage() {
                 className="w-full pl-10 pr-4 py-2 text-sm rounded-lg bg-white dark:bg-[#2A2A2A] border border-black/10 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
               />
             </div>
-            {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-red-500 text-xs">{errors.email}</p>
+            )}
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="password" className="text-xs font-medium">Password</label>
+            <label htmlFor="password" className="text-xs font-medium">
+              Password
+            </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black/40 dark:text-white/40" />
               <input
@@ -125,26 +145,45 @@ export default function LoginPage() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
-            {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
+            {errors.password && (
+              <p className="text-red-500 text-xs">{errors.password}</p>
+            )}
           </div>
 
           <div className="flex items-center justify-between text-xs">
             <label className="flex items-center gap-2">
               <input
+                id="remember"
+                name="remember"
                 type="checkbox"
+                checked={formData.remember ?? false}
+                onChange={(e) =>
+                  setFormData((p) => ({ ...p, remember: e.target.checked }))
+                }
                 className="h-3 w-3 rounded border-black/20 dark:border-white/20 text-black dark:text-white focus:ring-black dark:focus:ring-white"
               />
               Remember me
             </label>
-            <Link href="/forgot-password" className="text-black dark:text-white hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-black dark:text-white hover:underline"
+            >
               Forgot password?
             </Link>
           </div>
 
-          {errors.submit && <div className="text-red-500 text-sm text-center">{errors.submit}</div>}
+          {errors.submit && (
+            <div className="text-red-500 text-sm text-center">
+              {errors.submit}
+            </div>
+          )}
 
           <Button
             type="submit"
@@ -159,15 +198,22 @@ export default function LoginPage() {
               <span className="w-full border-t border-black/10 dark:border-white/10" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
             </div>
           </div>
 
           <SignIn />
 
           <div className="text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
-            <Link href="/register" className="text-black dark:text-white hover:underline">
+            <span className="text-muted-foreground">
+              Don't have an account?{" "}
+            </span>
+            <Link
+              href="/register"
+              className="text-black dark:text-white hover:underline"
+            >
               Sign up
             </Link>
           </div>

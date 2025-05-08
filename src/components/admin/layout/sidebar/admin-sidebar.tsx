@@ -44,7 +44,7 @@ export function AdminSidebar({ className, menuItems, title }: SidebarProps) {
                     <NavItem key={`${item.href}-${item.title}`} {...item} />
                 ))}
             </nav>
-            <div className="p-4 flex items-center justify-center">
+            <div className="p-4 flex flex-col items-center justify-center">
                 <NavItem {...settingsItem} />
             </div>
         </aside>

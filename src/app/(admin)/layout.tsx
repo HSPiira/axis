@@ -21,9 +21,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <AuthGuard>
         <div className="flex h-screen min-h-screen bg-background text-foreground">
           <AdminSidebar menuItems={menuItems} title={COMPANY_NAME} />
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1">
             <AdminHeader title={COMPANY_NAME} />
-            <main className="p-4">{children}</main>
+            <main className="pt-20 pl-8 pr-8 overflow-auto h-[calc(100vh-5rem)]">{children}</main>
           </div>
         </div>
       </AuthGuard>
