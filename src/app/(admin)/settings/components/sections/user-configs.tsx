@@ -1,23 +1,130 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Label, Input, Switch, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState, useEffect } from "react";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    Label,
+    Input,
+    Switch,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSettingsTab } from "@/hooks/use-settings-tab";
+import { Button } from "@/components/ui/button";
+import { UserDetailsCard } from "../detail-cards";
+import { UsersTable } from "../tables";
+interface User {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+    createdAt: string;
+    updatedAt: string;
+    userRoles: {
+        role: {
+            name: string;
+        };
+    }[];
+}
 
 export function UserSettings() {
-    const [sessionTimeout, setSessionTimeout] = useState('30');
-    const [passwordExpiry, setPasswordExpiry] = useState('90');
+    const { activeTab, handleTabChange } = useSettingsTab({
+        section: "users",
+        defaultTab: "users",
+    });
+
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10;
+    const totalPages = Math.ceil(users.length / pageSize);
+    const paginatedUsers = users.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    const [sessionTimeout, setSessionTimeout] = useState("30");
+    const [passwordExpiry, setPasswordExpiry] = useState("90");
     const [require2FA, setRequire2FA] = useState(false);
-    const [maxLoginAttempts, setMaxLoginAttempts] = useState('5');
+    const [maxLoginAttempts, setMaxLoginAttempts] = useState("5");
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await fetch("/api/users");
+                if (!response.ok) {
+                    throw new Error("Failed to fetch users");
+                }
+                const data = await response.json();
+                setUsers(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Failed to fetch users");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, []);
 
     return (
-        <div className="space-y-6 p-6">
-            <h1 className="text-2xl font-bold">User & Access Management</h1>
+        <div className="space-y-4 max-w-6xl mx-auto">
+            <div>
+                <h2 className="text-lg font-semibold">User & Access Management</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Manage user roles, permissions, and security settings
+                </p>
+            </div>
 
-            <Tabs defaultValue="roles" className="space-y-4">
+            <Tabs
+                value={activeTab}
+                onValueChange={handleTabChange}
+                className="space-y-4"
+            >
                 <TabsList>
+                    <TabsTrigger value="users">Users</TabsTrigger>
                     <TabsTrigger value="roles">Roles & Permissions</TabsTrigger>
                     <TabsTrigger value="security">Security Settings</TabsTrigger>
                     <TabsTrigger value="policies">Access Policies</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="users">
+                    <div className="flex items-start">
+                        <Card className="shadow-none flex-1">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <CardTitle>User Management</CardTitle>
+                                <Button>Add User</Button>
+                            </CardHeader>
+                            <CardContent>
+                                {loading ? (
+                                    <div className="text-center py-4">Loading users...</div>
+                                ) : error ? (
+                                    <div className="text-center py-4 text-red-500">{error}</div>
+                                ) : (
+                                    <UsersTable
+                                        users={users}
+                                        paginatedUsers={paginatedUsers}
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        setCurrentPage={setCurrentPage}
+                                        selectedUser={selectedUser}
+                                        setSelectedUser={setSelectedUser}
+                                    />
+                                )}
+                            </CardContent>
+                        </Card>
+                        {selectedUser && (
+                            <UserDetailsCard user={selectedUser} onClose={() => setSelectedUser(null)} />
+                        )}
+                    </div>
+                </TabsContent>
 
                 <TabsContent value="roles">
                     <Card>
@@ -185,4 +292,5 @@ export function UserSettings() {
         </div>
     );
 }
+
 export default UserSettings;

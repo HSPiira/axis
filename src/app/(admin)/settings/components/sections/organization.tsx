@@ -1,4 +1,6 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -7,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSettingsTab } from '@/hooks/use-settings-tab';
 
 interface Department {
     id: string;
@@ -23,6 +27,8 @@ interface Region {
 }
 
 export function OrganizationSettings() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [departments, setDepartments] = useState<Department[]>([
         { id: '1', name: 'Engineering', description: 'Software development and IT', manager: 'John Doe' },
         { id: '2', name: 'Sales', description: 'Sales and business development', manager: 'Jane Smith' },
@@ -39,11 +45,19 @@ export function OrganizationSettings() {
         timezone: 'UTC',
     });
 
-    return (
-        <div className="space-y-6 p-6">
-            <h1 className="text-2xl font-bold">Organization Settings</h1>
+    const { activeTab, handleTabChange } = useSettingsTab({
+        section: 'organization',
+        defaultTab: 'profile'
+    });
 
-            <Tabs defaultValue="profile" className="space-y-4">
+    return (
+        <div className="space-y-4 max-w-6xl mx-auto">
+            <div>
+                <h2 className="text-lg font-semibold">Organization Settings</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Manage organization profile and structure</p>
+            </div>
+
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="profile">Company Profile</TabsTrigger>
                     <TabsTrigger value="departments">Departments</TabsTrigger>

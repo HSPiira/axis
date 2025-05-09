@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useSettingsTab } from '@/hooks/use-settings-tab';
 
 interface NotificationTemplate {
     id: string;
@@ -25,6 +28,11 @@ interface NotificationPreference {
 }
 
 export function NotificationSettings() {
+    const { activeTab, handleTabChange } = useSettingsTab({
+        section: 'notifications',
+        defaultTab: 'email'
+    });
+
     const [smtpConfig, setSmtpConfig] = useState({
         host: '',
         port: '',
@@ -61,10 +69,13 @@ export function NotificationSettings() {
     ]);
 
     return (
-        <div className="space-y-6 p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notification Settings</h1>
+        <div className="space-y-4 max-w-6xl mx-auto">
+            <div>
+                <h2 className="text-lg font-semibold">Notification Settings</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Configure email, SMS, and push notification settings</p>
+            </div>
 
-            <Tabs defaultValue="email" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
                 <TabsList className="bg-gray-100 dark:bg-gray-800">
                     <TabsTrigger value="email">Email Server</TabsTrigger>
                     <TabsTrigger value="sms">SMS Gateway</TabsTrigger>

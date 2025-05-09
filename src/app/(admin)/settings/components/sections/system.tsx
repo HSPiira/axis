@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Switch, Input, Label, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTheme } from 'next-themes';
 
 export function SystemSettings() {
     const [systemName, setSystemName] = useState('Care System');
     const [timezone, setTimezone] = useState('UTC');
     const [locale, setLocale] = useState('en-US');
     const [maintenanceMode, setMaintenanceMode] = useState(false);
+    const { theme, setTheme } = useTheme();
     const [featureFlags, setFeatureFlags] = useState({
         betaFeatures: false,
-        darkMode: true,
+        darkMode: theme === 'dark',
         analytics: true,
     });
 
@@ -140,9 +142,10 @@ export function SystemSettings() {
                                 </div>
                                 <Switch
                                     checked={featureFlags.darkMode}
-                                    onCheckedChange={(checked) =>
-                                        setFeatureFlags(prev => ({ ...prev, darkMode: checked }))
-                                    }
+                                    onCheckedChange={(checked) => {
+                                        setFeatureFlags(prev => ({ ...prev, darkMode: checked }));
+                                        setTheme(checked ? 'dark' : 'light');
+                                    }}
                                     className="bg-gray-200 dark:bg-gray-700 data-[state=checked]:bg-emerald-500 dark:data-[state=checked]:bg-emerald-500"
                                 />
                             </div>

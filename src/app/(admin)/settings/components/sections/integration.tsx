@@ -1,4 +1,6 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -7,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSettingsTab } from '@/hooks/use-settings-tab';
 
 interface Webhook {
     id: string;
@@ -27,6 +31,13 @@ interface IDPConfig {
 }
 
 export function IntegrationSettings() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { activeTab, handleTabChange } = useSettingsTab({
+        section: 'integrations',
+        defaultTab: 'api'
+    });
+
     const [webhooks, setWebhooks] = useState<Webhook[]>([
         {
             id: '1',
@@ -74,10 +85,13 @@ export function IntegrationSettings() {
     });
 
     return (
-        <div className="space-y-6 p-6">
-            <h1 className="text-2xl font-bold">Integration Settings</h1>
+        <div className="space-y-4 max-w-6xl mx-auto">
+            <div>
+                <h2 className="text-lg font-semibold">Integration Settings</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Manage third-party integrations and API configurations</p>
+            </div>
 
-            <Tabs defaultValue="api" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="api">API Keys</TabsTrigger>
                     <TabsTrigger value="webhooks">Webhooks</TabsTrigger>

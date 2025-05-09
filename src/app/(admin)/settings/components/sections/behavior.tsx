@@ -1,4 +1,6 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -7,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useSettingsTab } from '@/hooks/use-settings-tab';
 
 interface WorkflowDefinition {
     id: string;
@@ -49,6 +53,13 @@ interface SearchPreset {
 }
 
 export function BehaviorSettings() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { activeTab, handleTabChange } = useSettingsTab({
+        section: 'behavior',
+        defaultTab: 'workflow'
+    });
+
     const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([
         {
             id: '1',
@@ -158,10 +169,13 @@ export function BehaviorSettings() {
     });
 
     return (
-        <div className="space-y-6 p-6">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Application Behavior</h1>
+        <div className="space-y-4 max-w-6xl mx-auto">
+            <div>
+                <h2 className="text-lg font-semibold">Application Behavior</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Configure application workflows and behavior settings</p>
+            </div>
 
-            <Tabs defaultValue="workflow" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
                 <TabsList className="bg-gray-100 dark:bg-gray-800">
                     <TabsTrigger value="workflow">Workflows</TabsTrigger>
                     <TabsTrigger value="ui">UI Customization</TabsTrigger>

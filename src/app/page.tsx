@@ -4,8 +4,10 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { CompanyLogo } from "@/components/admin/layout/sidebar/company-logo";
 import { COMPANY_NAME } from "@/lib/constants";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 import { BrandGradientText } from "@/components/ui/brand-gradient-text";
+import { Button } from "react-day-picker";
+import Link from "next/link";
 
 export default async function Home() {
   const session = await auth();
@@ -22,9 +24,6 @@ export default async function Home() {
               {COMPANY_NAME}
             </BrandGradientText>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-2">
-            Welcome
-          </h1>
           <p className="text-base sm:text-lg text-muted-foreground mb-6 text-center">
             Your confidential, modern counseling platform.
           </p>
@@ -44,9 +43,15 @@ export default async function Home() {
             </li>
           </ul>
 
-          <div className="w-full flex flex-col items-center">
-            <SignIn />
-          </div>
+          <Link
+            href="/login"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <span>Get Started</span>
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors">
+              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+            </div>
+          </Link>
         </div>
       </main>
       <footer className="w-full flex flex-col items-center mt-12 mb-4 px-4">
