@@ -893,4 +893,398 @@ Key features:
    ) : (
        <table>{/* Table content */}</table>
    )}
+   ```
+
+## Audit Logging Standards
+
+### When to Create Audit Logs
+Audit logs should be created in the following scenarios:
+
+1. **Data Modifications**:
+   - When creating new records
+   - When updating existing records
+   - When deleting records
+   - When changing record status
+
+2. **User Actions**:
+   - User login/logout
+   - Permission changes
+   - Role assignments
+   - Password changes
+
+3. **System Events**:
+   - Configuration changes
+   - System settings updates
+   - Integration events
+   - Scheduled task executions
+
+### Audit Log Implementation Pattern
+```typescript
+// lib/audit.ts
+import { prisma } from '@/lib/prisma';
+
+interface AuditLogData {
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  model: string;
+  recordId: string;
+  userId?: string;
+  oldData?: any;
+  newData?: any;
+  changes?: Record<string, { old: any; new: any }>;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export async function createAuditLog(data: AuditLogData) {
+  return await prisma.auditLog.create({
+    data: {
+      action: data.action,
+      model: data.model,
+      recordId: data.recordId,
+      userId: data.userId,
+      oldData: data.oldData,
+      newData: data.newData,
+      changes: data.changes,
+      ipAddress: data.ipAddress,
+      userAgent: data.userAgent,
+    },
+  });
+}
+```
+
+### Usage in API Routes
+```typescript
+// app/api/organizations/[id]/route.ts
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json();
+    
+    // Get the old data
+    const oldData = await prisma.organization.findUnique({
+      where: { id: params.id }
+    });
+
+    // Update the record
+    const newData = await prisma.organization.update({
+      where: { id: params.id },
+      data: body
+    });
+
+    // Create audit log
+    await createAuditLog({
+      action: 'UPDATE',
+      model: 'Organization',
+      recordId: params.id,
+      userId: request.user?.id,
+      oldData,
+      newData,
+      changes: getChanges(oldData, newData),
+      ipAddress: request.ip,
+      userAgent: request.headers.get('user-agent') || undefined
+    });
+
+    return NextResponse.json(newData);
+  } catch (error) {
+    return handleError(error);
+  }
+}
+```
+
+### Audit Log Querying
+```typescript
+// Example of querying audit logs
+const getAuditLogs = async (params: {
+  model?: string;
+  recordId?: string;
+  userId?: string;
+  startDate?: Date;
+  endDate?: Date;
+}) => {
+  return await prisma.auditLog.findMany({
+    where: {
+      ...(params.model && { model: params.model }),
+      ...(params.recordId && { recordId: params.recordId }),
+      ...(params.userId && { userId: params.userId }),
+      ...(params.startDate && params.endDate && {
+        createdAt: {
+          gte: params.startDate,
+          lte: params.endDate
+        }
+      })
+    },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+};
+```
+
+### Best Practices
+
+1. **Data Storage**:
+   - Store complete before/after states
+   - Record specific field changes
+   - Include relevant metadata
+   - Use JSON fields for flexibility
+
+2. **Performance**:
+   - Create audit logs asynchronously when possible
+   - Use proper indexing
+   - Implement pagination for large datasets
+   - Consider data retention policies
+
+3. **Security**:
+   - Never log sensitive data
+   - Include IP and user agent
+   - Track user context
+   - Implement proper access controls
+
+4. **Compliance**:
+   - Maintain immutable records
+   - Include timestamps
+   - Track all relevant metadata
+   - Support data export
+
+5. **Error Handling**:
+   - Log audit failures separately
+   - Don't block main operations
+   - Implement retry mechanisms
+   - Monitor audit log health
+
+### Audit Log Checklist
+When implementing audit logging:
+- [ ] Create audit log for all data modifications
+- [ ] Include user context when available
+- [ ] Store complete before/after states
+- [ ] Record specific field changes
+- [ ] Include request metadata
+- [ ] Implement proper error handling
+- [ ] Add necessary indexes
+- [ ] Consider performance impact
+- [ ] Implement data retention
+- [ ] Add audit log queries
+
+## Table Patterns
+
+### Table with Detail Card
+Tables that show detail cards on row selection should follow this pattern:
+
+```tsx
+interface TableProps {
+    data: Item[];
+    onAction: (item: Item) => void;
+}
+
+export function TableWithDetailCard({ data, onAction }: TableProps) {
+    const [selectedItem, setSelectedItem] = React.useState<Item | null>(null);
+
+    return (
+        <div className="flex items-start gap-4">
+            <div className="flex-1 rounded-md border overflow-x-auto">
+                <table className="w-full text-xs">
+                    <thead>
+                        <tr className="border-b bg-muted/50">
+                            {/* Headers with whitespace-nowrap */}
+                            <th className="h-10 px-3 text-left font-medium whitespace-nowrap">Column</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.map((item) => (
+                            <tr
+                                key={item.id}
+                                className={`border-b cursor-pointer hover:bg-muted/50 ${
+                                    selectedItem?.id === item.id ? 'bg-muted/50' : ''
+                                }`}
+                                onClick={() => setSelectedItem(
+                                    selectedItem?.id === item.id ? null : item
+                                )}
+                            >
+                                <td className="p-2 whitespace-nowrap">{item.name}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {selectedItem && (
+                <DetailCard
+                    item={selectedItem}
+                    onClose={() => setSelectedItem(null)}
+                    onAction={() => onAction(selectedItem)}
+                />
+            )}
+        </div>
+    );
+}
+```
+
+Key features:
+1. Row selection toggles the detail card (clicking selected row hides card)
+2. Visual feedback for selected row
+3. Proper overflow handling
+4. Consistent spacing and layout
+
+### Table Pagination
+All tables should implement pagination following this pattern:
+
+```tsx
+interface PaginatedTableProps {
+    data: Item[];
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+}
+
+export function PaginatedTable({ 
+    data, 
+    currentPage, 
+    totalPages, 
+    onPageChange 
+}: PaginatedTableProps) {
+    const pageSize = 10;
+    const paginatedData = data.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
+
+    return (
+        <div className="space-y-4">
+            <div className="rounded-md border overflow-x-auto">
+                <table className="w-full text-xs">
+                    {/* Table content */}
+                </table>
+            </div>
+            <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, data.length)} of {data.length} entries
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="text-sm">
+                        Page {currentPage} of {totalPages}
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
+```
+
+Key features:
+1. Consistent page size (10 items per page)
+2. Page navigation controls
+3. Entry count display
+4. Proper disabled states
+5. Responsive layout
+
+### Table Best Practices
+
+1. **Text Handling**
+   - Use `whitespace-nowrap` for columns that shouldn't wrap
+   - Use `truncate` with `max-w-[...]` for long text
+   - Add `title` attribute for truncated text
+   ```tsx
+   <td className="p-2">
+       <div className="truncate max-w-[200px]" title={longText}>
+           {longText}
+       </div>
+   </td>
+   ```
+
+2. **Responsive Design**
+   - Wrap table in `overflow-x-auto` container
+   - Use consistent text sizes
+   - Maintain proper spacing
+   ```tsx
+   <div className="overflow-x-auto">
+       <table className="w-full text-xs">
+           {/* Table content */}
+       </table>
+   </div>
+   ```
+
+3. **Selection States**
+   - Clear visual feedback for selected rows
+   - Toggle selection on click
+   - Proper hover states
+   ```tsx
+   <tr
+       className={`cursor-pointer hover:bg-muted/50 ${
+           isSelected ? 'bg-muted/50' : ''
+       }`}
+       onClick={() => onSelect(item)}
+   >
+   ```
+
+4. **Action Buttons**
+   - Use tooltips for icon buttons
+   - Prevent event propagation
+   - Consistent styling
+   ```tsx
+   <Button
+       size="icon"
+       variant="outline"
+       onClick={(e) => {
+           e.stopPropagation();
+           onAction(item);
+       }}
+   >
+   ```
+
+5. **Loading States**
+   - Show loading indicators
+   - Disable interactions
+   - Maintain layout
+   ```tsx
+   {isLoading ? (
+       <div className="flex items-center justify-center p-4">
+           <Spinner className="h-6 w-6" />
+       </div>
+   ) : (
+       <table>{/* Table content */}</table>
+   )}
+   ```
+
+6. **Empty States**
+   - Clear empty state message
+   - Optional action button
+   - Consistent styling
+   ```tsx
+   {data.length === 0 ? (
+       <div className="text-center p-4 text-muted-foreground">
+           No items found
+           {onAdd && (
+               <Button onClick={onAdd} className="mt-2">
+                   Add Item
+               </Button>
+           )}
+       </div>
+   ) : (
+       <table>{/* Table content */}</table>
+   )}
    ``` 

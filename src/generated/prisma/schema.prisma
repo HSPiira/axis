@@ -28,6 +28,8 @@ model User {
   accounts  Account[] // Linked social/enterprise accounts.
   sessions  Session[] // Active sessions for this user.
   userRoles UserRole[] // Roles assigned to the user.
+  Document  Document[]
+  auditLogs AuditLog[] // Audit logs created by this user
 }
 
 /// Links a user to an external identity provider (Microsoft, GitHub, etc).
@@ -110,4 +112,235 @@ model UserRole {
   role Role @relation(fields: [roleId], references: [id])
 
   @@unique([userId, roleId]) // Prevent duplicate role assignments.
+}
+
+/// Represents an industry classification
+model Industry {
+  id          String     @id @default(cuid())
+  name        String     @unique // Industry name
+  code        String?    @unique // Optional industry code (e.g., NAICS, SIC)
+  description String? // Optional description
+  parentId    String? // Reference to parent industry for hierarchical structure
+  parent      Industry?  @relation("IndustryHierarchy", fields: [parentId], references: [id])
+  children    Industry[] @relation("IndustryHierarchy")
+
+  organizations Organization[] // Organizations in this industry
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([code])
+  @@index([parentId])
+}
+
+/// Represents a client or partner organization in the system
+model Organization {
+  id            String    @id @default(cuid())
+  name          String // Organization's legal name
+  email         String? // Primary contact email
+  phone         String? // Primary contact phone
+  address       String? // Physical address
+  contactPerson String? // Primary contact person's name
+  contactEmail  String? // Contact person's email
+  contactPhone  String? // Contact person's phone
+  industryId    String? // Reference to primary industry
+  industry      Industry? @relation(fields: [industryId], references: [id])
+  status        OrgStatus @default(ACTIVE) // Current status of the organization
+  notes         String? // Additional notes or comments
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  contracts     Contract[] // Active contracts with this organization
+  Document      Document[] // Documents associated with this organization
+  KPI           KPI[]
+  KPIAssignment KPIAssignment[]
+
+  @@index([status]) // Index for faster status-based queries
+  @@index([name]) // Index for faster name-based searches
+  @@index([email]) // Index for faster email lookups
+  @@index([industryId]) // Index for faster industry-based queries
+}
+
+/// Represents a service contract between the organization and a client
+model Contract {
+  id             String       @id @default(cuid())
+  organizationId String // Reference to the organization
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  startDate   DateTime // Contract start date
+  endDate     DateTime // Contract end date
+  renewalDate DateTime? // Optional date when contract can be renewed
+  billingRate Float // Rate charged for services
+  isRenewable Boolean   @default(true) // Whether the contract can be renewed
+
+  // Payment tracking fields
+  paymentFrequency String? // How often payments are made (monthly, quarterly, etc.)
+  paymentTerms     String? // Payment terms (net 30, net 60, etc.)
+  currency         String?   @default("USD") // Currency for billing
+  lastBillingDate  DateTime? // When the last payment was processed
+  nextBillingDate  DateTime? // When the next payment is due
+
+  documentUrl String? // URL to the signed contract document
+  status      ContractStatus @default(ACTIVE) // Current status of the contract
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  Document      Document[] // Related documents (contract terms, amendments, etc.)
+  KPI           KPI[]
+  KPIAssignment KPIAssignment[]
+
+  @@index([organizationId]) // Index for faster organization contract queries
+  @@index([status]) // Index for faster status-based queries
+  @@index([endDate]) // Index for faster expiry date queries
+}
+
+/// Represents a document in the system (contracts, reports, certifications, etc.)
+model Document {
+  id                String       @id @default(cuid())
+  title             String // Document title/name
+  description       String? // Optional document description
+  type              DocumentType // Type of document (contract, report, etc.)
+  url               String // Storage link (S3, etc.)
+  fileSize          Int? // File size in bytes
+  fileType          String? // MIME type of the file
+  version           Int          @default(1) // Document version number
+  isLatest          Boolean      @default(true) // Indicates if this is the latest version
+  previousVersionId String? // Reference to previous version
+  previousVersion   Document?    @relation("DocumentVersions", fields: [previousVersionId], references: [id])
+  nextVersions      Document[]   @relation("DocumentVersions")
+
+  uploadedById   String? // User ID who uploaded the document
+  uploadedBy     User?         @relation(fields: [uploadedById], references: [id])
+  organizationId String? // Associated organization
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  contractId     String? // Associated contract
+  contract       Contract?     @relation(fields: [contractId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type]) // Index for faster document type queries
+  @@index([organizationId]) // Index for faster organization document queries
+  @@index([contractId]) // Index for faster contract document queries
+  @@index([uploadedById]) // Index for faster user document queries
+}
+
+// ENUM: Document types
+enum DocumentType {
+  CONTRACT
+  CERTIFICATION
+  KPI_REPORT
+  FEEDBACK_SUMMARY
+  BILLING_REPORT
+  UTILIZATION_REPORT
+  OTHER
+}
+
+// ENUM: Organization status
+enum OrgStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  PENDING
+}
+
+// ENUM: Contract status
+enum ContractStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  RENEWED
+}
+
+/// Represents an audit log entry for tracking changes to any model
+model AuditLog {
+  id       String  @id @default(cuid())
+  action   String // CREATE, UPDATE, DELETE
+  model    String // Name of the model that was changed
+  recordId String // ID of the record that was changed
+  userId   String? // ID of the user who made the change
+  user     User?   @relation(fields: [userId], references: [id])
+
+  // Store the changes as JSON
+  oldData Json? // Previous state of the record
+  newData Json? // New state of the record
+  changes Json // Specific fields that were changed
+
+  // Additional context
+  ipAddress String? // IP address of the request
+  userAgent String? // User agent of the request
+
+  createdAt DateTime @default(now())
+
+  @@index([model, recordId]) // For querying changes to specific records
+  @@index([userId]) // For querying changes by user
+  @@index([createdAt]) // For querying changes by time
+}
+
+/// Represents a Key Performance Indicator (KPI) in the system
+model KPI {
+  id          String  @id @default(cuid())
+  name        String // Name of the KPI
+  description String? // Optional description
+  type        String // Category or type of KPI
+  unit        String // Unit of measurement (%, $, number, etc.)
+  isActive    Boolean @default(true) // Whether the KPI is active in the catalog
+
+  // Relations
+  assignments KPIAssignment[] // KPI assignments to contracts
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+  Contract       Contract?     @relation(fields: [contractId], references: [id])
+  contractId     String?
+
+  @@index([type]) // For filtering by KPI type
+  @@index([isActive]) // For filtering active/inactive KPIs
+}
+
+/// Represents an assignment of a KPI to a contract
+model KPIAssignment {
+  id          String    @id @default(cuid())
+  kpiId       String // Reference to the KPI
+  contractId  String // Reference to the contract
+  targetValue String? // E.g., "12 sessions", "1 report/month"
+  frequency   Frequency // How often the KPI is measured
+  status      KPIStatus // Current status of the assignment
+  notes       String? // Additional notes
+  startDate   DateTime // When the KPI assignment starts
+  endDate     DateTime? // Optional end date for the assignment
+
+  // Relations
+  kpi      KPI      @relation(fields: [kpiId], references: [id])
+  contract Contract @relation(fields: [contractId], references: [id])
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  @@index([kpiId]) // For faster KPI lookups
+  @@index([contractId]) // For contract assignments
+  @@index([status]) // For status-based queries
+  @@index([startDate]) // For date-based queries
+}
+
+/// Represents how often a KPI is measured
+enum Frequency {
+  ONE_TIME
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+/// Represents the status of a KPI assignment
+enum KPIStatus {
+  PENDING
+  ONGOING
+  COMPLETED
+  CANCELLED
 }
