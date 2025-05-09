@@ -3,17 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const resolvedParams = await params;
-        const userId = resolvedParams.id;
+        const { id } = await context.params;
         const body = await request.json();
         const { name, roleId } = body;
 
         // First verify the user exists
         const existingUser = await prisma.user.findUnique({
-            where: { id: userId },
+            where: { id },
             include: {
                 userRoles: {
                     include: {
@@ -38,7 +37,7 @@ export async function PATCH(
 
         // Update user
         const updatedUser = await prisma.user.update({
-            where: { id: userId },
+            where: { id },
             data: updateData,
             include: {
                 userRoles: {
@@ -53,20 +52,20 @@ export async function PATCH(
         if (roleId !== undefined) {
             // First remove existing role
             await prisma.userRole.deleteMany({
-                where: { userId }
+                where: { userId: id }
             });
 
             // Then add new role
             await prisma.userRole.create({
                 data: {
-                    userId,
+                    userId: id,
                     roleId
                 }
             });
 
             // Fetch updated user with new role
             const userWithNewRole = await prisma.user.findUnique({
-                where: { id: userId },
+                where: { id },
                 include: {
                     userRoles: {
                         include: {

@@ -18,11 +18,10 @@ function formatRoleResponse(role: any) {
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
-        const resolvedParams = await params;
-        const roleId = resolvedParams.id;
+        const { id } = await context.params;
 
         // Validate request body
         const body = await request.json();
@@ -30,7 +29,7 @@ export async function PATCH(
 
         // First verify the role exists
         const existingRole = await prisma.role.findUnique({
-            where: { id: roleId },
+            where: { id },
             include: {
                 permissions: { include: { permission: true } },
                 users: true
@@ -69,12 +68,12 @@ export async function PATCH(
 
             // Update the role's permissions
             await prisma.rolePermission.deleteMany({
-                where: { roleId }
+                where: { roleId: id }
             });
 
             await prisma.rolePermission.createMany({
                 data: permissionIds.map((permissionId) => ({
-                    roleId,
+                    roleId: id,
                     permissionId
                 }))
             });
@@ -82,7 +81,7 @@ export async function PATCH(
 
         // Update the role's basic info if needed
         const updatedRole = await prisma.role.update({
-            where: { id: roleId },
+            where: { id },
             data: updateData,
             include: {
                 permissions: { include: { permission: true } },

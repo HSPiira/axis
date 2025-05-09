@@ -65,7 +65,7 @@ export function RolesTable({
                                 </div>
                             </td>
                             <td className="p-2">
-                                <div className="truncate max-w-[200px]" title={role.description || '-'}>
+                                <div title={role.description || '-'}>
                                     <span className="font-medium text-muted-foreground">
                                         {role.description || '-'}
                                     </span>

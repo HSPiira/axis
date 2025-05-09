@@ -1,84 +1,69 @@
 import { prisma } from "@/lib/db";
-import { ROLES, PERMISSIONS, type RoleType } from "@/lib/constants/roles";
+import { ROLES, PERMISSIONS, ROLE_PERMISSIONS, type RoleType, type PermissionType } from "@/lib/constants/roles";
+
+const BATCH_SIZE = 10;
 
 export async function setupRolesAndPermissions() {
     try {
-        // Create all permissions
-        const permissionPromises = Object.values(PERMISSIONS).map(permissionName =>
-            prisma.permission.upsert({
-                where: { name: permissionName },
-                update: {},
-                create: {
-                    name: permissionName,
-                    description: `Permission to ${permissionName.replace(':', ' ')}`
-                }
-            })
-        );
-        await Promise.all(permissionPromises);
-
-        // Create admin role with all permissions
-        const adminRole = await prisma.role.upsert({
-            where: { name: ROLES.ADMIN },
-            update: {},
-            create: {
-                name: ROLES.ADMIN,
-                description: 'Administrator with full access to all features'
-            }
-        });
+        // Create all permissions in batches
+        const permissionValues = Object.values(PERMISSIONS);
+        for (let i = 0; i < permissionValues.length; i += BATCH_SIZE) {
+            const batch = permissionValues.slice(i, i + BATCH_SIZE);
+            const permissionPromises = batch.map(permissionName =>
+                prisma.permission.upsert({
+                    where: { name: permissionName },
+                    update: {},
+                    create: {
+                        name: permissionName,
+                        description: `Permission to ${permissionName.replace(':', ' ')}`
+                    }
+                })
+            );
+            await Promise.all(permissionPromises);
+            console.log(`Created/updated permissions ${i + 1} to ${Math.min(i + BATCH_SIZE, permissionValues.length)}`);
+        }
 
         // Get all permissions
         const allPermissions = await prisma.permission.findMany();
 
-        // Assign all permissions to admin role
-        await prisma.rolePermission.deleteMany({
-            where: { roleId: adminRole.id }
-        });
+        // Create or update all roles and their permissions
+        for (const [roleName, rolePermissions] of Object.entries(ROLE_PERMISSIONS)) {
+            console.log(`Setting up role: ${roleName}`);
 
-        await prisma.rolePermission.createMany({
-            data: allPermissions.map(permission => ({
-                roleId: adminRole.id,
-                permissionId: permission.id
-            }))
-        });
+            // Create or update the role
+            const role = await prisma.role.upsert({
+                where: { name: roleName },
+                update: {},
+                create: {
+                    name: roleName,
+                    description: `${roleName.charAt(0).toUpperCase() + roleName.slice(1)} role`
+                }
+            });
 
-        // Create staff role with basic permissions
-        const staffRole = await prisma.role.upsert({
-            where: { name: ROLES.STAFF },
-            update: {},
-            create: {
-                name: ROLES.STAFF,
-                description: 'Staff member with basic access'
-            }
-        });
+            // Get the permission IDs for this role
+            const rolePermissionIds = allPermissions
+                .filter(p => (rolePermissions as PermissionType[]).includes(p.name as PermissionType))
+                .map(p => p.id);
 
-        // Define staff permissions
-        const staffPermissions = [
-            PERMISSIONS.STAFF_ACCESS,
-            PERMISSIONS.USER_READ,
-            PERMISSIONS.ROLE_READ,
-            PERMISSIONS.PERMISSION_READ
-        ];
+            // Remove existing role permissions
+            await prisma.rolePermission.deleteMany({
+                where: { roleId: role.id }
+            });
 
-        // Get staff permission records
-        const staffPermissionRecords = await prisma.permission.findMany({
-            where: {
-                name: {
-                    in: staffPermissions
+            // Create new role permissions in batches
+            for (let i = 0; i < rolePermissionIds.length; i += BATCH_SIZE) {
+                const batch = rolePermissionIds.slice(i, i + BATCH_SIZE);
+                if (batch.length > 0) {
+                    await prisma.rolePermission.createMany({
+                        data: batch.map(permissionId => ({
+                            roleId: role.id,
+                            permissionId
+                        }))
+                    });
                 }
             }
-        });
-
-        // Assign staff permissions
-        await prisma.rolePermission.deleteMany({
-            where: { roleId: staffRole.id }
-        });
-
-        await prisma.rolePermission.createMany({
-            data: staffPermissionRecords.map(permission => ({
-                roleId: staffRole.id,
-                permissionId: permission.id
-            }))
-        });
+            console.log(`Completed setup for role: ${roleName}`);
+        }
 
         console.log('Successfully set up roles and permissions');
     } catch (error) {
