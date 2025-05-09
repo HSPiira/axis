@@ -1,7 +1,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Mail, Shield, Info, Calendar, User as UserIcon, FileText, MessageSquare, StickyNote, BookOpen, Clock, Trash2, KeyRound, CheckCircle2, X } from 'lucide-react';
+import { Mail, Shield, Info, Calendar, User as UserIcon, FileText, MessageSquare, StickyNote, BookOpen, Clock, Trash2, KeyRound, CheckCircle2, X, Pencil } from 'lucide-react';
 
 interface User {
     id: string;
@@ -12,16 +12,31 @@ interface User {
     updatedAt: string;
     userRoles: {
         role: {
+            id: string;
             name: string;
         };
     }[];
+    accounts?: {
+        provider: string;
+        type: string;
+    }[];
 }
 
-const UserDetailsCard = ({ user, onClose }: { user: User; onClose: () => void }) => {
+interface UserDetailsCardProps {
+    user: User;
+    onClose: () => void;
+    onEdit: () => void;
+}
+
+const UserDetailsCard = ({ user, onClose, onEdit }: UserDetailsCardProps) => {
     const role = user.userRoles[0]?.role.name || 'No Role';
     const roleDesc = role === 'Administrator'
         ? 'Manages users, system settings, roles, and has full access to all data and configuration features.'
         : 'No role description.';
+
+    // Check if user is from a credential provider
+    const isCredentialUser = user.accounts?.some(account => account.type === 'credentials');
+
     return (
         <div className="w-[340px] bg-white dark:bg-muted rounded-xl shadow-sm p-4 ml-6 flex flex-col border border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-3 mb-2">
@@ -70,14 +85,31 @@ const UserDetailsCard = ({ user, onClose }: { user: User; onClose: () => void })
                 <div className="flex items-center gap-1"><BookOpen className="h-3 w-3 text-green-500" />Resources: 0</div>
                 <div className="flex items-center gap-1"><Clock className="h-3 w-3 text-gray-400" />Sessions: 0</div>
             </div>
+
             <div className="flex gap-2 mt-auto pt-2 border-t">
-                <Button variant="ghost" size="icon"><KeyRound className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon"><Mail className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon"><MessageSquare className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon"><FileText className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon"><StickyNote className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon"><BookOpen className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onEdit}
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                    <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                    <FileText className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                    <MessageSquare className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                    <StickyNote className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                    <BookOpen className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
             </div>
         </div>
     );

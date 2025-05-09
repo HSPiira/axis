@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+'use client';
+
+import React from "react";
 import {
     Card,
     CardContent,
@@ -7,17 +9,20 @@ import {
     Label,
     Input,
     Switch,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
 } from "@/components/ui";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSettingsTab } from "@/hooks/use-settings-tab";
+import { useSettingsData } from "@/hooks/use-settings-data";
 import { Button } from "@/components/ui/button";
 import { UserDetailsCard } from "../detail-cards";
 import { UsersTable } from "../tables";
+import RolesTable from "../tables/roles-table";
+import RolePermissionsModal from "../modals/role-permissions-modal";
+import RoleCreateModal from "../modals/role-create-modal";
+import { RoleDetailsCard } from "../detail-cards/role-detail-card";
+import { Plus, Search } from "lucide-react";
+import { UserEditModal } from '../modals/user-edit-modal';
+import { RoleEditModal } from '../modals/role-edit-modal';
+
 interface User {
     id: string;
     name: string | null;
@@ -27,52 +32,222 @@ interface User {
     updatedAt: string;
     userRoles: {
         role: {
+            id: string;
             name: string;
         };
     }[];
+    accounts?: {
+        provider: string;
+        type: string;
+    }[];
+}
+
+interface Role {
+    id: string;
+    name: string;
+    description?: string | null;
+    usersCount: number;
+    permissions: {
+        id: string;
+        name: string;
+        description?: string | null;
+    }[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+interface Permission {
+    id: string;
+    name: string;
+    description?: string | null;
 }
 
 export function UserSettings() {
-    const { activeTab, handleTabChange } = useSettingsTab({
-        section: "users",
-        defaultTab: "users",
+    const {
+        activeTab,
+        handleTabChange,
+        data,
+        loading,
+        error
+    } = useSettingsData({
+        section: 'users',
+        defaultTab: 'users',
+        dataLoaders: {
+            users: async () => {
+                const response = await fetch('/api/users');
+                if (!response.ok) throw new Error('Failed to fetch users');
+                return response.json();
+            },
+            roles: async () => {
+                const response = await fetch('/api/roles');
+                if (!response.ok) throw new Error('Failed to fetch roles');
+                return response.json();
+            },
+            permissions: async () => {
+                const response = await fetch('/api/permissions');
+                if (!response.ok) throw new Error('Failed to fetch permissions');
+                return response.json();
+            },
+            security: async () => {
+                const response = await fetch('/api/security-settings');
+                if (!response.ok) throw new Error('Failed to fetch security settings');
+                return response.json();
+            },
+            policies: async () => {
+                const response = await fetch('/api/access-policies');
+                if (!response.ok) throw new Error('Failed to fetch access policies');
+                return response.json();
+            }
+        }
     });
 
-    const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedRole, setSelectedRole] = React.useState<Role | null>(null);
+    const [showPermissionsModal, setShowPermissionsModal] = React.useState(false);
+    const [showCreateRoleModal, setShowCreateRoleModal] = React.useState(false);
+    const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
+    const [currentPage, setCurrentPage] = React.useState(1);
     const pageSize = 10;
+    const [roleSearch, setRoleSearch] = React.useState("");
+    const [userSearch, setUserSearch] = React.useState("");
+
+    // Add state for roles and users to allow local refresh
+    const [roles, setRoles] = React.useState<Role[]>([]);
+    const [usersState, setUsersState] = React.useState<User[]>([]);
+    const [showEditUserModal, setShowEditUserModal] = React.useState(false);
+    const [showEditRoleModal, setShowEditRoleModal] = React.useState(false);
+
+    // Sync roles and users from data loader
+    React.useEffect(() => {
+        if (data.roles) setRoles(data.roles);
+        if (data.users) setUsersState(data.users);
+    }, [data.roles, data.users]);
+
+    // Refresh roles from API and update details card if needed
+    const refreshRoles = async (selectId?: string) => {
+        const response = await fetch('/api/roles');
+        const updatedRoles = await response.json();
+        setRoles(updatedRoles);
+        if (selectId) {
+            const updated = updatedRoles.find((r: Role) => r.id === selectId);
+            if (updated) setSelectedRole(updated);
+        } else if (selectedRole) {
+            const updated = updatedRoles.find((r: Role) => r.id === selectedRole.id);
+            if (updated) setSelectedRole(updated);
+        }
+    };
+
+    // Refresh users from API and update details card if needed
+    const refreshUsers = async (selectId?: string) => {
+        const response = await fetch('/api/users');
+        const updatedUsers = await response.json();
+        setUsersState(updatedUsers);
+        if (selectId) {
+            const updated = updatedUsers.find((u: User) => u.id === selectId);
+            if (updated) setSelectedUser(updated);
+        } else if (selectedUser) {
+            const updated = updatedUsers.find((u: User) => u.id === selectedUser.id);
+            if (updated) setSelectedUser(updated);
+        }
+    };
+
+    const handleEditPermissions = (role: Role) => {
+        setSelectedRole(role);
+        setShowPermissionsModal(true);
+    };
+
+    const handleSavePermissions = async (roleId: string, permissionIds: string[]) => {
+        try {
+            const response = await fetch(`/api/roles/${roleId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ permissionIds }),
+            });
+
+            if (!response.ok) throw new Error('Failed to update permissions');
+
+            await refreshRoles(roleId);
+        } catch (error) {
+            console.error('Error updating permissions:', error);
+        }
+    };
+
+    const handleSaveUser = async (userId: string, data: { name?: string; roleId?: string }) => {
+        try {
+            const response = await fetch(`/api/users/${userId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) throw new Error('Failed to update user');
+
+            await refreshUsers(userId);
+            setShowEditUserModal(false);
+        } catch (error) {
+            console.error('Error updating user:', error);
+            throw error;
+        }
+    };
+
+    const handleEditUser = async (user: User) => {
+        setSelectedUser(user);
+        await refreshUsers(user.id);
+        setShowEditUserModal(true);
+    };
+
+    const handleSaveRole = async (roleId: string, data: { name: string; description?: string }) => {
+        try {
+            const response = await fetch(`/api/roles/${roleId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) throw new Error('Failed to update role');
+
+            await refreshRoles(roleId);
+            setShowEditRoleModal(false);
+        } catch (error) {
+            console.error('Error updating role:', error);
+            throw error;
+        }
+    };
+
+    // Calculate pagination values
+    const users = usersState || [];
     const totalPages = Math.ceil(users.length / pageSize);
     const paginatedUsers = users.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     );
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-    const [sessionTimeout, setSessionTimeout] = useState("30");
-    const [passwordExpiry, setPasswordExpiry] = useState("90");
-    const [require2FA, setRequire2FA] = useState(false);
-    const [maxLoginAttempts, setMaxLoginAttempts] = useState("5");
+    // Filter users by search
+    const filteredUsers = users.filter((user: User) => {
+        const q = userSearch.toLowerCase();
+        return (
+            (user.name?.toLowerCase().includes(q) ?? false) ||
+            (user.email?.toLowerCase().includes(q) ?? false)
+        );
+    });
+    const usersTotalPages = Math.ceil(filteredUsers.length / pageSize);
+    const paginatedFilteredUsers = filteredUsers.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const response = await fetch("/api/users");
-                if (!response.ok) {
-                    throw new Error("Failed to fetch users");
-                }
-                const data = await response.json();
-                setUsers(data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to fetch users");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUsers();
-    }, []);
+    // Filter roles by search
+    const filteredRoles = (roles || []).filter((role: Role) => {
+        const q = roleSearch.toLowerCase();
+        return (
+            role.name.toLowerCase().includes(q) ||
+            (role.description?.toLowerCase().includes(q) ?? false)
+        );
+    });
+    const rolesTotalPages = Math.ceil(filteredRoles.length / pageSize);
+    const paginatedRoles = filteredRoles.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+    );
 
     return (
         <div className="space-y-4 max-w-6xl mx-auto">
@@ -96,199 +271,203 @@ export function UserSettings() {
                 </TabsList>
 
                 <TabsContent value="users">
-                    <div className="flex items-start">
-                        <Card className="shadow-none flex-1">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle>User Management</CardTitle>
-                                <Button>Add User</Button>
-                            </CardHeader>
-                            <CardContent>
-                                {loading ? (
-                                    <div className="text-center py-4">Loading users...</div>
-                                ) : error ? (
-                                    <div className="text-center py-4 text-red-500">{error}</div>
-                                ) : (
-                                    <UsersTable
-                                        users={users}
-                                        paginatedUsers={paginatedUsers}
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        setCurrentPage={setCurrentPage}
-                                        selectedUser={selectedUser}
-                                        setSelectedUser={setSelectedUser}
-                                    />
-                                )}
-                            </CardContent>
-                        </Card>
-                        {selectedUser && (
-                            <UserDetailsCard user={selectedUser} onClose={() => setSelectedUser(null)} />
-                        )}
-                    </div>
+                    {loading.users ? (
+                        <div>Loading users...</div>
+                    ) : error.users ? (
+                        <div>Error loading users: {error.users.message}</div>
+                    ) : (
+                        <div className="flex items-start gap-4">
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between mb-4 gap-2">
+                                    <div className="relative flex-1 max-w-xs flex items-center gap-2">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                            <Search className="h-4 w-4" />
+                                        </span>
+                                        <input
+                                            type="text"
+                                            value={userSearch}
+                                            onChange={e => {
+                                                setUserSearch(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            placeholder="Search users..."
+                                            className="pl-9 pr-3 py-2 w-full rounded-full border border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                                        />
+                                        <Button
+                                            size="icon"
+                                            className="rounded-full h-10 w-10 ml-2"
+                                            variant="outline"
+                                            onClick={() => {/* TODO: open create user modal */ }}
+                                            aria-label="Add User"
+                                        >
+                                            <Plus className="h-5 w-5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <UsersTable
+                                    users={filteredUsers}
+                                    paginatedUsers={paginatedFilteredUsers}
+                                    currentPage={currentPage}
+                                    totalPages={usersTotalPages}
+                                    setCurrentPage={setCurrentPage}
+                                    selectedUser={selectedUser}
+                                    setSelectedUser={setSelectedUser}
+                                />
+                            </div>
+                            {selectedUser && (
+                                <UserDetailsCard
+                                    user={selectedUser}
+                                    onClose={() => setSelectedUser(null)}
+                                    onEdit={() => handleEditUser(selectedUser)}
+                                />
+                            )}
+                        </div>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="roles">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Role-based Access Control</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Default Role</Label>
-                                    <Select defaultValue="user">
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select default role" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="admin">Administrator</SelectItem>
-                                            <SelectItem value="manager">Manager</SelectItem>
-                                            <SelectItem value="user">User</SelectItem>
-                                            <SelectItem value="viewer">Viewer</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                    {loading.roles || loading.permissions ? (
+                        <div>Loading roles and permissions...</div>
+                    ) : error.roles || error.permissions ? (
+                        <div>Error loading roles: {error.roles?.message || error.permissions?.message}</div>
+                    ) : (
+                        <>
+                            <div className="flex items-center justify-between mb-4 gap-2">
+                                <div className="relative flex-1 max-w-xs flex items-center gap-2">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                        <Search className="h-4 w-4" />
+                                    </span>
+                                    <input
+                                        type="text"
+                                        value={roleSearch}
+                                        onChange={e => {
+                                            setRoleSearch(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        placeholder="Search roles..."
+                                        className="pl-9 pr-3 py-2 w-full rounded-full border border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                                    />
+                                    <Button
+                                        size="icon"
+                                        className="rounded-full h-10 w-10 ml-2"
+                                        variant="outline"
+                                        onClick={() => setShowCreateRoleModal(true)}
+                                        aria-label="Add Role"
+                                    >
+                                        <Plus className="h-5 w-5" />
+                                    </Button>
                                 </div>
                             </div>
-
-                            <div className="space-y-2">
-                                <Label>Permission Matrix</Label>
-                                <div className="border rounded-lg p-4">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr>
-                                                <th className="text-left">Permission</th>
-                                                <th className="text-center">Admin</th>
-                                                <th className="text-center">Manager</th>
-                                                <th className="text-center">User</th>
-                                                <th className="text-center">Viewer</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>View Dashboard</td>
-                                                <td className="text-center">✓</td>
-                                                <td className="text-center">✓</td>
-                                                <td className="text-center">✓</td>
-                                                <td className="text-center">✓</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Manage Users</td>
-                                                <td className="text-center">✓</td>
-                                                <td className="text-center">✓</td>
-                                                <td className="text-center">✗</td>
-                                                <td className="text-center">✗</td>
-                                            </tr>
-                                            <tr>
-                                                <td>System Settings</td>
-                                                <td className="text-center">✓</td>
-                                                <td className="text-center">✗</td>
-                                                <td className="text-center">✗</td>
-                                                <td className="text-center">✗</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                            <div className="flex items-start gap-4">
+                                <div className="flex-1">
+                                    <RolesTable
+                                        roles={filteredRoles}
+                                        paginatedRoles={paginatedRoles}
+                                        currentPage={currentPage}
+                                        totalPages={rolesTotalPages}
+                                        setCurrentPage={setCurrentPage}
+                                        selectedRole={selectedRole}
+                                        setSelectedRole={setSelectedRole}
+                                        onEditPermissions={handleEditPermissions}
+                                    />
                                 </div>
+                                {selectedRole && (
+                                    <RoleDetailsCard
+                                        role={selectedRole}
+                                        onClose={() => setSelectedRole(null)}
+                                        onEdit={() => setShowEditRoleModal(true)}
+                                        onEditPermissions={() => handleEditPermissions(selectedRole)}
+                                    />
+                                )}
                             </div>
-                        </CardContent>
-                    </Card>
+                        </>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="security">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Security Settings</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Session Timeout (minutes)</Label>
-                                    <Input
-                                        type="number"
-                                        value={sessionTimeout}
-                                        onChange={(e) => setSessionTimeout(e.target.value)}
-                                        min="5"
-                                        max="1440"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Password Expiry (days)</Label>
-                                    <Input
-                                        type="number"
-                                        value={passwordExpiry}
-                                        onChange={(e) => setPasswordExpiry(e.target.value)}
-                                        min="30"
-                                        max="365"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <Label>Require Two-Factor Authentication</Label>
-                                    <Switch
-                                        checked={require2FA}
-                                        onCheckedChange={setRequire2FA}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Maximum Login Attempts</Label>
-                                    <Input
-                                        type="number"
-                                        value={maxLoginAttempts}
-                                        onChange={(e) => setMaxLoginAttempts(e.target.value)}
-                                        min="3"
-                                        max="10"
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {loading.security ? (
+                        <div>Loading security settings...</div>
+                    ) : error.security ? (
+                        <div>Error loading security settings: {error.security.message}</div>
+                    ) : (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Security Settings</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {/* Security settings content */}
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="policies">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Access Policies</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Password Complexity Requirements</Label>
-                                <div className="space-y-2">
-                                    <div className="flex items-center space-x-2">
-                                        <Switch defaultChecked />
-                                        <Label>Require uppercase letters</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Switch defaultChecked />
-                                        <Label>Require numbers</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Switch defaultChecked />
-                                        <Label>Require special characters</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Switch defaultChecked />
-                                        <Label>Minimum length (8 characters)</Label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Account Lockout Policy</Label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Lockout Duration (minutes)</Label>
-                                        <Input type="number" defaultValue="30" min="5" max="1440" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Reset Attempts After (hours)</Label>
-                                        <Input type="number" defaultValue="24" min="1" max="72" />
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {loading.policies ? (
+                        <div>Loading access policies...</div>
+                    ) : error.policies ? (
+                        <div>Error loading access policies: {error.policies.message}</div>
+                    ) : (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Access Policies</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {/* Access policies content */}
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
             </Tabs>
+
+            {selectedRole && (
+                <>
+                    <RolePermissionsModal
+                        open={showPermissionsModal}
+                        onClose={() => setShowPermissionsModal(false)}
+                        role={selectedRole}
+                        allPermissions={data.permissions || []}
+                        onSave={handleSavePermissions}
+                    />
+                    <RoleEditModal
+                        open={showEditRoleModal}
+                        onClose={() => setShowEditRoleModal(false)}
+                        role={selectedRole}
+                        onSave={handleSaveRole}
+                    />
+                </>
+            )}
+
+            <RoleCreateModal
+                open={showCreateRoleModal}
+                onClose={() => setShowCreateRoleModal(false)}
+                allPermissions={data.permissions || []}
+                onSave={async (roleData) => {
+                    try {
+                        const response = await fetch('/api/roles', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(roleData),
+                        });
+
+                        if (!response.ok) throw new Error('Failed to create role');
+                        const newRole = await response.json();
+                        await refreshRoles(newRole.id);
+                        setShowCreateRoleModal(false);
+                    } catch (error) {
+                        console.error('Error creating role:', error);
+                    }
+                }}
+            />
+
+            {selectedUser && (
+                <UserEditModal
+                    open={showEditUserModal}
+                    onClose={() => setShowEditUserModal(false)}
+                    user={selectedUser}
+                    roles={data.roles || []}
+                    onSave={handleSaveUser}
+                />
+            )}
         </div>
     );
 }

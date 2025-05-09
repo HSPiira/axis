@@ -23,6 +23,11 @@
 # misc
 .DS_Store
 *.pem
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
 
 # debug
 npm-debug.log*
@@ -43,3 +48,41 @@ next-env.d.ts
 # Prisma
 /generated/prisma/client
 /generated/prisma/client-*
+/prisma/migrations/
+/prisma/*.db
+/prisma/*.db-journal
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Xata
+.xata/
+.xatarc
+
+# Qodo
+.qodo/
+
+# Logs
+logs
+*.log
+
+# Cache directories
+.cache/
+.turbo
+
+# Build artifacts
+dist/
+out/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+tmp/
+
+# System Files
+Thumbs.db

@@ -1,0 +1,66 @@
+[
+    {
+        "name": "view_users",
+        "description": "Can view users"
+    },
+    {
+        "name": "create_users",
+        "description": "Can create new users"
+    },
+    {
+        "name": "edit_users",
+        "description": "Can edit existing users"
+    },
+    {
+        "name": "delete_users",
+        "description": "Can delete users"
+    },
+    {
+        "name": "view_roles",
+        "description": "Can view roles"
+    },
+    {
+        "name": "create_roles",
+        "description": "Can create new roles"
+    },
+    {
+        "name": "edit_roles",
+        "description": "Can edit existing roles"
+    },
+    {
+        "name": "delete_roles",
+        "description": "Can delete roles"
+    },
+    {
+        "name": "view_permissions",
+        "description": "Can view permissions"
+    },
+    {
+        "name": "assign_permissions",
+        "description": "Can assign permissions to roles"
+    },
+    {
+        "name": "view_security_settings",
+        "description": "Can view security settings"
+    },
+    {
+        "name": "edit_security_settings",
+        "description": "Can edit security settings"
+    },
+    {
+        "name": "view_access_policies",
+        "description": "Can view access policies"
+    },
+    {
+        "name": "edit_access_policies",
+        "description": "Can edit access policies"
+    },
+    {
+        "name": "view_dashboard",
+        "description": "Can view dashboard"
+    },
+    {
+        "name": "manage_resources",
+        "description": "Can manage resources"
+    }
+]

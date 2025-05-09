@@ -12,8 +12,13 @@ interface User {
     updatedAt: string;
     userRoles: {
         role: {
+            id: string;
             name: string;
         };
+    }[];
+    accounts?: {
+        provider: string;
+        type: string;
     }[];
 }
 
