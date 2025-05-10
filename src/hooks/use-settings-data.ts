@@ -4,17 +4,17 @@ import { useState, useEffect } from 'react';
 import { useSettingsTab } from './use-settings-tab';
 import { useSession } from 'next-auth/react';
 
-interface UseSettingsDataOptions {
+interface UseSettingsDataOptions<T = unknown> {
     section: string;
     defaultTab: string;
     dataLoaders: {
-        [key: string]: () => Promise<any>;
+        [key: string]: () => Promise<T>;
     };
 }
 
-export function useSettingsData({ section, defaultTab, dataLoaders }: UseSettingsDataOptions) {
+export function useSettingsData<T = unknown>({ section, defaultTab, dataLoaders }: UseSettingsDataOptions<T>) {
     const { activeTab, handleTabChange } = useSettingsTab({ section, defaultTab });
-    const [data, setData] = useState<{ [key: string]: any }>({});
+    const [data, setData] = useState<{ [key: string]: T }>({});
     const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
     const [error, setError] = useState<{ [key: string]: Error | null }>({});
     const { data: session } = useSession();

@@ -9,14 +9,15 @@ import { auditLog } from '@/lib/audit-log';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 // Utility to robustly extract error code from error objects, even if nested
-function getErrorCode(error: any): string | undefined {
+function getErrorCode(error: unknown): string | undefined {
     if (!error) return undefined;
 
     // Handle plain objects with code property
-    if (typeof error === 'object') {
-        if ('code' in error) return error.code;
-        if ('error' in error && typeof error.error === 'object' && 'code' in error.error) {
-            return error.error.code;
+    if (typeof error === 'object' && error !== null) {
+        const errorObj = error as { code?: string; error?: { code?: string } };
+        if ('code' in errorObj) return errorObj.code;
+        if ('error' in errorObj && typeof errorObj.error === 'object' && errorObj.error !== null && 'code' in errorObj.error) {
+            return errorObj.error.code;
         }
     }
 

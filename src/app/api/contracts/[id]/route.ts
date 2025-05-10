@@ -12,11 +12,13 @@ const MAX_CURRENCY_LENGTH = 10;
 // GET /api/contracts/[id]
 export const GET = withPermission(PERMISSIONS.CONTRACT_READ)(async (
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: { id: string } }
 ) => {
+    const { id } = context.params;
+
     try {
         const contract = await prisma.contract.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 organization: { select: { id: true, name: true } },
                 Document: true,
@@ -28,11 +30,11 @@ export const GET = withPermission(PERMISSIONS.CONTRACT_READ)(async (
                 { status: 404 }
             );
         }
-        await auditLog('CONTRACT_LIST', { contractId: params.id });
+        await auditLog('CONTRACT_LIST', { contractId: id });
         return NextResponse.json(contract);
     } catch (error) {
         console.error("Error fetching contract:", error);
-        await auditLog('CONTRACT_LIST_ERROR', { error: error instanceof Error ? error.message : 'Unknown error', contractId: params.id });
+        await auditLog('CONTRACT_LIST_ERROR', { error: error instanceof Error ? error.message : 'Unknown error', contractId: id });
         return NextResponse.json(
             { error: "Failed to fetch contract" },
             { status: 500 }
@@ -43,8 +45,10 @@ export const GET = withPermission(PERMISSIONS.CONTRACT_READ)(async (
 // PATCH /api/contracts/[id]
 export const PATCH = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: { id: string } }
 ) => {
+    const { id } = context.params;
+
     try {
         let body;
         try {
@@ -96,21 +100,21 @@ export const PATCH = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
         if (body.nextBillingDate !== undefined) updateData.nextBillingDate = body.nextBillingDate ? new Date(body.nextBillingDate) : null;
 
         const contract = await prisma.contract.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData as any,
             include: {
                 organization: { select: { id: true, name: true } },
                 Document: true,
             },
         });
-        await auditLog('CONTRACT_CREATE', { contractId: params.id, update: true });
+        await auditLog('CONTRACT_CREATE', { contractId: id, update: true });
         return NextResponse.json(contract);
     } catch (error) {
         if (typeof error === 'object' && error && 'code' in error && (error as any).code === 'P2025') {
             return NextResponse.json({ error: "Contract not found" }, { status: 404 });
         }
         console.error("Error updating contract:", error);
-        await auditLog('CONTRACT_CREATE_ERROR', { error: error instanceof Error ? error.message : 'Unknown error', contractId: params.id });
+        await auditLog('CONTRACT_CREATE_ERROR', { error: error instanceof Error ? error.message : 'Unknown error', contractId: id });
         return NextResponse.json(
             { error: "Failed to update contract" },
             { status: 500 }
@@ -121,20 +125,22 @@ export const PATCH = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
 // DELETE /api/contracts/[id]
 export const DELETE = withPermission(PERMISSIONS.CONTRACT_DELETE)(async (
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: { id: string } }
 ) => {
+    const { id } = context.params;
+
     try {
         const contract = await prisma.contract.delete({
-            where: { id: params.id },
+            where: { id },
         });
-        await auditLog('CONTRACT_CREATE', { contractId: params.id, deleted: true });
+        await auditLog('CONTRACT_CREATE', { contractId: id, deleted: true });
         return NextResponse.json({ success: true });
     } catch (error) {
         if (typeof error === 'object' && error && 'code' in error && (error as any).code === 'P2025') {
             return NextResponse.json({ error: "Contract not found" }, { status: 404 });
         }
         console.error("Error deleting contract:", error);
-        await auditLog('CONTRACT_CREATE_ERROR', { error: error instanceof Error ? error.message : 'Unknown error', contractId: params.id });
+        await auditLog('CONTRACT_CREATE_ERROR', { error: error instanceof Error ? error.message : 'Unknown error', contractId: id });
         return NextResponse.json(
             { error: "Failed to delete contract" },
             { status: 500 }
@@ -145,8 +151,10 @@ export const DELETE = withPermission(PERMISSIONS.CONTRACT_DELETE)(async (
 // PUT /api/contracts/[id]
 export const PUT = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: { id: string } }
 ) => {
+    const { id } = context.params;
+
     try {
         let body;
         try {
@@ -194,21 +202,21 @@ export const PUT = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
             nextBillingDate: body.nextBillingDate ? new Date(body.nextBillingDate) : undefined,
         };
         const contract = await prisma.contract.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData as any,
             include: {
                 organization: { select: { id: true, name: true } },
                 Document: true,
             },
         });
-        await auditLog('CONTRACT_CREATE', { contractId: params.id, put: true });
+        await auditLog('CONTRACT_CREATE', { contractId: id, put: true });
         return NextResponse.json(contract);
     } catch (error) {
         if (typeof error === 'object' && error && 'code' in error && (error as any).code === 'P2025') {
             return NextResponse.json({ error: "Contract not found" }, { status: 404 });
         }
         console.error("Error replacing contract:", error);
-        await auditLog('CONTRACT_CREATE_ERROR', { error: error instanceof Error ? error.message : 'Unknown error', contractId: params.id });
+        await auditLog('CONTRACT_CREATE_ERROR', { error: error instanceof Error ? error.message : 'Unknown error', contractId: id });
         return NextResponse.json(
             { error: "Failed to replace contract" },
             { status: 500 }

@@ -68,9 +68,11 @@ export async function checkPermission(request: NextRequest, permission: string) 
     }
 }
 
-export function withPermission(permission: PermissionType) {
-    return function (handler: Function) {
-        return async function (request: NextRequest, context?: any) {
+type APIHandler<T = any> = (request: NextRequest, context: T) => Promise<any>;
+
+export function withPermission<T = any>(permission: PermissionType) {
+    return function (handler: APIHandler<T>): APIHandler<T> {
+        return async function (request, context) {
             try {
                 const result = await checkPermission(request, permission);
                 if (result instanceof NextResponse) {

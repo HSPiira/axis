@@ -4,6 +4,13 @@ import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
 import { Prisma } from "@/generated/prisma";
 
+interface IndustryInput {
+    name: string;
+    code: string;
+    description?: string;
+    parentId?: string;
+}
+
 // POST /api/industries/bulk
 export const POST = withPermission(PERMISSIONS.INDUSTRY_CREATE)(async (
     request: NextRequest
@@ -31,7 +38,7 @@ export const POST = withPermission(PERMISSIONS.INDUSTRY_CREATE)(async (
 
         // Create industries in a transaction
         const createdIndustries = await prisma.$transaction(
-            body.industries.map((industry: any) =>
+            body.industries.map((industry: IndustryInput) =>
                 prisma.industry.create({
                     data: {
                         name: industry.name,

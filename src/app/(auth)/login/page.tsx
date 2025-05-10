@@ -39,8 +39,9 @@ export default function LoginPage() {
 
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => {
-        const { [name as keyof FormErrors]: _, ...rest } = prev;
-        return rest;
+        const newErrors = { ...prev };
+        delete newErrors[name as keyof FormErrors];
+        return newErrors;
       });
     }
   };
@@ -68,7 +69,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       if (err instanceof ZodError) {
         const fieldErrors: FormErrors = {};
-        err.issues.forEach((issue: any) => {
+        err.issues.forEach((issue: { path: (string | number)[]; message: string }) => {
           fieldErrors[issue.path[0] as keyof FormErrors] = issue.message;
         });
         setErrors(fieldErrors);

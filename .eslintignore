@@ -1,13 +1,2 @@
-src/generated
-/**/
-* node_modules
-/**/
-* .next
-/**/
-* out
-/**/
-* build
-/**/
-* dist
-/**/
+# Ignore all files
 *

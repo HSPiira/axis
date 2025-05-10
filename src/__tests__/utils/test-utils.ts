@@ -14,7 +14,7 @@ type SupportedModel = 'user' | 'organization' | 'industry' | 'role' | 'permissio
 jest.mock('@/lib/db', () => {
     const createMockMethod = () => {
         const mock = jest.fn().mockResolvedValue(null);
-        mock.mockImplementation = (impl: (...args: any[]) => any) => {
+        mock.mockImplementation = <T>(impl: (...args: unknown[]) => T) => {
             mock.mockImplementationOnce(impl);
             return mock;
         };
@@ -127,6 +127,8 @@ export const mockAuth = (isValid: boolean = true) => {
     }));
 };
 
+type TestAPIHandler = (request: NextRequest, context?: { params: Record<string, string> }) => Promise<any>;
+
 // Mock the permission middleware
 export const mockPermissionMiddleware = () => {
     const mockCheckPermission = jest.fn(async (request: Request, permission: string) => {
@@ -202,7 +204,7 @@ export const mockPermissionMiddleware = () => {
 
     jest.mock('@/middleware/check-permission', () => {
         return {
-            withPermission: (permission: string) => (handler: Function) => async (request: Request, context?: any) => {
+            withPermission: (permission: string) => (handler: TestAPIHandler) => async (request: NextRequest, context?: { params: Record<string, string> }) => {
                 const result = await mockCheckPermission(request, permission);
                 if (!result.authorized) {
                     // Return 401 for invalid/expired token, 403 otherwise
@@ -353,18 +355,23 @@ type TestRequest = {
 export const createAuthenticatedRequest = (
     url: string,
     method: string = 'GET',
-    body?: any,
+    body?: unknown,
     headers: Record<string, string> = {}
 ) => {
-    const request = new NextRequest(url, {
+    const requestInit = {
         method,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer test-token',
             ...headers
-        },
-        ...(body && { body: JSON.stringify(body) })
+        }
+    } as const;
+
+    const request = new NextRequest(url, {
+        ...requestInit,
+        ...(body ? { body: JSON.stringify(body) } : {})
     });
+
     console.log('Created request:', {
         url,
         method,
@@ -376,10 +383,10 @@ export const createAuthenticatedRequest = (
 
 // Test API response helper
 export const testApiResponse = async (
-    handler: Function,
+    handler: TestAPIHandler,
     request: NextRequest,
     expectedStatus: number,
-    expectedData?: any,
+    expectedData?: unknown,
     context?: { params: Record<string, string> }
 ) => {
     // Set the global test request for mockAuth
@@ -419,7 +426,7 @@ export const testApiResponse = async (
 };
 
 // Mock pagination response
-export const mockPaginationResponse = (data: any[], total: number, page: number = 1, limit: number = 10) => {
+export const mockPaginationResponse = <T>(data: T[], total: number, page: number = 1, limit: number = 10) => {
     return {
         data,
         pagination: {
@@ -432,7 +439,7 @@ export const mockPaginationResponse = (data: any[], total: number, page: number 
 };
 
 // Clean up test data
-export const cleanupTestData = async (testUser: any, createdIds: string[], model: SupportedModel) => {
+export const cleanupTestData = async (testUser: { id: string }, createdIds: string[], model: SupportedModel) => {
     if (testUser) {
         await prisma.userRole.deleteMany({ where: { userId: testUser.id } });
         await prisma.user.delete({ where: { id: testUser.id } });
@@ -450,7 +457,7 @@ export const cleanupTestData = async (testUser: any, createdIds: string[], model
 
 // Mock industry references
 export const mockIndustryReference = (industryId: string) => {
-    const mock = (args: any) => {
+    const mock = (args: { where: { id: string } }) => {
         if (args.where.id === industryId) {
             return Promise.resolve({ id: industryId, name: 'Test Industry' });
         }

@@ -21,17 +21,26 @@ const MAX_NAME_LENGTH = 255;
 const MAX_DESCRIPTION_LENGTH = 1000;
 
 // Helper function to format role response
-function formatRoleResponse(role: any): RoleWithPermissions {
+function formatRoleResponse(role: Role & {
+    users?: { id: string }[];
+    permissions?: {
+        permission?: {
+            id: string;
+            name: string;
+            description: string | null;
+        };
+    }[];
+}): RoleWithPermissions {
     if (!role) {
         throw new Error('Role not found');
     }
     return {
         ...role,
         usersCount: (role.users ?? []).length,
-        permissions: (role.permissions ?? []).map((rp: any) => ({
-            id: rp.permission?.id,
-            name: rp.permission?.name,
-            description: rp.permission?.description
+        permissions: (role.permissions ?? []).map((rp) => ({
+            id: rp.permission?.id ?? '',
+            name: rp.permission?.name ?? '',
+            description: rp.permission?.description ?? null
         }))
     };
 }
