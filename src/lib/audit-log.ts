@@ -16,7 +16,23 @@ export type AuditAction =
     | 'ROLE_CREATE'
     | 'ROLE_CREATE_ERROR'
     | 'ROLE_DELETE'
-    | 'ROLE_DELETE_ERROR';
+    | 'ROLE_DELETE_ERROR'
+    | 'KPI_LIST'
+    | 'KPI_LIST_ERROR'
+    | 'KPI_CREATE'
+    | 'KPI_CREATE_ERROR'
+    | 'KPI_UPDATE'
+    | 'KPI_UPDATE_ERROR'
+    | 'KPI_DELETE'
+    | 'KPI_DELETE_ERROR'
+    | 'DOCUMENT_LIST'
+    | 'DOCUMENT_LIST_ERROR'
+    | 'DOCUMENT_CREATE'
+    | 'DOCUMENT_CREATE_ERROR'
+    | 'CONTRACT_LIST'
+    | 'CONTRACT_LIST_ERROR'
+    | 'CONTRACT_CREATE'
+    | 'CONTRACT_CREATE_ERROR';
 
 export async function auditLog(action: AuditAction, data?: Record<string, any>) {
     try {

@@ -49,6 +49,13 @@ export type Permission =
     | 'permission:update'
     | 'permission:delete'
     | 'permission:assign'
+    | 'kpi:create'
+    | 'kpi:read'
+    | 'kpi:update'
+    | 'kpi:delete'
+    | 'kpi:assign'
+    | 'kpi:import'
+    | 'kpi:export'
     | 'staff:access'
     | 'staff:manage'
     | 'staff:approve'
@@ -115,6 +122,15 @@ export const PERMISSIONS: Record<string, Permission> = {
     PERMISSION_UPDATE: 'permission:update',
     PERMISSION_DELETE: 'permission:delete',
     PERMISSION_ASSIGN: 'permission:assign',
+
+    // KPI management
+    KPI_CREATE: 'kpi:create',
+    KPI_READ: 'kpi:read',
+    KPI_UPDATE: 'kpi:update',
+    KPI_DELETE: 'kpi:delete',
+    KPI_ASSIGN: 'kpi:assign',
+    KPI_IMPORT: 'kpi:import',
+    KPI_EXPORT: 'kpi:export',
 
     // Staff permissions
     STAFF_ACCESS: 'staff:access',

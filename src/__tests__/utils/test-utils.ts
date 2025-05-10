@@ -37,6 +37,9 @@ jest.mock('@/lib/db', () => {
         industry: { [key: string]: jest.Mock };
         permission: { [key: string]: jest.Mock };
         rolePermission: { [key: string]: jest.Mock };
+        kPI: { [key: string]: jest.Mock };
+        kPIAssignment: { [key: string]: jest.Mock };
+        contract: { [key: string]: jest.Mock };
         $transaction: jest.Mock;
         $connect: jest.Mock;
         $disconnect: jest.Mock;
@@ -50,6 +53,9 @@ jest.mock('@/lib/db', () => {
         industry: createMockModel(['findMany', 'findFirst', 'findUnique', 'create', 'update', 'delete']),
         permission: createMockModel(['findMany', 'findUnique']),
         rolePermission: createMockModel(['createMany', 'deleteMany']),
+        kPI: createMockModel(['findMany', 'findFirst', 'findUnique', 'create', 'update', 'delete', 'count']),
+        kPIAssignment: createMockModel(['findMany', 'findFirst', 'findUnique', 'create', 'update', 'delete', 'count']),
+        contract: createMockModel(['findUnique']),
         $transaction: jest.fn((callback) => callback(mockPrisma)),
         $connect: jest.fn(),
         $disconnect: jest.fn(),
