@@ -7,7 +7,61 @@ export const ROLES = {
     AUDITOR: 'auditor',
 } as const;
 
-export const PERMISSIONS = {
+// Generic permission factory
+export const createResourcePermissions = (resource: string) => ({
+    CREATE: `${resource}:create`,
+    READ: `${resource}:read`,
+    UPDATE: `${resource}:update`,
+    DELETE: `${resource}:delete`,
+    ASSIGN: `${resource}:assign`,
+    IMPORT: `${resource}:import`,
+    EXPORT: `${resource}:export`,
+} as const);
+
+// Resource-specific permissions
+export const ORGANIZATION_PERMISSIONS = createResourcePermissions('organization');
+export const INDUSTRY_PERMISSIONS = {
+    ...createResourcePermissions('industry'),
+    HIERARCHY: 'industry:hierarchy',
+} as const;
+
+// Define the type for all permissions
+export type Permission =
+    | typeof ORGANIZATION_PERMISSIONS[keyof typeof ORGANIZATION_PERMISSIONS]
+    | typeof INDUSTRY_PERMISSIONS[keyof typeof INDUSTRY_PERMISSIONS]
+    | 'user:create'
+    | 'user:read'
+    | 'user:update'
+    | 'user:delete'
+    | 'user:impersonate'
+    | 'user:export'
+    | 'user:import'
+    | 'user:suspend'
+    | 'user:reactivate'
+    | 'role:create'
+    | 'role:read'
+    | 'role:update'
+    | 'role:delete'
+    | 'role:assign'
+    | 'role:revoke'
+    | 'permission:create'
+    | 'permission:read'
+    | 'permission:update'
+    | 'permission:delete'
+    | 'permission:assign'
+    | 'staff:access'
+    | 'staff:manage'
+    | 'staff:approve'
+    | 'document:create'
+    | 'document:read'
+    | 'document:update'
+    | 'document:delete'
+    | 'document:share'
+    | 'document:version'
+    | 'document:approve'
+    | 'document:reject';
+
+export const PERMISSIONS: Record<string, Permission> = {
     // User management
     USER_CREATE: 'user:create',
     USER_READ: 'user:read',
@@ -18,6 +72,9 @@ export const PERMISSIONS = {
     USER_IMPORT: 'user:import',
     USER_SUSPEND: 'user:suspend',
     USER_REACTIVATE: 'user:reactivate',
+
+    // Organization management
+    ...ORGANIZATION_PERMISSIONS,
 
     // Role management
     ROLE_CREATE: 'role:create',
@@ -40,14 +97,7 @@ export const PERMISSIONS = {
     STAFF_APPROVE: 'staff:approve',
 
     // Industry management
-    INDUSTRY_CREATE: 'industry:create',
-    INDUSTRY_READ: 'industry:read',
-    INDUSTRY_UPDATE: 'industry:update',
-    INDUSTRY_DELETE: 'industry:delete',
-    INDUSTRY_ASSIGN: 'industry:assign',
-    INDUSTRY_IMPORT: 'industry:import',
-    INDUSTRY_EXPORT: 'industry:export',
-    INDUSTRY_HIERARCHY: 'industry:hierarchy',
+    ...INDUSTRY_PERMISSIONS,
 
     // Document management
     DOCUMENT_CREATE: 'document:create',
@@ -57,88 +107,8 @@ export const PERMISSIONS = {
     DOCUMENT_SHARE: 'document:share',
     DOCUMENT_VERSION: 'document:version',
     DOCUMENT_APPROVE: 'document:approve',
-    DOCUMENT_REJECT: 'document:reject',
-    DOCUMENT_ARCHIVE: 'document:archive',
-    DOCUMENT_RESTORE: 'document:restore',
-    DOCUMENT_EXPORT: 'document:export',
-    DOCUMENT_IMPORT: 'document:import',
-
-    // Messaging
-    MESSAGE_CREATE: 'message:create',
-    MESSAGE_READ: 'message:read',
-    MESSAGE_UPDATE: 'message:update',
-    MESSAGE_DELETE: 'message:delete',
-    MESSAGE_ARCHIVE: 'message:archive',
-    MESSAGE_PIN: 'message:pin',
-    MESSAGE_FORWARD: 'message:forward',
-    MESSAGE_BROADCAST: 'message:broadcast',
-
-    // Notes
-    NOTE_CREATE: 'note:create',
-    NOTE_READ: 'note:read',
-    NOTE_UPDATE: 'note:update',
-    NOTE_DELETE: 'note:delete',
-    NOTE_SHARE: 'note:share',
-    NOTE_ARCHIVE: 'note:archive',
-    NOTE_RESTORE: 'note:restore',
-    NOTE_EXPORT: 'note:export',
-
-    // Resources
-    RESOURCE_CREATE: 'resource:create',
-    RESOURCE_READ: 'resource:read',
-    RESOURCE_UPDATE: 'resource:update',
-    RESOURCE_DELETE: 'resource:delete',
-    RESOURCE_SHARE: 'resource:share',
-    RESOURCE_APPROVE: 'resource:approve',
-    RESOURCE_REJECT: 'resource:reject',
-    RESOURCE_ARCHIVE: 'resource:archive',
-    RESOURCE_RESTORE: 'resource:restore',
-
-    // Analytics
-    ANALYTICS_READ: 'analytics:read',
-    ANALYTICS_EXPORT: 'analytics:export',
-    ANALYTICS_CUSTOM: 'analytics:custom',
-    ANALYTICS_SHARE: 'analytics:share',
-    ANALYTICS_SCHEDULE: 'analytics:schedule',
-
-    // Settings
-    SETTINGS_READ: 'settings:read',
-    SETTINGS_UPDATE: 'settings:update',
-    SETTINGS_ADVANCED: 'settings:advanced',
-    SETTINGS_SECURITY: 'settings:security',
-    SETTINGS_INTEGRATION: 'settings:integration',
-
-    // Audit & Compliance
-    AUDIT_READ: 'audit:read',
-    AUDIT_EXPORT: 'audit:export',
-    AUDIT_REVIEW: 'audit:review',
-    COMPLIANCE_READ: 'compliance:read',
-    COMPLIANCE_UPDATE: 'compliance:update',
-    COMPLIANCE_APPROVE: 'compliance:approve',
-
-    // Support & Help
-    SUPPORT_ACCESS: 'support:access',
-    SUPPORT_MANAGE: 'support:manage',
-    SUPPORT_RESOLVE: 'support:resolve',
-    SUPPORT_ASSIGN: 'support:assign',
-    SUPPORT_PRIORITIZE: 'support:prioritize',
-
-    // Workflow
-    WORKFLOW_CREATE: 'workflow:create',
-    WORKFLOW_READ: 'workflow:read',
-    WORKFLOW_UPDATE: 'workflow:update',
-    WORKFLOW_DELETE: 'workflow:delete',
-    WORKFLOW_APPROVE: 'workflow:approve',
-    WORKFLOW_REJECT: 'workflow:reject',
-    WORKFLOW_ASSIGN: 'workflow:assign',
-
-    // Notifications
-    NOTIFICATION_CREATE: 'notification:create',
-    NOTIFICATION_READ: 'notification:read',
-    NOTIFICATION_UPDATE: 'notification:update',
-    NOTIFICATION_DELETE: 'notification:delete',
-    NOTIFICATION_BROADCAST: 'notification:broadcast',
-} as const;
+    DOCUMENT_REJECT: 'document:reject'
+};
 
 // Role permission mappings
 export const ROLE_PERMISSIONS = {
@@ -151,6 +121,13 @@ export const ROLE_PERMISSIONS = {
         PERMISSIONS.USER_EXPORT,
         PERMISSIONS.USER_SUSPEND,
         PERMISSIONS.USER_REACTIVATE,
+        // Organization management
+        PERMISSIONS.ORGANIZATION_CREATE,
+        PERMISSIONS.ORGANIZATION_READ,
+        PERMISSIONS.ORGANIZATION_UPDATE,
+        PERMISSIONS.ORGANIZATION_EXPORT,
+        PERMISSIONS.ORGANIZATION_IMPORT,
+        PERMISSIONS.ORGANIZATION_ASSIGN,
         // Role management
         PERMISSIONS.ROLE_READ,
         PERMISSIONS.ROLE_ASSIGN,
@@ -183,6 +160,7 @@ export const ROLE_PERMISSIONS = {
         PERMISSIONS.SUPPORT_ACCESS,
         PERMISSIONS.SUPPORT_MANAGE,
         PERMISSIONS.SUPPORT_RESOLVE,
+        PERMISSIONS.SUPPORT_ASSIGN,
         // Workflow
         ...Object.values(PERMISSIONS).filter(p => p.startsWith('workflow:')),
         // Notifications
@@ -191,6 +169,8 @@ export const ROLE_PERMISSIONS = {
     [ROLES.STAFF]: [
         // User management
         PERMISSIONS.USER_READ,
+        // Organization management
+        PERMISSIONS.ORGANIZATION_READ,
         // Role management
         PERMISSIONS.ROLE_READ,
         // Permission management
@@ -227,6 +207,8 @@ export const ROLE_PERMISSIONS = {
     [ROLES.VIEWER]: [
         // User management
         PERMISSIONS.USER_READ,
+        // Organization management
+        PERMISSIONS.ORGANIZATION_READ,
         // Role management
         PERMISSIONS.ROLE_READ,
         // Permission management

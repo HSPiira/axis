@@ -253,29 +253,17 @@ enum ContractStatus {
   RENEWED
 }
 
-/// Represents an audit log entry for tracking changes to any model
+/// Represents an audit log entry
 model AuditLog {
-  id       String  @id @default(cuid())
-  action   String // CREATE, UPDATE, DELETE
-  model    String // Name of the model that was changed
-  recordId String // ID of the record that was changed
-  userId   String? // ID of the user who made the change
-  user     User?   @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  action    String // The action that was performed
+  data      String // JSON string containing additional data
+  timestamp DateTime @default(now())
+  User      User?    @relation(fields: [userId], references: [id])
+  userId    String?
 
-  // Store the changes as JSON
-  oldData Json? // Previous state of the record
-  newData Json? // New state of the record
-  changes Json // Specific fields that were changed
-
-  // Additional context
-  ipAddress String? // IP address of the request
-  userAgent String? // User agent of the request
-
-  createdAt DateTime @default(now())
-
-  @@index([model, recordId]) // For querying changes to specific records
-  @@index([userId]) // For querying changes by user
-  @@index([createdAt]) // For querying changes by time
+  @@index([action])
+  @@index([timestamp])
 }
 
 /// Represents a Key Performance Indicator (KPI) in the system
