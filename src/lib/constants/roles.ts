@@ -59,7 +59,32 @@ export type Permission =
     | 'document:share'
     | 'document:version'
     | 'document:approve'
-    | 'document:reject';
+    | 'document:reject'
+    | 'message:create'
+    | 'message:read'
+    | 'message:update'
+    | 'message:forward'
+    | 'note:create'
+    | 'note:read'
+    | 'note:update'
+    | 'note:share'
+    | 'resource:read'
+    | 'analytics:read'
+    | 'analytics:export'
+    | 'settings:read'
+    | 'settings:update'
+    | 'audit:read'
+    | 'audit:export'
+    | 'audit:review'
+    | 'compliance:read'
+    | 'compliance:update'
+    | 'support:access'
+    | 'support:manage'
+    | 'support:resolve'
+    | 'support:assign'
+    | 'notification:read'
+    | 'notification:create'
+    | 'notification:update';
 
 export const PERMISSIONS: Record<string, Permission> = {
     // User management
@@ -107,7 +132,48 @@ export const PERMISSIONS: Record<string, Permission> = {
     DOCUMENT_SHARE: 'document:share',
     DOCUMENT_VERSION: 'document:version',
     DOCUMENT_APPROVE: 'document:approve',
-    DOCUMENT_REJECT: 'document:reject'
+    DOCUMENT_REJECT: 'document:reject',
+
+    // Messaging
+    MESSAGE_CREATE: 'message:create',
+    MESSAGE_READ: 'message:read',
+    MESSAGE_UPDATE: 'message:update',
+    MESSAGE_FORWARD: 'message:forward',
+
+    // Notes
+    NOTE_CREATE: 'note:create',
+    NOTE_READ: 'note:read',
+    NOTE_UPDATE: 'note:update',
+    NOTE_SHARE: 'note:share',
+
+    // Resources
+    RESOURCE_READ: 'resource:read',
+
+    // Analytics
+    ANALYTICS_READ: 'analytics:read',
+    ANALYTICS_EXPORT: 'analytics:export',
+
+    // Settings
+    SETTINGS_READ: 'settings:read',
+    SETTINGS_UPDATE: 'settings:update',
+
+    // Audit & Compliance
+    AUDIT_READ: 'audit:read',
+    AUDIT_EXPORT: 'audit:export',
+    AUDIT_REVIEW: 'audit:review',
+    COMPLIANCE_READ: 'compliance:read',
+    COMPLIANCE_UPDATE: 'compliance:update',
+
+    // Support & Help
+    SUPPORT_ACCESS: 'support:access',
+    SUPPORT_MANAGE: 'support:manage',
+    SUPPORT_RESOLVE: 'support:resolve',
+    SUPPORT_ASSIGN: 'support:assign',
+
+    // Notifications
+    NOTIFICATION_READ: 'notification:read',
+    NOTIFICATION_CREATE: 'notification:create',
+    NOTIFICATION_UPDATE: 'notification:update'
 };
 
 // Role permission mappings

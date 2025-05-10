@@ -39,11 +39,11 @@ function formatRoleResponse(role: any): RoleWithPermissions {
 // GET /api/roles/[id]
 export const GET = withPermission(PERMISSIONS.ROLE_READ)(async (
     request: NextRequest,
-    context: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) => {
     console.log('ROLES BY ID HANDLER CALLED');
     try {
-        const { id } = context.params;
+        const { id } = await context.params;
 
         const role = await prisma.role.findUnique({
             where: { id },
@@ -68,9 +68,10 @@ export const GET = withPermission(PERMISSIONS.ROLE_READ)(async (
         return NextResponse.json(formatRoleResponse(role));
     } catch (error) {
         console.error("Error fetching role:", error);
+        const { id } = await context.params;
         await auditLog('ROLE_LIST_ERROR', {
             error: error instanceof Error ? error.message : 'Unknown error',
-            roleId: context.params.id
+            roleId: id
         });
         if (error instanceof Error && error.message === 'Role not found') {
             return NextResponse.json(
@@ -88,7 +89,7 @@ export const GET = withPermission(PERMISSIONS.ROLE_READ)(async (
 // PATCH /api/roles/[id]
 export const PATCH = withPermission(PERMISSIONS.ROLE_UPDATE)(async (
     request: NextRequest,
-    context: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) => {
     try {
         // Apply rate limiting
@@ -101,7 +102,7 @@ export const PATCH = withPermission(PERMISSIONS.ROLE_UPDATE)(async (
             );
         }
 
-        const { id } = context.params;
+        const { id } = await context.params;
 
         // Validate request body
         let body;
@@ -222,7 +223,7 @@ export const PATCH = withPermission(PERMISSIONS.ROLE_UPDATE)(async (
             console.error("Error updating role:", error);
             await auditLog('ROLE_UPDATE_ERROR' as AuditAction, {
                 error: error instanceof Error ? error.message : 'Unknown error',
-                roleId: context.params.id
+                roleId: id
             });
             return NextResponse.json(
                 { error: "An unexpected error occurred while updating role" },
@@ -231,14 +232,11 @@ export const PATCH = withPermission(PERMISSIONS.ROLE_UPDATE)(async (
         }
     } catch (error) {
         console.error("Error updating role:", error);
-
-        // Log the error
+        const { id } = await context.params;
         await auditLog('ROLE_CREATE_ERROR', {
             error: error instanceof Error ? error.message : 'Unknown error',
-            roleId: context.params.id
+            roleId: id
         });
-
-        // Handle unknown errors
         return NextResponse.json(
             { error: "An unexpected error occurred while updating role" },
             { status: 500 }
@@ -249,10 +247,10 @@ export const PATCH = withPermission(PERMISSIONS.ROLE_UPDATE)(async (
 // DELETE /api/roles/[id]
 export const DELETE = withPermission(PERMISSIONS.ROLE_DELETE)(async (
     request: NextRequest,
-    context: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) => {
     try {
-        const { id } = context.params;
+        const { id } = await context.params;
 
         // First verify the role exists and get its details
         const role = await prisma.role.findUnique({
@@ -301,9 +299,10 @@ export const DELETE = withPermission(PERMISSIONS.ROLE_DELETE)(async (
         });
     } catch (error) {
         console.error("Error deleting role:", error);
+        const { id } = await context.params;
         await auditLog('ROLE_DELETE_ERROR', {
             error: error instanceof Error ? error.message : 'Unknown error',
-            roleId: context.params.id
+            roleId: id
         });
         return NextResponse.json(
             { error: "Failed to delete role" },

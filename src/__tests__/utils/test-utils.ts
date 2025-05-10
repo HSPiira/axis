@@ -67,19 +67,57 @@ const ensureTestRoles = async () => {
     if (prisma.role && prisma.role.findUnique) {
         (prisma.role.findUnique as jest.Mock).mockImplementation((args) => {
             const roleName = args.where.name;
-            return Promise.resolve({ id: roleName, name: roleName });
+            return Promise.resolve({
+                id: roleName,
+                name: roleName,
+                description: `${roleName} role`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                permissions: [],
+                users: []
+            });
+        });
+    }
+
+    // Mock findMany for roles
+    if (prisma.role && prisma.role.findMany) {
+        (prisma.role.findMany as jest.Mock).mockImplementation(() => {
+            return Promise.resolve(roles.map(roleName => ({
+                id: roleName,
+                name: roleName,
+                description: `${roleName} role`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                permissions: [],
+                users: []
+            })));
         });
     }
 };
 
+// Add type for globalThis.__TEST_REQUEST__
+declare global {
+    // eslint-disable-next-line no-var
+    var __TEST_REQUEST__: Request | undefined;
+}
+
 // Mock the auth function
 export const mockAuth = (isValid: boolean = true) => {
     jest.mock('@/auth', () => ({
-        auth: jest.fn().mockResolvedValue(isValid ? {
-            id: 'test-user-id',
-            email: 'test@test.com',
-            name: 'Test User',
-        } : null)
+        auth: jest.fn().mockImplementation(async () => {
+            // Check for invalid/expired token in the global fetch context
+            if (globalThis.__TEST_REQUEST__ && globalThis.__TEST_REQUEST__.headers) {
+                const authHeader = globalThis.__TEST_REQUEST__.headers.get('authorization');
+                if (authHeader && (authHeader.includes('invalid-token') || authHeader.includes('expired-token'))) {
+                    return null;
+                }
+            }
+            return isValid ? {
+                id: 'test-user-id',
+                email: 'test@test.com',
+                name: 'Test User',
+            } : null;
+        })
     }));
 };
 
@@ -134,9 +172,11 @@ export const mockPermissionMiddleware = () => {
             withPermission: (permission: string) => (handler: Function) => async (request: Request, context?: any) => {
                 const result = await mockCheckPermission(request, permission);
                 if (!result.authorized) {
+                    // Return 401 for invalid/expired token, 403 otherwise
+                    const is401 = result.error === 'Unauthorized: Invalid or expired token';
                     return NextResponse.json(
                         { error: result.error },
-                        { status: result.error?.includes('Invalid or expired token') ? 401 : 403 }
+                        { status: is401 ? 401 : 403 }
                     );
                 }
                 return handler(request, context);
@@ -155,6 +195,8 @@ export const createTestUser = async (role: string, permissions: string[]) => {
         id: 'test-user-id',
         email: 'test@test.com',
         name: 'Test User',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
     };
 
     // Mock user creation with unique constraint handling
@@ -180,8 +222,31 @@ export const createTestUser = async (role: string, permissions: string[]) => {
             throw { code: 'P2002', message: 'Unique constraint violation' };
         }
         return {
+            id: `ur-${mockUser.id}-${role}`,
             userId: mockUser.id,
             roleId: role,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            role: {
+                id: role,
+                name: role,
+                description: `${role} role`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                permissions: permissions.map(permission => ({
+                    id: `rp-${permission}`,
+                    roleId: role,
+                    permissionId: `perm-${permission}`,
+                    permission: {
+                        id: `perm-${permission}`,
+                        name: permission,
+                        description: `${permission} permission`,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                })),
+                users: []
+            }
         };
     });
 
@@ -198,13 +263,52 @@ export const createTestUser = async (role: string, permissions: string[]) => {
 // Mock user roles for permission testing
 export const mockUserRoles = (role: string, permissions: string[]) => {
     (prisma.userRole.findMany as jest.Mock).mockResolvedValue([{
+        id: `ur-${role}`,
+        userId: 'test-user-id',
+        roleId: role,
         role: {
+            id: role,
             name: role,
+            description: `${role} role`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             permissions: permissions.map(permission => ({
-                permission: { name: permission }
-            }))
+                id: `rp-${permission}`,
+                roleId: role,
+                permissionId: `perm-${permission}`,
+                permission: {
+                    id: `perm-${permission}`,
+                    name: permission,
+                    description: `${permission} permission`,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }
+            })),
+            users: []
         }
     }]);
+
+    // Also mock the role.findUnique to return the same role data
+    (prisma.role.findUnique as jest.Mock).mockResolvedValue({
+        id: role,
+        name: role,
+        description: `${role} role`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissions: permissions.map(permission => ({
+            id: `rp-${permission}`,
+            roleId: role,
+            permissionId: `perm-${permission}`,
+            permission: {
+                id: `perm-${permission}`,
+                name: permission,
+                description: `${permission} permission`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        })),
+        users: []
+    });
 };
 
 type TestRequest = {
@@ -245,7 +349,11 @@ export const testApiResponse = async (
     expectedData?: any,
     context?: { params: Record<string, string> }
 ) => {
+    // Set the global test request for mockAuth
+    globalThis.__TEST_REQUEST__ = request;
     const response = await handler(request, context);
+    // Clean up after test
+    globalThis.__TEST_REQUEST__ = undefined;
     const data = await response.json();
 
     expect(response.status).toBe(expectedStatus);

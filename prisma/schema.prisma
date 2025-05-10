@@ -264,7 +264,6 @@ model AuditLog {
 
   @@index([action])
   @@index([timestamp])
-  @@map("audit_logs")
 }
 
 /// Represents a Key Performance Indicator (KPI) in the system

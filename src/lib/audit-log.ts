@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/db';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { auth } from '@/auth';
 
 export type AuditAction =
     | 'INDUSTRY_LIST'
@@ -23,15 +25,29 @@ export async function auditLog(action: AuditAction, data?: Record<string, any>) 
             return;
         }
 
-        await prisma.auditLog.create({
-            data: {
-                action,
-                data: data || {},
-                timestamp: new Date(),
-            },
-        });
+        // Get the current user from the session
+        const session = await auth();
+        const userId = session?.user?.id;
+
+        try {
+            await prisma.auditLog.create({
+                data: {
+                    action,
+                    data: data || {},
+                    timestamp: new Date(),
+                    userId: userId || null,
+                },
+            });
+        } catch (error) {
+            if (error instanceof PrismaClientKnownRequestError && error.code === 'P2021') {
+                // Table doesn't exist, silently skip
+                return;
+            }
+            // Log other errors but don't throw
+            console.error('Failed to create audit log:', error instanceof Error ? error.message : 'Unknown error');
+        }
     } catch (error) {
         // Don't throw errors from audit logging
-        console.error('Failed to create audit log:', error);
+        console.error('Failed to create audit log:', error instanceof Error ? error.message : 'Unknown error');
     }
 } 
