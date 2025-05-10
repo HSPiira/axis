@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Represents an authenticated user in the system.
+model User {
+  id            String    @id @default(cuid()) // Primary user ID.
+  name          String? // Full name from identity provider or manually set.
+  email         String?   @unique // Email address, usually from the provider.
+  emailVerified DateTime? // Date/time email was verified.
+  image         String? // Profile image URL.
+  createdAt     DateTime  @default(now()) // Timestamp of user creation.
+  updatedAt     DateTime  @updatedAt // Timestamp of last update.
+
+  // Relations
+  accounts  Account[] // Linked social/enterprise accounts.
+  sessions  Session[] // Active sessions for this user.
+  userRoles UserRole[] // Roles assigned to the user.
+}
+
+/// Links a user to an external identity provider (Microsoft, GitHub, etc).
+model Account {
+  id                String  @id @default(cuid()) // Unique account ID.
+  userId            String // FK to User.
+  type              String // Account type ('oauth', 'oidc', etc).
+  provider          String // Provider name (e.g. 'microsoft').
+  providerAccountId String // User ID on the provider side.
+  refresh_token     String? // OAuth refresh token.
+  access_token      String? // OAuth access token.
+  expires_at        Int? // Expiry timestamp (UNIX).
+  token_type        String? // Type of token (Bearer, etc).
+  scope             String? // OAuth scopes.
+  id_token          String? // ID token (JWT).
+  session_state     String? // Used for OIDC session management.
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // Relation to User.
+
+  @@unique([provider, providerAccountId]) // Prevents duplicates per provider+user combo.
+}
+
+/// Stores active sessions for stateless authentication (JWT or DB).
+model Session {
+  id           String   @id @default(cuid()) // Unique session ID.
+  sessionToken String   @unique // Token stored in cookie.
+  userId       String // FK to User.
+  expires      DateTime // Expiration date of session.
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+/// Used for email/passwordless login flows or account recovery.
+model VerificationToken {
+  identifier String // Email or phone identifier.
+  token      String   @unique // One-time token (sent via email/SMS).
+  expires    DateTime // Expiration timestamp.
+
+  @@unique([identifier, token]) // Ensures no reuse per email/token combo.
+}
+
+/// Represents a group of permissions (e.g. 'Admin', 'Manager', 'User').
+model Role {
+  id          String  @id @default(cuid()) // Unique role ID.
+  name        String  @unique // Role name.
+  description String? // Optional description.
+
+  permissions RolePermission[] // Assigned permissions.
+  users       UserRole[] // Users with this role.
+}
+
+/// Represents a single action a user can perform (e.g. 'view_users', 'edit_asset').
+model Permission {
+  id          String  @id @default(cuid()) // Unique permission ID.
+  name        String  @unique // Permission name/code.
+  description String? // Optional details.
+
+  roles RolePermission[] // Roles that include this permission.
+}
+
+/// Pivot table assigning permissions to roles.
+model RolePermission {
+  id           String @id @default(cuid()) // Unique ID.
+  roleId       String // FK to Role.
+  permissionId String // FK to Permission.
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId]) // Prevent duplicate entries.
+}
+
+/// Assigns one or more roles to a user.
+model UserRole {
+  id     String @id @default(cuid()) // Unique ID.
+  userId String // FK to User.
+  roleId String // FK to Role.
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId]) // Prevent duplicate role assignments.
+}
