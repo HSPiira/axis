@@ -32,6 +32,14 @@ jest.mock('@/lib/db', () => {
             deleteMany: jest.fn(),
             count: jest.fn(),
         },
+        contract: {
+            create: jest.fn(),
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            count: jest.fn(),
+        },
     };
 
     return {

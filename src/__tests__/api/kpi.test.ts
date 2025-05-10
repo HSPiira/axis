@@ -29,6 +29,12 @@ describe('KPI API', () => {
     beforeEach(() => {
         resetMocks();
         jest.clearAllMocks();
+        prisma.kPI = {
+            findMany: jest.fn(),
+            count: jest.fn(),
+            findFirst: jest.fn(),
+            create: jest.fn(),
+        };
     });
 
     describe('Permission Checks', () => {

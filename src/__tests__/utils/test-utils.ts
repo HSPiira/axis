@@ -140,6 +140,33 @@ export const mockPermissionMiddleware = () => {
             return { authorized: false, error: 'Unauthorized: Invalid or expired token' };
         }
 
+        // Mock user roles and permissions
+        (prisma.userRole.findMany as jest.Mock).mockResolvedValue([{
+            id: 'ur-1',
+            userId: 'test-user-id',
+            roleId: 'admin',
+            role: {
+                id: 'admin',
+                name: 'admin',
+                description: 'Admin role',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                permissions: [{
+                    id: 'rp-1',
+                    roleId: 'admin',
+                    permissionId: 'perm-1',
+                    permission: {
+                        id: 'perm-1',
+                        name: permission,
+                        description: `${permission} permission`,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                }],
+                users: []
+            }
+        }]);
+
         const userRoles = await prisma.userRole.findMany({
             where: { userId: 'test-user-id' },
             include: {
@@ -357,10 +384,31 @@ export const testApiResponse = async (
 ) => {
     // Set the global test request for mockAuth
     globalThis.__TEST_REQUEST__ = request;
-    const response = await handler(request, context);
+    let response;
+    try {
+        response = await handler(request, context);
+    } catch (err) {
+        console.error('Handler threw error:', err);
+        throw err;
+    }
     // Clean up after test
     globalThis.__TEST_REQUEST__ = undefined;
-    const data = await response.json();
+
+    // Don't try to parse JSON for 204 No Content responses
+    let data;
+    if (response.status !== 204) {
+        data = await response.json();
+    }
+
+    if (response.status !== expectedStatus || (expectedData && JSON.stringify(data) !== JSON.stringify(expectedData))) {
+        // Print debug info if the test fails
+        console.error('--- TEST DEBUG ---');
+        console.error('Expected status:', expectedStatus);
+        console.error('Actual status:', response.status);
+        console.error('Expected data:', expectedData);
+        console.error('Actual data:', data);
+        console.error('------------------');
+    }
 
     expect(response.status).toBe(expectedStatus);
     if (expectedData) {

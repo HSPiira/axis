@@ -106,7 +106,7 @@ export const PATCH = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
         await auditLog('CONTRACT_CREATE', { contractId: params.id, update: true });
         return NextResponse.json(contract);
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        if (typeof error === 'object' && error && 'code' in error && (error as any).code === 'P2025') {
             return NextResponse.json({ error: "Contract not found" }, { status: 404 });
         }
         console.error("Error updating contract:", error);
@@ -130,7 +130,7 @@ export const DELETE = withPermission(PERMISSIONS.CONTRACT_DELETE)(async (
         await auditLog('CONTRACT_CREATE', { contractId: params.id, deleted: true });
         return NextResponse.json({ success: true });
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        if (typeof error === 'object' && error && 'code' in error && (error as any).code === 'P2025') {
             return NextResponse.json({ error: "Contract not found" }, { status: 404 });
         }
         console.error("Error deleting contract:", error);
@@ -204,7 +204,7 @@ export const PUT = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
         await auditLog('CONTRACT_CREATE', { contractId: params.id, put: true });
         return NextResponse.json(contract);
     } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        if (typeof error === 'object' && error && 'code' in error && (error as any).code === 'P2025') {
             return NextResponse.json({ error: "Contract not found" }, { status: 404 });
         }
         console.error("Error replacing contract:", error);

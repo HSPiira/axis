@@ -11,7 +11,31 @@ import {
 } from '../utils/test-utils';
 import { prisma } from '@/lib/db';
 
-jest.mock('@/lib/db');
+jest.mock('@/lib/db', () => ({
+    prisma: {
+        kPIAssignment: {
+            findMany: jest.fn(),
+            count: jest.fn(),
+            findFirst: jest.fn(),
+            findUnique: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        kPI: {
+            findUnique: jest.fn(),
+        },
+        contract: {
+            findUnique: jest.fn(),
+        },
+        userRole: {
+            findMany: jest.fn(),
+        },
+        role: {
+            findUnique: jest.fn(),
+        },
+    },
+}));
 jest.mock('@/lib/rate-limit', () => ({
     rateLimit: jest.fn().mockReturnValue({
         check: jest.fn().mockResolvedValue({ success: true })

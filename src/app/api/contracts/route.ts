@@ -5,6 +5,7 @@ import { PERMISSIONS } from "@/lib/constants/roles";
 import { rateLimit } from '@/lib/rate-limit';
 import { auditLog } from '@/lib/audit-log';
 import { Prisma, ContractStatus } from "@/generated/prisma";
+import { z } from 'zod';
 
 const MAX_PAYMENT_TERMS_LENGTH = 255;
 const MAX_PAYMENT_FREQUENCY_LENGTH = 100;
@@ -90,6 +91,18 @@ export const GET = withPermission(PERMISSIONS.CONTRACT_READ)(async (request: Nex
     }
 });
 
+// Validation schema for contract creation
+const createContractSchema = z.object({
+    organizationId: z.string().min(1, 'Organization ID is required'),
+    startDate: z.string().transform(str => new Date(str)),
+    endDate: z.string().transform(str => new Date(str)),
+    billingRate: z.number().positive('Billing rate must be positive'),
+    isRenewable: z.boolean().optional().default(true),
+    paymentFrequency: z.string().optional(),
+    paymentTerms: z.string().optional(),
+    currency: z.string().optional().default('USD'),
+});
+
 // POST /api/contracts
 export const POST = withPermission(PERMISSIONS.CONTRACT_CREATE)(async (request: NextRequest) => {
     try {
@@ -103,86 +116,24 @@ export const POST = withPermission(PERMISSIONS.CONTRACT_CREATE)(async (request: 
             );
         }
 
-        let body;
-        try {
-            body = await request.json();
-        } catch (error) {
+        const body = await request.json();
+
+        // Validate input
+        const validatedData = createContractSchema.parse(body);
+
+        // Validate date range
+        if (validatedData.endDate <= validatedData.startDate) {
             return NextResponse.json(
-                { error: "Invalid request body" },
+                { error: 'End date must be after start date' },
                 { status: 400 }
             );
         }
 
-        // Validate required fields and length constraints
-        const organizationId = body.organizationId;
-        const startDate = body.startDate;
-        const endDate = body.endDate;
-        const billingRate = body.billingRate;
-        const isRenewable = body.isRenewable ?? true;
-        const paymentFrequency = body.paymentFrequency?.trim();
-        const paymentTerms = body.paymentTerms?.trim();
-        const currency = body.currency?.trim() || 'USD';
-        const status = body.status as ContractStatus ?? ContractStatus.ACTIVE;
-        const documentUrl = body.documentUrl?.trim();
-        const renewalDate = body.renewalDate;
-        const lastBillingDate = body.lastBillingDate;
-        const nextBillingDate = body.nextBillingDate;
-
-        if (!organizationId) {
-            return NextResponse.json(
-                { error: "Organization ID is required" },
-                { status: 400 }
-            );
-        }
-        if (!startDate || !endDate) {
-            return NextResponse.json(
-                { error: "Start and end dates are required" },
-                { status: 400 }
-            );
-        }
-        if (paymentTerms && paymentTerms.length > MAX_PAYMENT_TERMS_LENGTH) {
-            return NextResponse.json(
-                { error: "Payment terms too long" },
-                { status: 400 }
-            );
-        }
-        if (paymentFrequency && paymentFrequency.length > MAX_PAYMENT_FREQUENCY_LENGTH) {
-            return NextResponse.json(
-                { error: "Payment frequency too long" },
-                { status: 400 }
-            );
-        }
-        if (currency && currency.length > MAX_CURRENCY_LENGTH) {
-            return NextResponse.json(
-                { error: "Currency code too long" },
-                { status: 400 }
-            );
-        }
-
+        // Create contract
         const contract = await prisma.contract.create({
             data: {
-                organizationId,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
-                billingRate,
-                isRenewable,
-                paymentFrequency,
-                paymentTerms,
-                currency,
-                status,
-                documentUrl,
-                renewalDate: renewalDate ? new Date(renewalDate) : undefined,
-                lastBillingDate: lastBillingDate ? new Date(lastBillingDate) : undefined,
-                nextBillingDate: nextBillingDate ? new Date(nextBillingDate) : undefined,
-            },
-            include: {
-                organization: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
-                },
-                Document: true,
+                ...validatedData,
+                status: ContractStatus.ACTIVE,
             },
         });
 
@@ -195,12 +146,19 @@ export const POST = withPermission(PERMISSIONS.CONTRACT_CREATE)(async (request: 
 
         return NextResponse.json(contract, { status: 201 });
     } catch (error) {
-        console.error("Error creating contract:", error);
+        if (error instanceof z.ZodError) {
+            return NextResponse.json(
+                { error: error.errors[0].message },
+                { status: 400 }
+            );
+        }
+
+        console.error('Contract creation error:', error);
         await auditLog('CONTRACT_CREATE_ERROR', {
             error: error instanceof Error ? error.message : 'Unknown error'
         });
         return NextResponse.json(
-            { error: "Failed to create contract" },
+            { error: 'Failed to create contract' },
             { status: 500 }
         );
     }
