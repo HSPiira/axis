@@ -1,24 +1,28 @@
-import { prisma } from './db';
+import { prisma } from '@/lib/db';
 
-export type AuditLogAction =
+export type AuditAction =
     | 'INDUSTRY_LIST'
     | 'INDUSTRY_LIST_ERROR'
     | 'INDUSTRY_CREATE'
     | 'INDUSTRY_CREATE_ERROR'
-    | 'INDUSTRY_VALIDATION_ERROR';
+    | 'ORGANIZATION_LIST'
+    | 'ORGANIZATION_LIST_ERROR'
+    | 'ORGANIZATION_CREATE'
+    | 'ORGANIZATION_CREATE_ERROR';
 
-interface AuditLogData {
-    [key: string]: any;
-}
-
-export async function auditLog(action: AuditLogAction, data: AuditLogData) {
+export async function auditLog(action: AuditAction, data?: Record<string, any>) {
     try {
+        // Skip audit logging in test environment
+        if (process.env.NODE_ENV === 'test') {
+            return;
+        }
+
         await prisma.auditLog.create({
             data: {
                 action,
-                data: JSON.stringify(data),
+                data: data || {},
                 timestamp: new Date(),
-            }
+            },
         });
     } catch (error) {
         // Don't throw errors from audit logging

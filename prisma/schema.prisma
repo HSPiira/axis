@@ -256,14 +256,15 @@ enum ContractStatus {
 /// Represents an audit log entry
 model AuditLog {
   id        String   @id @default(cuid())
-  action    String // The action that was performed
-  data      String // JSON string containing additional data
+  action    String
+  data      Json?
   timestamp DateTime @default(now())
   User      User?    @relation(fields: [userId], references: [id])
   userId    String?
 
   @@index([action])
   @@index([timestamp])
+  @@map("audit_logs")
 }
 
 /// Represents a Key Performance Indicator (KPI) in the system

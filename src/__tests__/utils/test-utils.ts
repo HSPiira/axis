@@ -2,46 +2,58 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { ROLES } from '@/lib/constants/roles';
 import jwt from 'jsonwebtoken';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { rateLimit } from '@/lib/rate-limit';
 
 type SupportedModel = 'user' | 'organization' | 'industry' | 'role' | 'permission' | 'userRole';
 
+// Set test environment
+// process.env.NODE_ENV = 'test';
+
 // Mock Prisma client
 jest.mock('@/lib/db', () => {
-    const mockPrisma = {
-        user: {
-            create: jest.fn(),
-            delete: jest.fn(),
-            findUnique: jest.fn(),
-        },
-        role: {
-            findUnique: jest.fn(),
-            create: jest.fn(),
-        },
-        userRole: {
-            create: jest.fn(),
-            findMany: jest.fn(),
-            deleteMany: jest.fn(),
-        },
-        organization: {
-            findMany: jest.fn(),
-            findFirst: jest.fn(),
-            create: jest.fn(),
-            deleteMany: jest.fn(),
-            count: jest.fn(),
-        },
-        industry: {
-            findMany: jest.fn(),
-            findFirst: jest.fn(),
-            create: jest.fn(),
-            deleteMany: jest.fn(),
-            count: jest.fn(),
-        },
+    const createMockMethod = () => {
+        const mock = jest.fn().mockResolvedValue(null) as jest.Mock;
+        mock.mockImplementation = (impl: (...args: any[]) => any) => {
+            mock.mockImplementationOnce(impl);
+            return mock;
+        };
+        return mock;
+    };
+
+    const createMockModel = (methods: string[]) => {
+        const model: { [key: string]: jest.Mock } = {};
+        methods.forEach(method => {
+            model[method] = createMockMethod();
+        });
+        return model;
+    };
+
+    type MockPrisma = {
+        user: { [key: string]: jest.Mock };
+        role: { [key: string]: jest.Mock };
+        userRole: { [key: string]: jest.Mock };
+        organization: { [key: string]: jest.Mock };
+        industry: { [key: string]: jest.Mock };
+        $transaction: jest.Mock;
+        $connect: jest.Mock;
+        $disconnect: jest.Mock;
+    };
+
+    const mockPrisma: MockPrisma = {
+        user: createMockModel(['create', 'delete', 'findUnique', 'findMany']),
+        role: createMockModel(['findUnique', 'create', 'findMany']),
+        userRole: createMockModel(['create', 'findMany', 'deleteMany', 'delete']),
+        organization: createMockModel(['findMany', 'findFirst', 'create', 'deleteMany', 'count', 'findUnique', 'update']),
+        industry: createMockModel(['findMany', 'findFirst', 'findUnique', 'create', 'update', 'delete']),
+        $transaction: jest.fn((callback) => callback(mockPrisma)),
+        $connect: jest.fn(),
+        $disconnect: jest.fn(),
     };
 
     return {
         prisma: mockPrisma,
-        __esModule: true,
-        default: mockPrisma,
+        PrismaClient: jest.fn(() => mockPrisma),
     };
 });
 
@@ -54,9 +66,13 @@ const ensureTestRoles = async () => {
 };
 
 // Mock the auth function
-export const mockAuth = () => {
+export const mockAuth = (isValid: boolean = true) => {
     jest.mock('@/auth', () => ({
-        auth: jest.fn().mockResolvedValue(null)
+        auth: jest.fn().mockResolvedValue(isValid ? {
+            id: 'test-user-id',
+            email: 'test@test.com',
+            name: 'Test User',
+        } : null)
     }));
 };
 
@@ -64,11 +80,17 @@ export const mockAuth = () => {
 export const mockPermissionMiddleware = () => {
     const mockCheckPermission = jest.fn(async (request: Request, permission: string) => {
         const authHeader = request.headers.get('authorization');
-        if (!authHeader?.startsWith('Bearer ')) return false;
+        if (!authHeader?.startsWith('Bearer ')) {
+            return { authorized: false, error: 'Unauthorized: No token provided' };
+        }
 
         const token = authHeader.substring(7);
+        if (token === 'invalid-token' || token === 'expired-token') {
+            return { authorized: false, error: 'Unauthorized: Invalid or expired token' };
+        }
+
         const userRoles = await prisma.userRole.findMany({
-            where: { userId: token },
+            where: { userId: 'test-user-id' },
             include: {
                 role: {
                     include: {
@@ -84,25 +106,30 @@ export const mockPermissionMiddleware = () => {
 
         // Admin role has access to everything
         if (userRoles.some(userRole => userRole.role.name === ROLES.ADMIN)) {
-            return true;
+            return { authorized: true };
         }
 
         // Check if user has the required permission through any of their roles
-        return userRoles.some(userRole =>
+        const hasPermission = userRoles.some(userRole =>
             userRole.role.permissions.some(
                 rolePermission => rolePermission.permission.name === permission
             )
         );
+
+        return {
+            authorized: hasPermission,
+            error: hasPermission ? undefined : 'Unauthorized: Insufficient permissions'
+        };
     });
 
     jest.mock('@/middleware/check-permission', () => {
         return {
             withPermission: (permission: string) => (handler: Function) => async (request: Request) => {
-                const hasPermission = await mockCheckPermission(request, permission);
-                if (!hasPermission) {
+                const result = await mockCheckPermission(request, permission);
+                if (!result.authorized) {
                     return NextResponse.json(
-                        { error: 'Unauthorized: Insufficient permissions' },
-                        { status: 403 }
+                        { error: result.error },
+                        { status: result.error?.includes('Invalid or expired token') ? 401 : 403 }
                     );
                 }
                 return handler(request);
@@ -123,10 +150,32 @@ export const createTestUser = async (role: string, permissions: string[]) => {
         name: 'Test User',
     };
 
-    (prisma.user.create as jest.Mock).mockResolvedValue(mockUser);
-    (prisma.userRole.create as jest.Mock).mockResolvedValue({
-        userId: mockUser.id,
-        roleId: role,
+    // Mock user creation with unique constraint handling
+    (prisma.user.create as jest.Mock).mockImplementation(async (data) => {
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({ where: { email: data.data.email } });
+        if (existingUser) {
+            throw { code: 'P2002', message: 'Unique constraint violation' };
+        }
+        return mockUser;
+    });
+
+    // Mock user role creation
+    (prisma.userRole.create as jest.Mock).mockImplementation(async (data) => {
+        // Check if role assignment already exists
+        const existingRole = await prisma.userRole.findMany({
+            where: {
+                userId: data.data.userId,
+                roleId: data.data.roleId
+            }
+        });
+        if (existingRole.length > 0) {
+            throw { code: 'P2002', message: 'Unique constraint violation' };
+        }
+        return {
+            userId: mockUser.id,
+            roleId: role,
+        };
     });
 
     // Create JWT token
@@ -197,33 +246,124 @@ export const mockPaginationResponse = (data: any[], total: number, page: number 
             pages: Math.ceil(total / limit),
             page,
             limit,
-        }
+        },
     };
 };
 
 // Clean up test data
 export const cleanupTestData = async (testUser: any, createdIds: string[], model: SupportedModel) => {
-    try {
-        if (createdIds.length > 0) {
-            const modelClient = prisma[model] as { deleteMany: (args: any) => Promise<any> };
-            await modelClient.deleteMany({
-                where: {
-                    id: {
-                        in: createdIds
-                    }
-                }
+    if (testUser) {
+        await prisma.userRole.deleteMany({ where: { userId: testUser.id } });
+        await prisma.user.delete({ where: { id: testUser.id } });
+    }
+
+    if (createdIds.length > 0) {
+        const modelDeleteMany = prisma[model]?.deleteMany as (args: any) => Promise<any>;
+        if (typeof modelDeleteMany === 'function') {
+            await modelDeleteMany({
+                where: { id: { in: createdIds } },
+            });
+        }
+    }
+};
+
+// Mock industry references
+export const mockIndustryReference = (industryId: string) => {
+    const mock = (args: any) => {
+        if (args.where.id === industryId) {
+            return Promise.resolve({ id: industryId, name: 'Test Industry' });
+        }
+        return Promise.resolve(null);
+    };
+
+    if (prisma.industry && prisma.industry.findUnique) {
+        (prisma.industry.findUnique as jest.Mock).mockImplementation(mock);
+    }
+};
+
+// Mock organization creation with industry reference handling
+export const mockOrganizationCreation = () => {
+    const createdOrganizations = new Map();
+
+    (prisma.organization.create as jest.Mock).mockImplementation(async (data) => {
+        // Check for unique constraints
+        const existingOrg = Array.from(createdOrganizations.values()).find(
+            org => org.name === data.data.name || org.email === data.data.email
+        );
+        if (existingOrg) {
+            throw new PrismaClientKnownRequestError('Unique constraint violation', {
+                code: 'P2002',
+                meta: { target: ['name', 'email'] },
+                clientVersion: '2.0.0'
             });
         }
 
-        if (testUser?.id) {
-            await prisma.userRole.deleteMany({
-                where: { userId: testUser.id }
+        // Check for foreign key constraints
+        if (data.data.industryId) {
+            const industry = await prisma.industry.findUnique({
+                where: { id: data.data.industryId }
             });
-            await prisma.user.delete({
-                where: { id: testUser.id }
+            if (!industry) {
+                throw new PrismaClientKnownRequestError('Foreign key constraint failed', {
+                    code: 'P2003',
+                    meta: { field_name: 'industryId' },
+                    clientVersion: '2.0.0'
+                });
+            }
+        }
+
+        const newOrg = {
+            id: `org-${Date.now()}`,
+            name: data.data.name,
+            email: data.data.email,
+            industryId: data.data.industryId,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        createdOrganizations.set(newOrg.id, newOrg);
+        return newOrg;
+    });
+
+    (prisma.organization.findMany as jest.Mock).mockImplementation(async () => {
+        return Array.from(createdOrganizations.values());
+    });
+
+    (prisma.organization.findFirst as jest.Mock).mockImplementation(async ({ where }) => {
+        return Array.from(createdOrganizations.values()).find(org =>
+            org.id === where.id ||
+            org.name === where.name ||
+            org.email === where.email
+        );
+    });
+
+    (prisma.organization.count as jest.Mock).mockImplementation(async () => {
+        return createdOrganizations.size;
+    });
+};
+
+// Reset all mocks before each test
+export const resetMocks = () => {
+    // Reset all mock implementations
+    Object.values(prisma).forEach(model => {
+        if (typeof model === 'object') {
+            Object.values(model).forEach(method => {
+                if (typeof method === 'function' && 'mockReset' in method) {
+                    (method as jest.Mock).mockReset();
+                }
             });
         }
-    } catch (error) {
-        console.error('Error cleaning up test data:', error);
-    }
+    });
+
+    // Reset rate limiter mock
+    (rateLimit as jest.Mock).mockReset();
+    (rateLimit as jest.Mock).mockReturnValue({
+        check: jest.fn().mockResolvedValue({ success: true })
+    });
+
+    // Reset auth mock
+    mockAuth(true);
+
+    // Reset permission middleware
+    mockPermissionMiddleware();
 }; 

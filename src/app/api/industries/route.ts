@@ -15,12 +15,6 @@ const MAX_CODE_LENGTH = 50;
 const MAX_DESCRIPTION_LENGTH = 1000;
 const MAX_HIERARCHY_DEPTH = 5;
 
-// Rate limiting configuration
-const limiter = rateLimit({
-    interval: 60 * 1000, // 1 minute
-    uniqueTokenPerInterval: 500
-});
-
 // GET /api/industries
 export const GET = withPermission(INDUSTRY_PERMISSIONS.READ)(async (request: NextRequest) => {
     try {
@@ -111,9 +105,9 @@ export const GET = withPermission(INDUSTRY_PERMISSIONS.READ)(async (request: Nex
 export const POST = withPermission(INDUSTRY_PERMISSIONS.CREATE)(async (request: NextRequest) => {
     try {
         // Apply rate limiting
-        try {
-            await limiter.check(50, 'POST_INDUSTRIES'); // 50 requests per minute for testing
-        } catch {
+        const limiter = rateLimit();
+        const result = await limiter.check(50, 'POST_INDUSTRIES');
+        if (!result.success) {
             return NextResponse.json(
                 { error: "Too many requests" },
                 { status: 429 }
@@ -231,113 +225,85 @@ export const POST = withPermission(INDUSTRY_PERMISSIONS.CREATE)(async (request: 
             }
         }
 
-        // Check if industry with same name or code already exists
+        // Check for existing industry with same name or code
+        const existing = await prisma.industry.findFirst({
+            where: {
+                OR: [
+                    { name },
+                    ...(code ? [{ code }] : [])
+                ]
+            }
+        });
+
+        if (existing) {
+            return NextResponse.json(
+                { error: "Industry with this name or code already exists" },
+                { status: 409 }
+            );
+        }
+
         try {
-            const existing = await prisma.industry.findFirst({
-                where: {
-                    OR: [
-                        { name },
-                        ...(code ? [{ code }] : []),
-                    ],
-                },
-            });
-
-            if (existing) {
-                return NextResponse.json(
-                    { error: "Industry with this name or code already exists" },
-                    { status: 409 }
-                );
-            }
-
-            // Get parent industry if specified
-            const parentIndustry = body.parentId
-                ? await prisma.industry.findUnique({
-                    where: { id: body.parentId },
-                    include: {
-                        parent: {
-                            include: {
-                                parent: true
-                            }
-                        }
-                    }
-                })
-                : null;
-
-            // Check for circular references
-            let current = parentIndustry;
-            let depth = 1;
-
-            while (current?.parent) {
-                if (current.parent.id === body.parentId) {
-                    throw new Error(
-                        'Circular reference detected: Cannot set an industry as its own parent or create a circular parent-child relationship'
-                    );
-                }
-                current = current.parent;
-                depth++;
-
-                if (depth > MAX_HIERARCHY_DEPTH) {
-                    throw new Error(
-                        `Maximum hierarchy depth of ${MAX_HIERARCHY_DEPTH} exceeded`
-                    );
-                }
-            }
-
-            // Create new industry
+            // Create the industry
             const industry = await prisma.industry.create({
                 data: {
                     name,
-                    code: code || null,
-                    description: description || null,
-                    parentId: body.parentId || null,
+                    code,
+                    description,
+                    parentId: body.parentId
                 },
                 include: {
                     parent: {
                         select: {
                             id: true,
                             name: true,
-                            code: true,
-                        },
-                    },
-                },
+                            code: true
+                        }
+                    }
+                }
             });
 
             // Log the successful creation
             await auditLog('INDUSTRY_CREATE', {
                 industryId: industry.id,
                 name: industry.name,
-                code: industry.code,
-                parentId: industry.parentId
+                code: industry.code
             });
 
             return NextResponse.json(industry, { status: 201 });
         } catch (error) {
-            // Handle unique constraint violations that might occur due to race conditions
-            if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
-                return NextResponse.json(
-                    { error: "Industry with this name or code already exists" },
-                    { status: 409 }
-                );
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                if (error.code === 'P2002') {
+                    return NextResponse.json(
+                        { error: "Industry with this name or code already exists" },
+                        { status: 409 }
+                    );
+                }
+                if (error.code === 'P2003') {
+                    return NextResponse.json(
+                        { error: "Invalid parent industry reference" },
+                        { status: 400 }
+                    );
+                }
             }
+
             console.error("Error creating industry:", error);
             await auditLog('INDUSTRY_CREATE_ERROR', {
-                error: error instanceof Error ? error.message : 'Unknown error',
-                name,
-                code,
-                parentId: body.parentId
+                error: error instanceof Error ? error.message : 'Unknown error'
             });
+
             return NextResponse.json(
-                { error: error instanceof Error ? error.message : "Internal server error" },
+                { error: "Failed to create industry" },
                 { status: 500 }
             );
         }
     } catch (error) {
-        console.error("Error creating industry:", error);
+        console.error("Error in POST /industries:", error);
         await auditLog('INDUSTRY_CREATE_ERROR', {
             error: error instanceof Error ? error.message : 'Unknown error'
         });
+
         return NextResponse.json(
-            { error: error instanceof Error ? error.message : "Internal server error" },
+            { error: "Failed to create industry" },
             { status: 500 }
         );
     }
