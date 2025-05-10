@@ -21,7 +21,7 @@ async function getUserFromToken(token: string) {
     }
 }
 
-async function checkPermission(request: NextRequest, permission: string) {
+export async function checkPermission(request: NextRequest, permission: string) {
     console.log("Checking permission:", permission);
 
     const authHeader = request.headers.get('authorization');
