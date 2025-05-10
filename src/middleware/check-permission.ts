@@ -61,6 +61,13 @@ export async function checkPermission(request: NextRequest, permission: string) 
         return hasPermission;
     } catch (error) {
         console.error("Error checking permissions:", error);
+        const authHeader = request.headers.get('authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            return NextResponse.json(
+                { error: 'Unauthorized: Invalid or expired token' },
+                { status: 401 }
+            );
+        }
         return NextResponse.json(
             { error: 'Unauthorized: No token provided' },
             { status: 401 }

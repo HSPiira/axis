@@ -254,40 +254,29 @@ export const POST = withPermission(ORGANIZATION_PERMISSIONS.CREATE)(async (reque
             });
 
             return NextResponse.json(organization, { status: 201 });
-        } catch (error) {
-            // console.error("Error creating organization:", error); // silenced for test clarity
-            console.log('Caught error:', error);
-            console.log('Error type:', error instanceof Error ? error.constructor.name : typeof error);
-            console.log('Error code:', getErrorCode(error));
+        } catch (error: any) {
+            console.error('Caught error:', error);
+            console.error('Error type:', typeof error);
+            console.error('Error code:', error.code);
 
-            await auditLog('ORGANIZATION_CREATE_ERROR', {
-                error: error instanceof Error ? error.message : 'Unknown error'
-            });
-
-            // Use getErrorCode utility
-            const errorCode = getErrorCode(error);
-            switch (errorCode) {
-                case 'P2002':
-                    return NextResponse.json(
-                        { error: 'Organization with this name or email already exists' },
-                        { status: 409 }
-                    );
-                case 'P2003':
-                    return NextResponse.json(
-                        { error: 'Invalid industry ID' },
-                        { status: 400 }
-                    );
-                case 'P1001':
-                    return NextResponse.json(
-                        { error: 'Service temporarily unavailable' },
-                        { status: 503 }
-                    );
-                default:
-                    return NextResponse.json(
-                        { error: 'Failed to create organization' },
-                        { status: 500 }
-                    );
+            if (error.code === 'P2002') {
+                return NextResponse.json(
+                    { error: 'Organization with this name or email already exists' },
+                    { status: 409 }
+                );
             }
+
+            if (error.code === 'P2003') {
+                return NextResponse.json(
+                    { error: 'Invalid industry ID' },
+                    { status: 400 }
+                );
+            }
+
+            return NextResponse.json(
+                { error: 'Failed to create organization' },
+                { status: 500 }
+            );
         }
     } catch (error) {
         console.error("Error in POST /organizations:", error);

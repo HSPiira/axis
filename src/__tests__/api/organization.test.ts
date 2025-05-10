@@ -384,7 +384,7 @@ describe('Organization API', () => {
 
             await testApiResponse(POST, request, 409, {
                 error: 'Organization with this name or email already exists'
-            });
+            }, { params: {} });
         });
 
         it('should handle special characters in organization name', async () => {
@@ -496,19 +496,21 @@ describe('Organization API', () => {
         it('should reject invalid tokens', async () => {
             const request = createAuthenticatedRequest('http://localhost:3000/api/organization');
             request.headers.set('Authorization', 'Bearer invalid-token');
+            globalThis.__TEST_REQUEST__ = request;
 
             await testApiResponse(GET, request, 401, {
                 error: 'Unauthorized: Invalid or expired token'
-            });
+            }, { params: {} });
         });
 
         it('should reject expired tokens', async () => {
             const request = createAuthenticatedRequest('http://localhost:3000/api/organization');
             request.headers.set('Authorization', 'Bearer expired-token');
+            globalThis.__TEST_REQUEST__ = request;
 
             await testApiResponse(GET, request, 401, {
                 error: 'Unauthorized: Invalid or expired token'
-            });
+            }, { params: {} });
         });
     });
 
@@ -616,6 +618,7 @@ describe('Organization API', () => {
         });
 
         it('should handle unique constraint violations', async () => {
+            mockUserRoles(ROLES.MANAGER, [ORGANIZATION_PERMISSIONS.CREATE]);
             // Mock organization creation to fail with unique constraint
             (prisma.organization.create as jest.Mock).mockRejectedValue({
                 code: 'P2002',
@@ -630,14 +633,15 @@ describe('Organization API', () => {
                     email: 'test@org.com'
                 }
             );
+            globalThis.__TEST_REQUEST__ = request;
 
-            const response = await POST(request);
-            expect(response.status).toBe(409);
-            const data = await response.json();
-            expect(data.error).toBe('Organization with this name or email already exists');
+            await testApiResponse(POST, request, 409, {
+                error: 'Organization with this name or email already exists'
+            }, { params: {} });
         });
 
         it('should handle foreign key constraint violations', async () => {
+            mockUserRoles(ROLES.MANAGER, [ORGANIZATION_PERMISSIONS.CREATE]);
             // Mock organization creation to fail with foreign key constraint
             (prisma.organization.create as jest.Mock).mockRejectedValue({
                 code: 'P2003',
@@ -654,11 +658,11 @@ describe('Organization API', () => {
                     industryId: 'invalid-id'
                 }
             );
+            globalThis.__TEST_REQUEST__ = request;
 
-            const response = await POST(request);
-            expect(response.status).toBe(400);
-            const data = await response.json();
-            expect(data.error).toBe('Invalid industry ID');
+            await testApiResponse(POST, request, 400, {
+                error: 'Invalid industry ID'
+            }, { params: {} });
         });
 
         it('should handle database connection timeouts', async () => {
@@ -864,6 +868,7 @@ describe('Organization API', () => {
         });
 
         it('should handle unique constraint violations', async () => {
+            mockUserRoles(ROLES.MANAGER, [ORGANIZATION_PERMISSIONS.CREATE]);
             // Mock organization creation to fail with unique constraint
             (prisma.organization.create as jest.Mock).mockRejectedValue({
                 code: 'P2002',
@@ -878,14 +883,15 @@ describe('Organization API', () => {
                     email: 'test@org.com'
                 }
             );
+            globalThis.__TEST_REQUEST__ = request;
 
-            const response = await POST(request);
-            expect(response.status).toBe(409);
-            const data = await response.json();
-            expect(data.error).toBe('Organization with this name or email already exists');
+            await testApiResponse(POST, request, 409, {
+                error: 'Organization with this name or email already exists'
+            }, { params: {} });
         });
 
         it('should handle foreign key constraint violations', async () => {
+            mockUserRoles(ROLES.MANAGER, [ORGANIZATION_PERMISSIONS.CREATE]);
             // Mock organization creation to fail with foreign key constraint
             (prisma.organization.create as jest.Mock).mockRejectedValue({
                 code: 'P2003',
@@ -902,11 +908,11 @@ describe('Organization API', () => {
                     industryId: 'invalid-id'
                 }
             );
+            globalThis.__TEST_REQUEST__ = request;
 
-            const response = await POST(request);
-            expect(response.status).toBe(400);
-            const data = await response.json();
-            expect(data.error).toBe('Invalid industry ID');
+            await testApiResponse(POST, request, 400, {
+                error: 'Invalid industry ID'
+            }, { params: {} });
         });
 
         it('should handle database connection timeouts', async () => {
