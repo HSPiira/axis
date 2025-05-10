@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
 import { auditLog } from '@/lib/audit-log';
-import { Prisma, ContractStatus } from "@/generated/prisma";
+import { Prisma, ContractStatus } from "@prisma/client";
 
 const MAX_PAYMENT_TERMS_LENGTH = 255;
 const MAX_PAYMENT_FREQUENCY_LENGTH = 100;
@@ -97,7 +97,7 @@ export const PATCH = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
 
         const contract = await prisma.contract.update({
             where: { id: params.id },
-            data: updateData,
+            data: updateData as any,
             include: {
                 organization: { select: { id: true, name: true } },
                 Document: true,
@@ -195,7 +195,7 @@ export const PUT = withPermission(PERMISSIONS.CONTRACT_UPDATE)(async (
         };
         const contract = await prisma.contract.update({
             where: { id: params.id },
-            data: updateData,
+            data: updateData as any,
             include: {
                 organization: { select: { id: true, name: true } },
                 Document: true,

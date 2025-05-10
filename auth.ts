@@ -3,8 +3,14 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { PrismaClient } from "@prisma/client";
+import type { Adapter } from "next-auth/adapters";
+
+// Create a type-safe adapter
+const adapter = PrismaAdapter(prisma as unknown as PrismaClient);
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter,
   providers: [
     MicrosoftEntraID({
       clientId: process.env["AUTH_MICROSOFT_ENTRA_ID_ID"],

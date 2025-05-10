@@ -7,7 +7,9 @@ import { rateLimit } from '@/lib/rate-limit';
 import { auditLog } from '@/lib/audit-log';
 
 type IndustryWithParent = Industry & {
-    parent: Industry | null;
+    parent: (Industry & {
+        parent: Industry | null;
+    }) | null;
 };
 
 const MAX_NAME_LENGTH = 255;
@@ -195,14 +197,15 @@ export const POST = withPermission(INDUSTRY_PERMISSIONS.CREATE)(async (request: 
                     );
                 }
 
-                while (current?.parent) {
-                    if (current.parent.id === body.parentId) {
+                // Type assertion to handle the parent relationship
+                while ((current as any)?.parent) {
+                    if ((current as any).parent.id === body.parentId) {
                         return NextResponse.json(
                             { error: "Invalid parent industry reference" },
                             { status: 400 }
                         );
                     }
-                    current = current.parent;
+                    current = (current as any).parent;
                     depth++;
 
                     if (depth > MAX_HIERARCHY_DEPTH) {
@@ -214,7 +217,7 @@ export const POST = withPermission(INDUSTRY_PERMISSIONS.CREATE)(async (request: 
                 }
             } catch (error) {
                 console.error("Error validating parent industry:", error);
-                await auditLog('INDUSTRY_VALIDATION_ERROR', {
+                await auditLog('INDUSTRY_CREATE_ERROR', {
                     error: error instanceof Error ? error.message : 'Unknown error',
                     parentId: body.parentId
                 });

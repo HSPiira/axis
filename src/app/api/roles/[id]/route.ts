@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
-import { Prisma, Role } from "@/generated/prisma";
+import { Prisma, Role } from "@prisma/client";
 import { rateLimit } from '@/lib/rate-limit';
 import { auditLog } from '@/lib/audit-log';
 import { AuditAction } from '@/lib/audit-log';
