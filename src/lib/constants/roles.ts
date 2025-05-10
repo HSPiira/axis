@@ -39,6 +39,16 @@ export const PERMISSIONS = {
     STAFF_MANAGE: 'staff:manage',
     STAFF_APPROVE: 'staff:approve',
 
+    // Industry management
+    INDUSTRY_CREATE: 'industry:create',
+    INDUSTRY_READ: 'industry:read',
+    INDUSTRY_UPDATE: 'industry:update',
+    INDUSTRY_DELETE: 'industry:delete',
+    INDUSTRY_ASSIGN: 'industry:assign',
+    INDUSTRY_IMPORT: 'industry:import',
+    INDUSTRY_EXPORT: 'industry:export',
+    INDUSTRY_HIERARCHY: 'industry:hierarchy',
+
     // Document management
     DOCUMENT_CREATE: 'document:create',
     DOCUMENT_READ: 'document:read',
