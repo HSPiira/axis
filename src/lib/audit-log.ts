@@ -8,7 +8,13 @@ export type AuditAction =
     | 'ORGANIZATION_LIST'
     | 'ORGANIZATION_LIST_ERROR'
     | 'ORGANIZATION_CREATE'
-    | 'ORGANIZATION_CREATE_ERROR';
+    | 'ORGANIZATION_CREATE_ERROR'
+    | 'ROLE_LIST'
+    | 'ROLE_LIST_ERROR'
+    | 'ROLE_CREATE'
+    | 'ROLE_CREATE_ERROR'
+    | 'ROLE_DELETE'
+    | 'ROLE_DELETE_ERROR';
 
 export async function auditLog(action: AuditAction, data?: Record<string, any>) {
     try {

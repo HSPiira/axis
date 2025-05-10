@@ -87,7 +87,7 @@ async function checkPermission(request: NextRequest, permission: string) {
 
 export function withPermission(permission: PermissionType) {
     return function (handler: Function) {
-        return async function (request: NextRequest) {
+        return async function (request: NextRequest, context?: any) {
             try {
                 const result = await checkPermission(request, permission);
                 if (result instanceof NextResponse) {
@@ -99,7 +99,7 @@ export function withPermission(permission: PermissionType) {
                         { status: 403 }
                     );
                 }
-                return await handler(request);
+                return await handler(request, context);
             } catch (error) {
                 console.error("Error in permission middleware:", error);
                 return NextResponse.json(

@@ -75,7 +75,7 @@ export type Contract = $Result.DefaultSelection<Prisma.$ContractPayload>
 export type Document = $Result.DefaultSelection<Prisma.$DocumentPayload>
 /**
  * Model AuditLog
- * Represents an audit log entry for tracking changes to any model
+ * Represents an audit log entry
  */
 export type AuditLog = $Result.DefaultSelection<Prisma.$AuditLogPayload>
 /**
@@ -678,7 +678,7 @@ export namespace Prisma {
   ? False
   : T extends Uint8Array
   ? False
-  : T extends bigint
+  : T extends BigInt
   ? False
   : T extends object
   ? True
@@ -16315,37 +16315,23 @@ export namespace Prisma {
   export type AuditLogMinAggregateOutputType = {
     id: string | null
     action: string | null
-    model: string | null
-    recordId: string | null
+    timestamp: Date | null
     userId: string | null
-    ipAddress: string | null
-    userAgent: string | null
-    createdAt: Date | null
   }
 
   export type AuditLogMaxAggregateOutputType = {
     id: string | null
     action: string | null
-    model: string | null
-    recordId: string | null
+    timestamp: Date | null
     userId: string | null
-    ipAddress: string | null
-    userAgent: string | null
-    createdAt: Date | null
   }
 
   export type AuditLogCountAggregateOutputType = {
     id: number
     action: number
-    model: number
-    recordId: number
+    data: number
+    timestamp: number
     userId: number
-    oldData: number
-    newData: number
-    changes: number
-    ipAddress: number
-    userAgent: number
-    createdAt: number
     _all: number
   }
 
@@ -16353,37 +16339,23 @@ export namespace Prisma {
   export type AuditLogMinAggregateInputType = {
     id?: true
     action?: true
-    model?: true
-    recordId?: true
+    timestamp?: true
     userId?: true
-    ipAddress?: true
-    userAgent?: true
-    createdAt?: true
   }
 
   export type AuditLogMaxAggregateInputType = {
     id?: true
     action?: true
-    model?: true
-    recordId?: true
+    timestamp?: true
     userId?: true
-    ipAddress?: true
-    userAgent?: true
-    createdAt?: true
   }
 
   export type AuditLogCountAggregateInputType = {
     id?: true
     action?: true
-    model?: true
-    recordId?: true
+    data?: true
+    timestamp?: true
     userId?: true
-    oldData?: true
-    newData?: true
-    changes?: true
-    ipAddress?: true
-    userAgent?: true
-    createdAt?: true
     _all?: true
   }
 
@@ -16462,15 +16434,9 @@ export namespace Prisma {
   export type AuditLogGroupByOutputType = {
     id: string
     action: string
-    model: string
-    recordId: string
+    data: JsonValue | null
+    timestamp: Date
     userId: string | null
-    oldData: JsonValue | null
-    newData: JsonValue | null
-    changes: JsonValue
-    ipAddress: string | null
-    userAgent: string | null
-    createdAt: Date
     _count: AuditLogCountAggregateOutputType | null
     _min: AuditLogMinAggregateOutputType | null
     _max: AuditLogMaxAggregateOutputType | null
@@ -16493,90 +16459,60 @@ export namespace Prisma {
   export type AuditLogSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     action?: boolean
-    model?: boolean
-    recordId?: boolean
+    data?: boolean
+    timestamp?: boolean
     userId?: boolean
-    oldData?: boolean
-    newData?: boolean
-    changes?: boolean
-    ipAddress?: boolean
-    userAgent?: boolean
-    createdAt?: boolean
-    user?: boolean | AuditLog$userArgs<ExtArgs>
+    User?: boolean | AuditLog$UserArgs<ExtArgs>
   }, ExtArgs["result"]["auditLog"]>
 
   export type AuditLogSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     action?: boolean
-    model?: boolean
-    recordId?: boolean
+    data?: boolean
+    timestamp?: boolean
     userId?: boolean
-    oldData?: boolean
-    newData?: boolean
-    changes?: boolean
-    ipAddress?: boolean
-    userAgent?: boolean
-    createdAt?: boolean
-    user?: boolean | AuditLog$userArgs<ExtArgs>
+    User?: boolean | AuditLog$UserArgs<ExtArgs>
   }, ExtArgs["result"]["auditLog"]>
 
   export type AuditLogSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     action?: boolean
-    model?: boolean
-    recordId?: boolean
+    data?: boolean
+    timestamp?: boolean
     userId?: boolean
-    oldData?: boolean
-    newData?: boolean
-    changes?: boolean
-    ipAddress?: boolean
-    userAgent?: boolean
-    createdAt?: boolean
-    user?: boolean | AuditLog$userArgs<ExtArgs>
+    User?: boolean | AuditLog$UserArgs<ExtArgs>
   }, ExtArgs["result"]["auditLog"]>
 
   export type AuditLogSelectScalar = {
     id?: boolean
     action?: boolean
-    model?: boolean
-    recordId?: boolean
+    data?: boolean
+    timestamp?: boolean
     userId?: boolean
-    oldData?: boolean
-    newData?: boolean
-    changes?: boolean
-    ipAddress?: boolean
-    userAgent?: boolean
-    createdAt?: boolean
   }
 
-  export type AuditLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "action" | "model" | "recordId" | "userId" | "oldData" | "newData" | "changes" | "ipAddress" | "userAgent" | "createdAt", ExtArgs["result"]["auditLog"]>
+  export type AuditLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "action" | "data" | "timestamp" | "userId", ExtArgs["result"]["auditLog"]>
   export type AuditLogInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | AuditLog$userArgs<ExtArgs>
+    User?: boolean | AuditLog$UserArgs<ExtArgs>
   }
   export type AuditLogIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | AuditLog$userArgs<ExtArgs>
+    User?: boolean | AuditLog$UserArgs<ExtArgs>
   }
   export type AuditLogIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | AuditLog$userArgs<ExtArgs>
+    User?: boolean | AuditLog$UserArgs<ExtArgs>
   }
 
   export type $AuditLogPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "AuditLog"
     objects: {
-      user: Prisma.$UserPayload<ExtArgs> | null
+      User: Prisma.$UserPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       action: string
-      model: string
-      recordId: string
+      data: Prisma.JsonValue | null
+      timestamp: Date
       userId: string | null
-      oldData: Prisma.JsonValue | null
-      newData: Prisma.JsonValue | null
-      changes: Prisma.JsonValue
-      ipAddress: string | null
-      userAgent: string | null
-      createdAt: Date
     }, ExtArgs["result"]["auditLog"]>
     composites: {}
   }
@@ -16971,7 +16907,7 @@ export namespace Prisma {
    */
   export interface Prisma__AuditLogClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends AuditLog$userArgs<ExtArgs> = {}>(args?: Subset<T, AuditLog$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    User<T extends AuditLog$UserArgs<ExtArgs> = {}>(args?: Subset<T, AuditLog$UserArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -17003,15 +16939,9 @@ export namespace Prisma {
   interface AuditLogFieldRefs {
     readonly id: FieldRef<"AuditLog", 'String'>
     readonly action: FieldRef<"AuditLog", 'String'>
-    readonly model: FieldRef<"AuditLog", 'String'>
-    readonly recordId: FieldRef<"AuditLog", 'String'>
+    readonly data: FieldRef<"AuditLog", 'Json'>
+    readonly timestamp: FieldRef<"AuditLog", 'DateTime'>
     readonly userId: FieldRef<"AuditLog", 'String'>
-    readonly oldData: FieldRef<"AuditLog", 'Json'>
-    readonly newData: FieldRef<"AuditLog", 'Json'>
-    readonly changes: FieldRef<"AuditLog", 'Json'>
-    readonly ipAddress: FieldRef<"AuditLog", 'String'>
-    readonly userAgent: FieldRef<"AuditLog", 'String'>
-    readonly createdAt: FieldRef<"AuditLog", 'DateTime'>
   }
     
 
@@ -17408,9 +17338,9 @@ export namespace Prisma {
   }
 
   /**
-   * AuditLog.user
+   * AuditLog.User
    */
-  export type AuditLog$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type AuditLog$UserArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the User
      */
@@ -20006,15 +19936,9 @@ export namespace Prisma {
   export const AuditLogScalarFieldEnum: {
     id: 'id',
     action: 'action',
-    model: 'model',
-    recordId: 'recordId',
-    userId: 'userId',
-    oldData: 'oldData',
-    newData: 'newData',
-    changes: 'changes',
-    ipAddress: 'ipAddress',
-    userAgent: 'userAgent',
-    createdAt: 'createdAt'
+    data: 'data',
+    timestamp: 'timestamp',
+    userId: 'userId'
   };
 
   export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
@@ -20068,13 +19992,6 @@ export namespace Prisma {
   };
 
   export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
-
-
-  export const JsonNullValueInput: {
-    JsonNull: typeof JsonNull
-  };
-
-  export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
   export const QueryMode: {
@@ -21135,31 +21052,19 @@ export namespace Prisma {
     NOT?: AuditLogWhereInput | AuditLogWhereInput[]
     id?: StringFilter<"AuditLog"> | string
     action?: StringFilter<"AuditLog"> | string
-    model?: StringFilter<"AuditLog"> | string
-    recordId?: StringFilter<"AuditLog"> | string
+    data?: JsonNullableFilter<"AuditLog">
+    timestamp?: DateTimeFilter<"AuditLog"> | Date | string
     userId?: StringNullableFilter<"AuditLog"> | string | null
-    oldData?: JsonNullableFilter<"AuditLog">
-    newData?: JsonNullableFilter<"AuditLog">
-    changes?: JsonFilter<"AuditLog">
-    ipAddress?: StringNullableFilter<"AuditLog"> | string | null
-    userAgent?: StringNullableFilter<"AuditLog"> | string | null
-    createdAt?: DateTimeFilter<"AuditLog"> | Date | string
-    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    User?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
   }
 
   export type AuditLogOrderByWithRelationInput = {
     id?: SortOrder
     action?: SortOrder
-    model?: SortOrder
-    recordId?: SortOrder
+    data?: SortOrderInput | SortOrder
+    timestamp?: SortOrder
     userId?: SortOrderInput | SortOrder
-    oldData?: SortOrderInput | SortOrder
-    newData?: SortOrderInput | SortOrder
-    changes?: SortOrder
-    ipAddress?: SortOrderInput | SortOrder
-    userAgent?: SortOrderInput | SortOrder
-    createdAt?: SortOrder
-    user?: UserOrderByWithRelationInput
+    User?: UserOrderByWithRelationInput
   }
 
   export type AuditLogWhereUniqueInput = Prisma.AtLeast<{
@@ -21168,30 +21073,18 @@ export namespace Prisma {
     OR?: AuditLogWhereInput[]
     NOT?: AuditLogWhereInput | AuditLogWhereInput[]
     action?: StringFilter<"AuditLog"> | string
-    model?: StringFilter<"AuditLog"> | string
-    recordId?: StringFilter<"AuditLog"> | string
+    data?: JsonNullableFilter<"AuditLog">
+    timestamp?: DateTimeFilter<"AuditLog"> | Date | string
     userId?: StringNullableFilter<"AuditLog"> | string | null
-    oldData?: JsonNullableFilter<"AuditLog">
-    newData?: JsonNullableFilter<"AuditLog">
-    changes?: JsonFilter<"AuditLog">
-    ipAddress?: StringNullableFilter<"AuditLog"> | string | null
-    userAgent?: StringNullableFilter<"AuditLog"> | string | null
-    createdAt?: DateTimeFilter<"AuditLog"> | Date | string
-    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    User?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
   }, "id">
 
   export type AuditLogOrderByWithAggregationInput = {
     id?: SortOrder
     action?: SortOrder
-    model?: SortOrder
-    recordId?: SortOrder
+    data?: SortOrderInput | SortOrder
+    timestamp?: SortOrder
     userId?: SortOrderInput | SortOrder
-    oldData?: SortOrderInput | SortOrder
-    newData?: SortOrderInput | SortOrder
-    changes?: SortOrder
-    ipAddress?: SortOrderInput | SortOrder
-    userAgent?: SortOrderInput | SortOrder
-    createdAt?: SortOrder
     _count?: AuditLogCountOrderByAggregateInput
     _max?: AuditLogMaxOrderByAggregateInput
     _min?: AuditLogMinOrderByAggregateInput
@@ -21203,15 +21096,9 @@ export namespace Prisma {
     NOT?: AuditLogScalarWhereWithAggregatesInput | AuditLogScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"AuditLog"> | string
     action?: StringWithAggregatesFilter<"AuditLog"> | string
-    model?: StringWithAggregatesFilter<"AuditLog"> | string
-    recordId?: StringWithAggregatesFilter<"AuditLog"> | string
+    data?: JsonNullableWithAggregatesFilter<"AuditLog">
+    timestamp?: DateTimeWithAggregatesFilter<"AuditLog"> | Date | string
     userId?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
-    oldData?: JsonNullableWithAggregatesFilter<"AuditLog">
-    newData?: JsonNullableWithAggregatesFilter<"AuditLog">
-    changes?: JsonWithAggregatesFilter<"AuditLog">
-    ipAddress?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
-    userAgent?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
-    createdAt?: DateTimeWithAggregatesFilter<"AuditLog"> | Date | string
   }
 
   export type KPIWhereInput = {
@@ -22333,98 +22220,56 @@ export namespace Prisma {
   export type AuditLogCreateInput = {
     id?: string
     action: string
-    model: string
-    recordId: string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes: JsonNullValueInput | InputJsonValue
-    ipAddress?: string | null
-    userAgent?: string | null
-    createdAt?: Date | string
-    user?: UserCreateNestedOneWithoutAuditLogsInput
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: Date | string
+    User?: UserCreateNestedOneWithoutAuditLogsInput
   }
 
   export type AuditLogUncheckedCreateInput = {
     id?: string
     action: string
-    model: string
-    recordId: string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: Date | string
     userId?: string | null
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes: JsonNullValueInput | InputJsonValue
-    ipAddress?: string | null
-    userAgent?: string | null
-    createdAt?: Date | string
   }
 
   export type AuditLogUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     action?: StringFieldUpdateOperationsInput | string
-    model?: StringFieldUpdateOperationsInput | string
-    recordId?: StringFieldUpdateOperationsInput | string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes?: JsonNullValueInput | InputJsonValue
-    ipAddress?: NullableStringFieldUpdateOperationsInput | string | null
-    userAgent?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneWithoutAuditLogsNestedInput
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
+    User?: UserUpdateOneWithoutAuditLogsNestedInput
   }
 
   export type AuditLogUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     action?: StringFieldUpdateOperationsInput | string
-    model?: StringFieldUpdateOperationsInput | string
-    recordId?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
     userId?: NullableStringFieldUpdateOperationsInput | string | null
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes?: JsonNullValueInput | InputJsonValue
-    ipAddress?: NullableStringFieldUpdateOperationsInput | string | null
-    userAgent?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AuditLogCreateManyInput = {
     id?: string
     action: string
-    model: string
-    recordId: string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: Date | string
     userId?: string | null
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes: JsonNullValueInput | InputJsonValue
-    ipAddress?: string | null
-    userAgent?: string | null
-    createdAt?: Date | string
   }
 
   export type AuditLogUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     action?: StringFieldUpdateOperationsInput | string
-    model?: StringFieldUpdateOperationsInput | string
-    recordId?: StringFieldUpdateOperationsInput | string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes?: JsonNullValueInput | InputJsonValue
-    ipAddress?: NullableStringFieldUpdateOperationsInput | string | null
-    userAgent?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AuditLogUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     action?: StringFieldUpdateOperationsInput | string
-    model?: StringFieldUpdateOperationsInput | string
-    recordId?: StringFieldUpdateOperationsInput | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
     userId?: NullableStringFieldUpdateOperationsInput | string | null
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes?: JsonNullValueInput | InputJsonValue
-    ipAddress?: NullableStringFieldUpdateOperationsInput | string | null
-    userAgent?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type KPICreateInput = {
@@ -23486,64 +23331,27 @@ export namespace Prisma {
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
-  export type JsonFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
 
   export type AuditLogCountOrderByAggregateInput = {
     id?: SortOrder
     action?: SortOrder
-    model?: SortOrder
-    recordId?: SortOrder
+    data?: SortOrder
+    timestamp?: SortOrder
     userId?: SortOrder
-    oldData?: SortOrder
-    newData?: SortOrder
-    changes?: SortOrder
-    ipAddress?: SortOrder
-    userAgent?: SortOrder
-    createdAt?: SortOrder
   }
 
   export type AuditLogMaxOrderByAggregateInput = {
     id?: SortOrder
     action?: SortOrder
-    model?: SortOrder
-    recordId?: SortOrder
+    timestamp?: SortOrder
     userId?: SortOrder
-    ipAddress?: SortOrder
-    userAgent?: SortOrder
-    createdAt?: SortOrder
   }
 
   export type AuditLogMinOrderByAggregateInput = {
     id?: SortOrder
     action?: SortOrder
-    model?: SortOrder
-    recordId?: SortOrder
+    timestamp?: SortOrder
     userId?: SortOrder
-    ipAddress?: SortOrder
-    userAgent?: SortOrder
-    createdAt?: SortOrder
   }
   export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
     | PatchUndefined<
@@ -23570,32 +23378,6 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedJsonNullableFilter<$PrismaModel>
     _max?: NestedJsonNullableFilter<$PrismaModel>
-  }
-  export type JsonWithAggregatesFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonWithAggregatesFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedJsonFilter<$PrismaModel>
-    _max?: NestedJsonFilter<$PrismaModel>
   }
 
   export type KPICountOrderByAggregateInput = {
@@ -25164,29 +24946,6 @@ export namespace Prisma {
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
-  export type NestedJsonFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
-        Required<NestedJsonFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>
-
-  export type NestedJsonFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
 
   export type NestedEnumFrequencyFilter<$PrismaModel = never> = {
     equals?: $Enums.Frequency | EnumFrequencyFieldRefInput<$PrismaModel>
@@ -25351,27 +25110,15 @@ export namespace Prisma {
   export type AuditLogCreateWithoutUserInput = {
     id?: string
     action: string
-    model: string
-    recordId: string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes: JsonNullValueInput | InputJsonValue
-    ipAddress?: string | null
-    userAgent?: string | null
-    createdAt?: Date | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: Date | string
   }
 
   export type AuditLogUncheckedCreateWithoutUserInput = {
     id?: string
     action: string
-    model: string
-    recordId: string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes: JsonNullValueInput | InputJsonValue
-    ipAddress?: string | null
-    userAgent?: string | null
-    createdAt?: Date | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: Date | string
   }
 
   export type AuditLogCreateOrConnectWithoutUserInput = {
@@ -25528,15 +25275,9 @@ export namespace Prisma {
     NOT?: AuditLogScalarWhereInput | AuditLogScalarWhereInput[]
     id?: StringFilter<"AuditLog"> | string
     action?: StringFilter<"AuditLog"> | string
-    model?: StringFilter<"AuditLog"> | string
-    recordId?: StringFilter<"AuditLog"> | string
+    data?: JsonNullableFilter<"AuditLog">
+    timestamp?: DateTimeFilter<"AuditLog"> | Date | string
     userId?: StringNullableFilter<"AuditLog"> | string | null
-    oldData?: JsonNullableFilter<"AuditLog">
-    newData?: JsonNullableFilter<"AuditLog">
-    changes?: JsonFilter<"AuditLog">
-    ipAddress?: StringNullableFilter<"AuditLog"> | string | null
-    userAgent?: StringNullableFilter<"AuditLog"> | string | null
-    createdAt?: DateTimeFilter<"AuditLog"> | Date | string
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -27853,14 +27594,8 @@ export namespace Prisma {
   export type AuditLogCreateManyUserInput = {
     id?: string
     action: string
-    model: string
-    recordId: string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes: JsonNullValueInput | InputJsonValue
-    ipAddress?: string | null
-    userAgent?: string | null
-    createdAt?: Date | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: Date | string
   }
 
   export type AccountUpdateWithoutUserInput = {
@@ -27994,40 +27729,22 @@ export namespace Prisma {
   export type AuditLogUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     action?: StringFieldUpdateOperationsInput | string
-    model?: StringFieldUpdateOperationsInput | string
-    recordId?: StringFieldUpdateOperationsInput | string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes?: JsonNullValueInput | InputJsonValue
-    ipAddress?: NullableStringFieldUpdateOperationsInput | string | null
-    userAgent?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AuditLogUncheckedUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     action?: StringFieldUpdateOperationsInput | string
-    model?: StringFieldUpdateOperationsInput | string
-    recordId?: StringFieldUpdateOperationsInput | string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes?: JsonNullValueInput | InputJsonValue
-    ipAddress?: NullableStringFieldUpdateOperationsInput | string | null
-    userAgent?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AuditLogUncheckedUpdateManyWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     action?: StringFieldUpdateOperationsInput | string
-    model?: StringFieldUpdateOperationsInput | string
-    recordId?: StringFieldUpdateOperationsInput | string
-    oldData?: NullableJsonNullValueInput | InputJsonValue
-    newData?: NullableJsonNullValueInput | InputJsonValue
-    changes?: JsonNullValueInput | InputJsonValue
-    ipAddress?: NullableStringFieldUpdateOperationsInput | string | null
-    userAgent?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    data?: NullableJsonNullValueInput | InputJsonValue
+    timestamp?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type RolePermissionCreateManyRoleInput = {

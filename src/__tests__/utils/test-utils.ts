@@ -13,7 +13,7 @@ type SupportedModel = 'user' | 'organization' | 'industry' | 'role' | 'permissio
 // Mock Prisma client
 jest.mock('@/lib/db', () => {
     const createMockMethod = () => {
-        const mock = jest.fn().mockResolvedValue(null) as jest.Mock;
+        const mock = jest.fn().mockResolvedValue(null);
         mock.mockImplementation = (impl: (...args: any[]) => any) => {
             mock.mockImplementationOnce(impl);
             return mock;
@@ -35,6 +35,8 @@ jest.mock('@/lib/db', () => {
         userRole: { [key: string]: jest.Mock };
         organization: { [key: string]: jest.Mock };
         industry: { [key: string]: jest.Mock };
+        permission: { [key: string]: jest.Mock };
+        rolePermission: { [key: string]: jest.Mock };
         $transaction: jest.Mock;
         $connect: jest.Mock;
         $disconnect: jest.Mock;
@@ -42,10 +44,12 @@ jest.mock('@/lib/db', () => {
 
     const mockPrisma: MockPrisma = {
         user: createMockModel(['create', 'delete', 'findUnique', 'findMany']),
-        role: createMockModel(['findUnique', 'create', 'findMany']),
+        role: createMockModel(['findUnique', 'create', 'findMany', 'findFirst', 'update', 'delete', 'deleteMany', 'count']),
         userRole: createMockModel(['create', 'findMany', 'deleteMany', 'delete']),
         organization: createMockModel(['findMany', 'findFirst', 'create', 'deleteMany', 'count', 'findUnique', 'update']),
         industry: createMockModel(['findMany', 'findFirst', 'findUnique', 'create', 'update', 'delete']),
+        permission: createMockModel(['findMany', 'findUnique']),
+        rolePermission: createMockModel(['createMany', 'deleteMany']),
         $transaction: jest.fn((callback) => callback(mockPrisma)),
         $connect: jest.fn(),
         $disconnect: jest.fn(),
@@ -60,8 +64,11 @@ jest.mock('@/lib/db', () => {
 // Create test roles if they don't exist
 const ensureTestRoles = async () => {
     const roles = Object.values(ROLES);
-    for (const role of roles) {
-        (prisma.role.findUnique as jest.Mock).mockResolvedValue({ id: role, name: role });
+    if (prisma.role && prisma.role.findUnique) {
+        (prisma.role.findUnique as jest.Mock).mockImplementation((args) => {
+            const roleName = args.where.name;
+            return Promise.resolve({ id: roleName, name: roleName });
+        });
     }
 };
 
@@ -124,7 +131,7 @@ export const mockPermissionMiddleware = () => {
 
     jest.mock('@/middleware/check-permission', () => {
         return {
-            withPermission: (permission: string) => (handler: Function) => async (request: Request) => {
+            withPermission: (permission: string) => (handler: Function) => async (request: Request, context?: any) => {
                 const result = await mockCheckPermission(request, permission);
                 if (!result.authorized) {
                     return NextResponse.json(
@@ -132,7 +139,7 @@ export const mockPermissionMiddleware = () => {
                         { status: result.error?.includes('Invalid or expired token') ? 401 : 403 }
                     );
                 }
-                return handler(request);
+                return handler(request, context);
             }
         };
     });
@@ -200,6 +207,11 @@ export const mockUserRoles = (role: string, permissions: string[]) => {
     }]);
 };
 
+type TestRequest = {
+    request: NextRequest;
+    context?: { params: Record<string, string> };
+};
+
 // Create a test request with authentication
 export const createAuthenticatedRequest = (
     url: string,
@@ -216,6 +228,12 @@ export const createAuthenticatedRequest = (
         },
         ...(body && { body: JSON.stringify(body) })
     });
+    console.log('Created request:', {
+        url,
+        method,
+        headers: request.headers,
+        body: body ? JSON.stringify(body) : undefined
+    });
     return request;
 };
 
@@ -224,9 +242,10 @@ export const testApiResponse = async (
     handler: Function,
     request: NextRequest,
     expectedStatus: number,
-    expectedData?: any
+    expectedData?: any,
+    context?: { params: Record<string, string> }
 ) => {
-    const response = await handler(request);
+    const response = await handler(request, context);
     const data = await response.json();
 
     expect(response.status).toBe(expectedStatus);
@@ -342,6 +361,13 @@ export const mockOrganizationCreation = () => {
     });
 };
 
+// Mock rate limiter
+jest.mock('@/lib/rate-limit', () => ({
+    rateLimit: jest.fn().mockReturnValue({
+        check: jest.fn().mockResolvedValue({ success: true })
+    })
+}));
+
 // Reset all mocks before each test
 export const resetMocks = () => {
     // Reset all mock implementations
@@ -356,7 +382,7 @@ export const resetMocks = () => {
     });
 
     // Reset rate limiter mock
-    (rateLimit as jest.Mock).mockReset();
+    jest.clearAllMocks();
     (rateLimit as jest.Mock).mockReturnValue({
         check: jest.fn().mockResolvedValue({ success: true })
     });

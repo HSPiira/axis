@@ -248,15 +248,9 @@ exports.Prisma.DocumentScalarFieldEnum = {
 exports.Prisma.AuditLogScalarFieldEnum = {
   id: 'id',
   action: 'action',
-  model: 'model',
-  recordId: 'recordId',
-  userId: 'userId',
-  oldData: 'oldData',
-  newData: 'newData',
-  changes: 'changes',
-  ipAddress: 'ipAddress',
-  userAgent: 'userAgent',
-  createdAt: 'createdAt'
+  data: 'data',
+  timestamp: 'timestamp',
+  userId: 'userId'
 };
 
 exports.Prisma.KPIScalarFieldEnum = {
@@ -294,10 +288,6 @@ exports.Prisma.SortOrder = {
 
 exports.Prisma.NullableJsonNullValueInput = {
   DbNull: Prisma.DbNull,
-  JsonNull: Prisma.JsonNull
-};
-
-exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
