@@ -17,6 +17,13 @@ describe('User API', () => {
 
     describe('POST /api/users', () => {
         it('should create a new user successfully', async () => {
+            (prisma.user.create as jest.Mock).mockResolvedValueOnce({
+                id: 'new-user-id',
+                email: 'new@example.com',
+                name: 'New User',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
             const request = new Request('http://localhost:3000/api/users', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -36,6 +43,10 @@ describe('User API', () => {
         });
 
         it('should return 409 when creating a user with existing email', async () => {
+            (prisma.user.create as jest.Mock).mockRejectedValueOnce({
+                code: 'P2002',
+                message: 'Unique constraint violation'
+            });
             const request = new Request('http://localhost:3000/api/users', {
                 method: 'POST',
                 body: JSON.stringify({

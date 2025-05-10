@@ -88,17 +88,25 @@ async function checkPermission(request: NextRequest, permission: string) {
 export function withPermission(permission: PermissionType) {
     return function (handler: Function) {
         return async function (request: NextRequest) {
-            const result = await checkPermission(request, permission);
-            if (result instanceof NextResponse) {
-                return result;
-            }
-            if (!result) {
+            try {
+                const result = await checkPermission(request, permission);
+                if (result instanceof NextResponse) {
+                    return result;
+                }
+                if (!result) {
+                    return NextResponse.json(
+                        { error: 'Unauthorized: Insufficient permissions' },
+                        { status: 403 }
+                    );
+                }
+                return await handler(request);
+            } catch (error) {
+                console.error("Error in permission middleware:", error);
                 return NextResponse.json(
-                    { error: 'Unauthorized: Insufficient permissions' },
-                    { status: 403 }
+                    { error: 'Internal server error' },
+                    { status: 500 }
                 );
             }
-            return await handler(request);
         };
     };
 } 

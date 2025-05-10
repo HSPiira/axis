@@ -65,8 +65,8 @@ describe('Industries API', () => {
             const request = createAuthenticatedRequest('http://localhost:3000/api/industries');
             request.headers.delete('Authorization');
 
-            await testApiResponse(GET, request, 403, {
-                error: 'Unauthorized: Insufficient permissions'
+            await testApiResponse(GET, request, 401, {
+                error: 'Unauthorized: No token provided'
             });
         });
 
@@ -681,8 +681,8 @@ describe('Industries API', () => {
             const request = createAuthenticatedRequest('http://localhost:3000/api/industries');
             request.headers.set('Authorization', 'Bearer invalid-token');
 
-            await testApiResponse(GET, request, 403, {
-                error: 'Unauthorized: Insufficient permissions'
+            await testApiResponse(GET, request, 401, {
+                error: 'Unauthorized: Invalid or expired token'
             });
         });
 
@@ -744,11 +744,12 @@ describe('Industries API', () => {
 
             // Simulate a race condition where the industry is created between our check and creation
             (prisma.industry.findFirst as jest.Mock).mockResolvedValue(null);
-            (prisma.industry.create as jest.Mock).mockRejectedValue({
+            const error = new Prisma.PrismaClientKnownRequestError('Unique constraint violation', {
                 code: 'P2002',
                 clientVersion: '5.0.0',
                 meta: { target: ['name'] }
             });
+            (prisma.industry.create as jest.Mock).mockRejectedValue(error);
 
             const request = createAuthenticatedRequest(
                 'http://localhost:3000/api/industries',

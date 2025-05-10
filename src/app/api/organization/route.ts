@@ -42,8 +42,8 @@ export const GET = withPermission(ORGANIZATION_PERMISSIONS.READ)(async (request:
         }
 
         const { searchParams } = new URL(request.url);
-        let page = parseInt(searchParams.get('page') || '1');
-        let limit = parseInt(searchParams.get('limit') || '10');
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '10');
 
         // Validate pagination parameters
         if (isNaN(page) || page < 1 || isNaN(limit) || limit < 1 || limit > 100) {
