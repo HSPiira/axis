@@ -6,15 +6,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function checkPermission(request: NextRequest, permission: string) {
-    console.log("Checking permission:", permission);
-
     try {
         const session = await auth();
         if (!session?.user?.id) {
-            // Debug log for diagnosis
             const authHeader = request.headers.get('authorization');
-            console.log('DEBUG: No session. Authorization header:', authHeader);
-            console.log('DEBUG: Session value:', session);
             if (authHeader && authHeader.startsWith('Bearer ')) {
                 return NextResponse.json(
                     { error: 'Unauthorized: Invalid or expired token' },
@@ -26,8 +21,6 @@ export async function checkPermission(request: NextRequest, permission: string) 
                 { status: 401 }
             );
         }
-
-        console.log("Session user ID:", session.user.id);
 
         const userRoles = await prisma.userRole.findMany({
             where: { userId: session.user.id },
@@ -44,11 +37,8 @@ export async function checkPermission(request: NextRequest, permission: string) 
             }
         });
 
-        console.log("User roles:", JSON.stringify(userRoles, null, 2));
-
         // Admin role has access to everything
         if (userRoles.some(userRole => userRole.role.name === ROLES.ADMIN)) {
-            console.log("Has permission: true (admin)");
             return true;
         }
 
@@ -57,7 +47,6 @@ export async function checkPermission(request: NextRequest, permission: string) 
             userRole.role.permissions.some(rp => rp.permission.name === permission)
         );
 
-        console.log("Has permission:", hasPermission);
         return hasPermission;
     } catch (error) {
         console.error("Error checking permissions:", error);

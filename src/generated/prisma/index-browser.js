@@ -331,7 +331,7 @@ exports.DocumentType = exports.$Enums.DocumentType = {
 };
 
 exports.Frequency = exports.$Enums.Frequency = {
-  ONE_TIME: 'ONE_TIME',
+  ONCE: 'ONCE',
   WEEKLY: 'WEEKLY',
   MONTHLY: 'MONTHLY',
   QUARTERLY: 'QUARTERLY',

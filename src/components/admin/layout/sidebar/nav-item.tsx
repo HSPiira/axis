@@ -16,8 +16,7 @@ const NavItem = ({ icon: Icon, title, href, onClick }: NavItemProps) => {
                 <Link
                     href={href}
                     onClick={onClick}
-                    className={`flex items-center justify-center w-10 h-10 rounded-full hover:bg-accent ${pathname === href ? "bg-accent" : ""
-                        }`}
+                    className={`flex items-center justify-center w-10 h-10 rounded-full hover:bg-accent ${pathname === href ? "sidebar-active" : ""}`}
                     aria-current={pathname === href ? "page" : undefined}
                 >
                     {Icon && <Icon className="h-5 w-5 text-foreground" />}

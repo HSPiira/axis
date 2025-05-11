@@ -228,29 +228,29 @@ model Document {
 
 // ENUM: Document types
 enum DocumentType {
-  CONTRACT
-  CERTIFICATION
-  KPI_REPORT
-  FEEDBACK_SUMMARY
-  BILLING_REPORT
-  UTILIZATION_REPORT
-  OTHER
+  CONTRACT           @map("contract")
+  CERTIFICATION      @map("certification")
+  KPI_REPORT         @map("kpi_report")
+  FEEDBACK_SUMMARY   @map("feedback_summary")
+  BILLING_REPORT     @map("billing_report")
+  UTILIZATION_REPORT @map("utilization_report")
+  OTHER              @map("other")
 }
 
 // ENUM: Organization status
 enum OrgStatus {
-  ACTIVE
-  INACTIVE
-  TERMINATED
-  PENDING
+  ACTIVE     @map("Active")
+  INACTIVE   @map("Inactive")
+  TERMINATED @map("Terminated")
+  PENDING    @map("Pending")
 }
 
 // ENUM: Contract status
 enum ContractStatus {
-  ACTIVE
-  EXPIRED
-  TERMINATED
-  RENEWED
+  ACTIVE     @map("Active")
+  EXPIRED    @map("Expired")
+  TERMINATED @map("Terminated")
+  RENEWED    @map("Renewed")
 }
 
 /// Represents an audit log entry
@@ -264,6 +264,7 @@ model AuditLog {
 
   @@index([action])
   @@index([timestamp])
+  @@map("audit_logs") // Table name in the database
 }
 
 /// Represents a Key Performance Indicator (KPI) in the system
@@ -318,17 +319,17 @@ model KPIAssignment {
 
 /// Represents how often a KPI is measured
 enum Frequency {
-  ONE_TIME
-  WEEKLY
-  MONTHLY
-  QUARTERLY
-  ANNUALLY
+  ONCE      @map("Once")
+  WEEKLY    @map("Weekly")
+  MONTHLY   @map("Monthly")
+  QUARTERLY @map("Quarterly")
+  ANNUALLY  @map("Annually")
 }
 
 /// Represents the status of a KPI assignment
 enum KPIStatus {
-  PENDING
-  ONGOING
-  COMPLETED
-  CANCELLED
+  PENDING   @map("Pending")
+  ONGOING   @map("Ongoing")
+  COMPLETED @map("Completed")
+  CANCELLED @map("Cancelled")
 }

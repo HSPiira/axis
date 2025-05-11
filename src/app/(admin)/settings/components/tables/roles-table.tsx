@@ -55,7 +55,10 @@ export function RolesTable({
                     {paginatedRoles.map((role) => (
                         <tr
                             key={role.id}
-                            className={`border-b hover:bg-muted/50 transition-colors cursor-pointer ${selectedRole && selectedRole.id === role.id ? 'bg-muted/30' : ''}`}
+                            className={`border-b hover:bg-muted/50 transition-colors cursor-pointer ${selectedRole && selectedRole.id === role.id
+                                ? 'bg-primary/10 dark:bg-primary/20'
+                                : ''
+                                }`}
                             onClick={() => setSelectedRole(selectedRole && selectedRole.id === role.id ? null : role)}
                         >
                             <td className="p-1.5">

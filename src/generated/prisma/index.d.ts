@@ -127,7 +127,7 @@ export type ContractStatus = (typeof ContractStatus)[keyof typeof ContractStatus
 
 
 export const Frequency: {
-  ONE_TIME: 'ONE_TIME',
+  ONCE: 'ONCE',
   WEEKLY: 'WEEKLY',
   MONTHLY: 'MONTHLY',
   QUARTERLY: 'QUARTERLY',

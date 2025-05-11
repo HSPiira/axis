@@ -7,6 +7,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { sanitizeInput } from '@/lib/sanitize';
 import { auditLog } from '@/lib/audit-log';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { OrgStatus } from '@prisma/client';
 
 // Utility to robustly extract error code from error objects, even if nested
 function getErrorCode(error: unknown): string | undefined {
@@ -55,7 +56,7 @@ export const GET = withPermission(ORGANIZATION_PERMISSIONS.READ)(async (request:
         }
 
         const search = searchParams.get('search') || '';
-        const status = searchParams.get('status') as Prisma.OrganizationWhereInput['status'];
+        const status = searchParams.get('status') as OrgStatus | null;
 
         const where: Prisma.OrganizationWhereInput = {
             OR: [
@@ -80,7 +81,7 @@ export const GET = withPermission(ORGANIZATION_PERMISSIONS.READ)(async (request:
                             },
                         },
                     },
-                    orderBy: { name: 'asc' },
+                    orderBy: { createdAt: 'desc' },
                 }),
                 prisma.organization.count({ where }),
             ]);
@@ -90,6 +91,7 @@ export const GET = withPermission(ORGANIZATION_PERMISSIONS.READ)(async (request:
                 page,
                 limit,
                 search,
+                status,
                 total
             });
 
@@ -161,26 +163,41 @@ export const POST = withPermission(ORGANIZATION_PERMISSIONS.CREATE)(async (reque
 
         // Check content type
         const contentType = request.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            return NextResponse.json(
-                { error: "Content-Type header must be application/json" },
-                { status: 400 }
-            );
-        }
+        console.log('Content-Type:', contentType);
 
         let body;
         try {
-            body = await request.json();
+            if (contentType?.includes('multipart/form-data')) {
+                const formData = await request.formData();
+                body = Object.fromEntries(formData.entries());
+                console.log('Form data:', body);
+            } else if (contentType?.includes('application/json')) {
+                body = await request.json();
+                console.log('JSON body:', body);
+            } else {
+                return NextResponse.json(
+                    { error: "Content-Type must be either application/json or multipart/form-data" },
+                    { status: 400 }
+                );
+            }
         } catch (error) {
+            console.error('Error parsing request body:', error);
             return NextResponse.json(
-                { error: "Invalid JSON in request body" },
+                { error: "Invalid request body" },
                 { status: 400 }
             );
         }
 
         // Validate required fields and length constraints
-        const name = body.name?.trim();
-        const email = body.email?.trim()?.toLowerCase();
+        const name = body.name?.toString()?.trim();
+        const email = body.email?.toString()?.trim()?.toLowerCase();
+        const industryId = body.industryId?.toString();
+        const phone = body.phone?.toString()?.trim();
+        const address = body.address?.toString()?.trim();
+        const contactPerson = body.contactPerson?.toString()?.trim();
+        const contactEmail = body.contactEmail?.toString()?.trim();
+        const contactPhone = body.contactPhone?.toString()?.trim();
+        const notes = body.notes?.toString()?.trim();
 
         if (!name) {
             return NextResponse.json(
@@ -233,16 +250,20 @@ export const POST = withPermission(ORGANIZATION_PERMISSIONS.CREATE)(async (reque
         const sanitizedData = {
             name: sanitizeInput(name),
             email: email ? sanitizeInput(email) : null,
-            industryId: body.industryId,
+            phone: phone ? sanitizeInput(phone) : null,
+            address: address ? sanitizeInput(address) : null,
+            contactPerson: contactPerson ? sanitizeInput(contactPerson) : null,
+            contactEmail: contactEmail ? sanitizeInput(contactEmail) : null,
+            contactPhone: contactPhone ? sanitizeInput(contactPhone) : null,
+            notes: notes ? sanitizeInput(notes) : null,
+            industryId: industryId || null,
         };
 
         try {
             const organization = await prisma.organization.create({
                 data: {
-                    name: sanitizedData.name,
-                    email: sanitizedData.email,
-                    industryId: sanitizedData.industryId,
-                    status: 'ACTIVE'
+                    ...sanitizedData,
+                    status: OrgStatus.ACTIVE
                 }
             });
 
@@ -250,7 +271,8 @@ export const POST = withPermission(ORGANIZATION_PERMISSIONS.CREATE)(async (reque
             await auditLog('ORGANIZATION_CREATE', {
                 organizationId: organization.id,
                 name: organization.name,
-                email: organization.email
+                email: organization.email,
+                status: organization.status
             });
 
             return NextResponse.json(organization, { status: 201 });

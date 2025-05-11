@@ -24,7 +24,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
+                // Only allow test user in non-production environments  
+                const isProduction = process.env.NODE_ENV === 'production';
                 if (credentials?.email === "test@test.com" && credentials?.password === "password") {
+                    // Prevent test user login in production  
+                    if (isProduction) {
+                        console.warn("Attempted test user login in production environment");
+                        return null;
+                    }
                     // Create or get test user
                     let user = await prisma.user.findUnique({
                         where: { email: "test@test.com" },
@@ -98,4 +105,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     pages: {
         signIn: '/login',
     },
+    trustHost: true,
 }); 

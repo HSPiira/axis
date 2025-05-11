@@ -55,11 +55,11 @@ export async function auditLog(action: AuditAction, data?: Record<string, any>) 
                 },
             });
         } catch (error) {
+            // Silently handle missing table error
             if (error instanceof PrismaClientKnownRequestError && error.code === 'P2021') {
-                // Table doesn't exist, silently skip
                 return;
             }
-            // Log other errors but don't throw
+            // Only log non-table-missing errors
             console.error('Failed to create audit log:', error instanceof Error ? error.message : 'Unknown error');
         }
     } catch (error) {

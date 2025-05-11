@@ -59,7 +59,7 @@ export function RolePermissionsModal({ open, onClose, role, allPermissions, onSa
     if (!role) return null;
 
     const footer = (
-        <>
+        <div className="flex justify-center gap-2 mb-2 mr-2">
             <Button
                 variant="outline"
                 onClick={onClose}
@@ -75,7 +75,7 @@ export function RolePermissionsModal({ open, onClose, role, allPermissions, onSa
             >
                 {isSaving ? 'Saving...' : 'Save'}
             </Button>
-        </>
+        </div>
     );
 
     return (

@@ -48,7 +48,10 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, paginatedUsers, currentP
                 {paginatedUsers.map((user) => (
                     <tr
                         key={user.id}
-                        className={`border-b hover:bg-muted/50 transition-colors cursor-pointer ${selectedUser && selectedUser.id === user.id ? 'bg-muted/30' : ''}`}
+                        className={`border-b hover:bg-muted/50 transition-colors cursor-pointer ${selectedUser && selectedUser.id === user.id
+                            ? 'bg-primary/10 dark:bg-primary/20'
+                            : ''
+                            }`}
                         onClick={() => setSelectedUser(selectedUser && selectedUser.id === user.id ? null : user)}
                     >
                         <td className="p-2">

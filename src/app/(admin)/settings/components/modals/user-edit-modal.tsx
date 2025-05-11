@@ -79,14 +79,14 @@ export function UserEditModal({ open, onClose, user, roles, onSave }: UserEditMo
             title="Edit User"
             maxWidth="md"
             footer={
-                <>
+                <div className="flex justify-center gap-2 mb-2 mr-2">
                     <Button variant="outline" onClick={onClose} type="button" disabled={isSaving}>
                         Cancel
                     </Button>
                     <Button onClick={handleSave} type="button" disabled={isSaving}>
                         {isSaving ? 'Saving...' : 'Save'}
                     </Button>
-                </>
+                </div>
             }
         >
             <div className="space-y-4">

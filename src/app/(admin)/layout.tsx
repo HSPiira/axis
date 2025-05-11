@@ -16,7 +16,7 @@ import { useState } from "react";
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const menuItems: MenuItem[] = [
     { title: "Dashboard", href: "/dashboard", icon: HomeIcon },
-    { icon: Users, title: "People", href: "/people" },
+    { icon: Users, title: "Clients", href: "/clients" },
     { icon: CalendarIcon, title: "Sessions", href: "/sessions" },
   ];
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
