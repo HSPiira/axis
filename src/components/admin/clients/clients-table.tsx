@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight, Plus, Upload, CheckCircle, XCircle, ArrowUpD
 import { AddClientModal } from ".";
 import { ClientDetailsCard } from ".";
 import SearchAction from "@/components/search-action";
-import { OrgStatus } from "@prisma/client";
+import { OrgStatus } from "@/generated/prisma";
 
 
 /**

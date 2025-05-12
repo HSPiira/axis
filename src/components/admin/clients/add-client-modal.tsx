@@ -226,9 +226,9 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                 <form
                     id="add-client-form"
                     onSubmit={handleSubmit}
-                    className="flex-1 w-full space-y-4"
+                    className="flex-1 w-full"
                 >
-                    <div className="relative h-[400px] overflow-visible space-y-4 px-1">
+                    <div className="relative h-[400px] overflow-visible px-1 flex flex-col">
                         <AnimatePresence mode="wait">
                             {step === 1 && (
                                 <motion.div
@@ -277,7 +277,7 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                                                 <Building2 className="w-3.5 h-3.5 text-blue-400" /> Organization Name *
                                             </label>
                                             <input
-                                                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
+                                                className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
                                                 placeholder="Enter organization name"
                                                 value={form.name}
                                                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -293,7 +293,7 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                                                 <div className="relative">
                                                     <input
                                                         type="text"
-                                                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200 pr-8"
+                                                        className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200 pr-8"
                                                         placeholder="Search industry..."
                                                         value={searchTerm}
                                                         onChange={(e) => {
@@ -365,7 +365,7 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                                                 <MapPin className="w-3.5 h-3.5 text-yellow-400" /> Address
                                             </label>
                                             <input
-                                                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
+                                                className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
                                                 placeholder="Enter organization address"
                                                 value={form.address}
                                                 onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
@@ -378,7 +378,7 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                                                     <Mail className="w-3.5 h-3.5 text-emerald-400" /> Organization Email
                                                 </label>
                                                 <input
-                                                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
+                                                    className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
                                                     type="email"
                                                     placeholder="Enter organization email"
                                                     value={form.email}
@@ -391,7 +391,7 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                                                     <Phone className="w-3.5 h-3.5 text-pink-400" /> Organization Phone
                                                 </label>
                                                 <input
-                                                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
+                                                    className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
                                                     placeholder="Enter organization phone"
                                                     value={form.phone}
                                                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
@@ -408,51 +408,48 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
-                                    className="flex flex-col gap-3"
+                                    className="flex flex-1 flex-col gap-3 justify-center"
                                 >
                                     <div className="space-y-1">
                                         <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-200">
                                             <User className="w-3.5 h-3.5 text-indigo-400" /> Contact Person
                                         </label>
                                         <input
-                                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
+                                            className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
                                             placeholder="Enter contact person name"
                                             value={form.contactPerson}
                                             onChange={e => setForm(f => ({ ...f, contactPerson: e.target.value }))}
                                         />
                                     </div>
-
                                     <div className="space-y-1">
                                         <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-200">
                                             <Mail className="w-3.5 h-3.5 text-orange-400" /> Contact Email
                                         </label>
                                         <input
-                                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
+                                            className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
                                             type="email"
                                             placeholder="Enter contact email"
                                             value={form.contactEmail}
                                             onChange={e => setForm(f => ({ ...f, contactEmail: e.target.value }))}
                                         />
                                     </div>
-
                                     <div className="space-y-1">
                                         <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-200">
                                             <Phone className="w-3.5 h-3.5 text-green-400" /> Contact Phone
                                         </label>
                                         <input
-                                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
+                                            className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200"
                                             placeholder="Enter contact phone"
                                             value={form.contactPhone}
                                             onChange={e => setForm(f => ({ ...f, contactPhone: e.target.value }))}
                                         />
                                     </div>
-
                                     <div className="space-y-1">
                                         <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-200">
                                             <StickyNote className="w-3.5 h-3.5 text-purple-400" /> Notes
                                         </label>
                                         <textarea
-                                            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200 min-h-[80px]"
+                                            className="w-full rounded-sm border border-gray-300 dark:border-gray-600 px-3 py-2 text-xs bg-white dark:bg-[#222] focus:ring-2 focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-200 min-h-[80px]"
                                             placeholder="Enter any additional notes"
                                             value={form.notes}
                                             onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
@@ -467,7 +464,7 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
-                                    className="space-y-4"
+                                    className="flex flex-1 flex-col justify-center gap-4"
                                 >
                                     <div className="flex items-center gap-3">
                                         {form.logoUrl && (
@@ -542,7 +539,7 @@ export default function AddClientModal({ open, onClose, onAdd }: AddClientModalP
                     </div>
 
                     {/* Navigation Buttons */}
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 mt-4">
                         {step > 1 && (
                             <button
                                 type="button"

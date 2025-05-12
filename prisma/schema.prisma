@@ -29,7 +29,7 @@ model User {
   sessions  Session[] // Active sessions for this user.
   userRoles UserRole[] // Roles assigned to the user.
   Document  Document[]
-  auditLogs AuditLog[] // Audit logs created by this user
+  auditLogs AuditLog[] // Audit logs created by this user.
 }
 
 /// Links a user to an external identity provider (Microsoft, GitHub, etc).

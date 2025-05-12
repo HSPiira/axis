@@ -12,7 +12,7 @@ export function AdminHeader({ title, onSidebarToggle }: { title: string; onSideb
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 h-16 border-b bg-background z-30 w-full md:left-16 md:w-[calc(100vw-4rem)]"
+      className="fixed top-0 left-0 right-0 h-16 border-b bg-background z-30 w-full"
     >
       <div className="flex items-center justify-between h-full max-w-screen-2xl mx-auto px-2 sm:px-3 md:px-4 w-full">
         <div className="flex items-center gap-2">

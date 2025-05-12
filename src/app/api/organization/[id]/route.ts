@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
-import type { Prisma } from "@/generated/prisma";
+import { ContractStatus, type Prisma } from "@/generated/prisma";
 
 // GET /api/organization/[id]
 export const GET = withPermission(PERMISSIONS.ORGANIZATION_READ)(async (
@@ -44,7 +44,7 @@ export const GET = withPermission(PERMISSIONS.ORGANIZATION_READ)(async (
 });
 
 // PUT /api/organization/[id]
-export const PUT = withPermission(PERMISSIONS.ORGANIZATION_UPDATE)(async (
+export const PATCH = withPermission(PERMISSIONS.ORGANIZATION_UPDATE)(async (
     request: Request,
     { params }: { params: { id: string } }
 ) => {
@@ -106,7 +106,7 @@ export const DELETE = withPermission(PERMISSIONS.ORGANIZATION_DELETE)(async (
         const activeContracts = await prisma.contract.count({
             where: {
                 organizationId: params.id,
-                status: "ACTIVE",
+                status: ContractStatus.ACTIVE,
             },
         });
 
