@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Users, Calendar, Mail, Phone, Building2, MapPin, CheckCircle, XCircle, Tag, User, Pencil, Users2, FilePenLineIcon, UserCog } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Users, Calendar, Mail, Phone, Building2, MapPin, CheckCircle, XCircle, Tag, User, Pencil, Users2, FilePenLineIcon, UserCog, Building, BadgeCheck, Trash2, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { OrgStatus } from "@/generated/prisma";
 import {
     Tooltip,
@@ -29,19 +30,26 @@ interface Client {
         name: string;
         code?: string;
     };
+    website?: string;
 }
 
 interface ClientDetailsCardProps {
     client: Client;
     onClose: () => void;
+    onSave?: (updated: Client) => void;
 }
 
-export default function ClientDetailsCard({ client, onClose }: ClientDetailsCardProps) {
+export default function ClientDetailsCard({ client: initialClient, onClose, onSave }: ClientDetailsCardProps) {
+    const [client, setClient] = useState(initialClient);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    useEffect(() => {
+        setClient(initialClient);
+    }, [initialClient]);
 
     return (
         <>
-            <div className="w-[340px] p-4 flex flex-col border border-[#e5e7eb] dark:border-[#18191b] rounded-none bg-white dark:bg-[#000]">
+            <div className="w-full lg:w-[340px] p-4 flex flex-col border border-[#e5e7eb] dark:border-[#18191b] rounded-none bg-white dark:bg-[#000]">
                 {/* Header Section */}
                 <div className="flex items-center gap-3 mb-3">
                     <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
@@ -150,7 +158,7 @@ export default function ClientDetailsCard({ client, onClose }: ClientDetailsCard
                 </div>
 
                 {/* Action Buttons */}
-                <div className="mt-auto pt-4 flex justify-end gap-2">
+                <div className="mt-auto pt-4 flex flex-col sm:flex-row justify-end gap-2">
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -192,6 +200,10 @@ export default function ClientDetailsCard({ client, onClose }: ClientDetailsCard
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 client={client}
+                onSave={updated => {
+                    setClient(prev => ({ ...prev, ...updated }));
+                    if (onSave) onSave(updated);
+                }}
             />
         </>
     );

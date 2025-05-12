@@ -59,6 +59,36 @@ export function ClientEditModal({ isOpen, onClose, client, onSave }: ClientEditM
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    const resetForm = () => {
+        setForm({
+            name: client.name || "",
+            email: client.email || "",
+            phone: client.phone || "",
+            address: client.address || "",
+            contactPerson: client.contactPerson || "",
+            contactEmail: client.contactEmail || "",
+            contactPhone: client.contactPhone || "",
+            notes: client.notes || "",
+            logo: null,
+            logoUrl: client.logo || "",
+            industryId: client.industryId || client.industry?.id || "",
+        });
+        setSelectedIndustry(client.industry || null);
+        setIndustrySearch(client.industry?.name || "");
+        setShowDropdown(false);
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        if (!isOpen) {
+            resetForm();
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        resetForm();
+    }, [client.id]);
+
     useEffect(() => {
         if (!industrySearch) return;
         setIsLoadingIndustries(true);
@@ -142,6 +172,7 @@ export function ClientEditModal({ isOpen, onClose, client, onSave }: ClientEditM
             if (!res.ok) throw new Error("Failed to update client");
             const updated = await res.json();
             if (onSave) onSave(updated);
+            resetForm();
             onClose();
         } catch (err: any) {
             alert(err.message || "Failed to save changes");
@@ -150,15 +181,20 @@ export function ClientEditModal({ isOpen, onClose, client, onSave }: ClientEditM
         }
     };
 
+    const handleClose = () => {
+        resetForm();
+        onClose();
+    };
+
     return (
         <Modal
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title="Edit Client"
             maxWidth="2xl"
             footer={
                 <div className="flex justify-end gap-2 px-1 pb-1 pr-3">
-                    <Button variant="outline" onClick={onClose} disabled={loading}>
+                    <Button variant="outline" onClick={handleClose} disabled={loading}>
                         Cancel
                     </Button>
                     <Button onClick={handleSave} disabled={loading}>

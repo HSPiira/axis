@@ -3,6 +3,7 @@ import { Button, ThemeToggle } from "@/components/ui";
 import { Bell, LogIn, LogOut, MessageCircle, Menu } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { BrandGradientText } from "@/components/ui/brand-gradient-text";
+import { CompanyLogo } from "@/components/admin/layout/sidebar/company-logo";
 
 export function AdminHeader({ title, onSidebarToggle }: { title: string; onSidebarToggle: () => void }) {
   const { data: session } = useSession();
@@ -19,15 +20,18 @@ export function AdminHeader({ title, onSidebarToggle }: { title: string; onSideb
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden mr-1"
+            className="lg:hidden mr-1"
             aria-label="Open sidebar"
             onClick={onSidebarToggle}
           >
             <Menu className="h-6 w-6" />
           </Button>
-          <h1 className="flex items-center min-h-[1.75rem] text-base sm:text-lg md:text-xl lg:text-2xl font-bold truncate sm:whitespace-normal max-w-full">
-            <BrandGradientText>{title}</BrandGradientText>
-          </h1>
+          <div className="flex items-center gap-3">
+            <CompanyLogo companyName={title} size="md" />
+            <h1 className="flex items-center min-h-[1.75rem] text-base sm:text-lg md:text-xl lg:text-2xl font-bold truncate sm:whitespace-normal max-w-full">
+              <BrandGradientText>{title}</BrandGradientText>
+            </h1>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button

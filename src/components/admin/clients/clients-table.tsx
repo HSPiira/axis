@@ -79,6 +79,12 @@ export default function ClientsTable() {
         setCurrentPage(1);
     }, [searchQuery, sortField, sortDirection]);
 
+    // Handler to update a client in-place
+    const handleClientUpdate = (updatedClient: Client) => {
+        setClients(prev => prev.map(c => c.id === updatedClient.id ? { ...c, ...updatedClient } : c));
+        setSelectedClient(prev => prev && prev.id === updatedClient.id ? { ...prev, ...updatedClient } : prev);
+    };
+
     return (
         <div className="space-y-4">
             <SearchAction
@@ -98,9 +104,9 @@ export default function ClientsTable() {
                 }}
             />
 
-            <div className="flex gap-6">
-                <div className="flex-1">
-                    <div className="p-4 shadow-none border-[0.5px] border-[#e5e7eb] dark:border-[#18191b] bg-white dark:bg-[#000]">
+            <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex-1 min-w-0">
+                    <div className="p-4 shadow-none border-[0.5px] border-[#e5e7eb] dark:border-[#18191b] bg-white dark:bg-[#000] overflow-x-auto">
                         <table className="min-w-full divide-y divide-border text-xs">
                             <thead>
                                 <tr className="bg-white dark:bg-[#000]">
@@ -114,7 +120,7 @@ export default function ClientsTable() {
                                         </div>
                                     </th>
                                     <th
-                                        className={`px-4 py-2 text-left whitespace-nowrap cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 ${selectedClient ? 'hidden' : ''}`}
+                                        className={`px-4 py-2 text-left whitespace-nowrap cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 ${selectedClient ? 'hidden' : 'hidden lg:table-cell'}`}
                                         onClick={() => setSortField('contactPerson')}
                                     >
                                         <div className="flex items-center gap-1">
@@ -123,7 +129,7 @@ export default function ClientsTable() {
                                         </div>
                                     </th>
                                     <th
-                                        className={`px-4 py-2 text-left whitespace-nowrap cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 ${selectedClient ? 'hidden' : ''}`}
+                                        className={`px-4 py-2 text-left whitespace-nowrap cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 ${selectedClient ? 'hidden' : 'hidden lg:table-cell'}`}
                                         onClick={() => setSortField('email')}
                                     >
                                         <div className="flex items-center gap-1">
@@ -141,7 +147,7 @@ export default function ClientsTable() {
                                         </div>
                                     </th>
                                     <th
-                                        className="px-4 py-2 text-left whitespace-nowrap cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+                                        className="px-4 py-2 text-left whitespace-nowrap cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 hidden md:table-cell"
                                         onClick={() => setSortField('industry')}
                                     >
                                         <div className="flex items-center gap-1">
@@ -150,7 +156,7 @@ export default function ClientsTable() {
                                         </div>
                                     </th>
                                     <th
-                                        className={`px-4 py-2 text-left whitespace-nowrap cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 ${selectedClient ? 'hidden' : ''}`}
+                                        className={`px-4 py-2 text-left whitespace-nowrap cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 ${selectedClient ? 'hidden' : 'hidden lg:table-cell'}`}
                                         onClick={() => setSortField('createdAt')}
                                     >
                                         <div className="flex items-center gap-1">
@@ -183,13 +189,17 @@ export default function ClientsTable() {
                                     clients.map((client) => (
                                         <tr
                                             key={client.id}
-                                            className={`transition-colors cursor-pointer border-b border-border last:border-0 bg-white dark:bg-[#111] hover:bg-accent/40 ${selectedClient?.id === client.id ? 'bg-primary/10 dark:bg-primary/20' : ''
-                                                }`}
+                                            className={`transition-colors cursor-pointer border-b border-border last:border-0 bg-white dark:bg-[#111] hover:bg-accent/40 ${selectedClient?.id === client.id ? 'bg-primary/10 dark:bg-primary/20' : ''}`}
                                             onClick={() => setSelectedClient(selectedClient?.id === client.id ? null : client)}
                                         >
-                                            <td className="px-4 py-2 font-medium whitespace-nowrap">{client.name}</td>
-                                            <td className={`px-4 py-2 whitespace-nowrap ${selectedClient ? 'hidden' : ''}`}>{client.contactPerson}</td>
-                                            <td className={`px-4 py-2 whitespace-nowrap ${selectedClient ? 'hidden' : ''}`}>{client.email}</td>
+                                            <td className="px-4 py-2 font-medium whitespace-nowrap">
+                                                <div className="flex flex-col">
+                                                    <span>{client.name}</span>
+                                                    <span className="text-gray-500 dark:text-gray-400 md:hidden">{client.contactPerson}</span>
+                                                </div>
+                                            </td>
+                                            <td className={`px-4 py-2 whitespace-nowrap ${selectedClient ? 'hidden' : 'hidden lg:table-cell'}`}>{client.contactPerson}</td>
+                                            <td className={`px-4 py-2 whitespace-nowrap ${selectedClient ? 'hidden' : 'hidden lg:table-cell'}`}>{client.email}</td>
                                             <td className="px-4 py-2 whitespace-nowrap">
                                                 {client.status === OrgStatus.ACTIVE ? (
                                                     <span className="inline-flex items-center gap-1 text-green-500 font-medium">
@@ -201,8 +211,8 @@ export default function ClientsTable() {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-2 whitespace-nowrap">{client.industry?.name || "N/A"}</td>
-                                            <td className={`px-4 py-2 whitespace-nowrap ${selectedClient ? 'hidden' : ''}`}>
+                                            <td className="px-4 py-2 whitespace-nowrap hidden md:table-cell">{client.industry?.name || "N/A"}</td>
+                                            <td className={`px-4 py-2 whitespace-nowrap ${selectedClient ? 'hidden' : 'hidden lg:table-cell'}`}>
                                                 {new Date(client.createdAt).toLocaleDateString('en-GB', {
                                                     day: '2-digit',
                                                     month: '2-digit',
@@ -330,10 +340,13 @@ export default function ClientsTable() {
                 </div>
 
                 {selectedClient && (
-                    <ClientDetailsCard
-                        client={selectedClient}
-                        onClose={() => setSelectedClient(null)}
-                    />
+                    <div className="lg:w-[340px] w-full">
+                        <ClientDetailsCard
+                            client={selectedClient}
+                            onClose={() => setSelectedClient(null)}
+                            onSave={handleClientUpdate}
+                        />
+                    </div>
                 )}
             </div>
 
