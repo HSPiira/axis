@@ -2,22 +2,24 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
+import type { Prisma } from '@/generated/prisma';
 
 // Utility to robustly extract error code from error objects, even if nested
-function getErrorCode(error: unknown): string | undefined {
+function getErrorCode(
+    error: Error | PrismaClientKnownRequestError | Record<string, any> | null | undefined
+): string | undefined {
     if (!error) return undefined;
 
-    // Handle plain objects with code property
-    if (typeof error === 'object' && error !== null) {
-        const errorObj = error as { code?: string; error?: { code?: string } };
-        if ('code' in errorObj) return errorObj.code;
-        if ('error' in errorObj && typeof errorObj.error === 'object' && errorObj.error !== null && 'code' in errorObj.error) {
-            return errorObj.error.code;
+    // Handle plain objects with code property  
+    if (typeof error === 'object') {
+        if ('code' in error) return error.code;
+        if ('error' in error && typeof error.error === 'object' && 'code' in error.error) {
+            return error.error.code;
         }
     }
 
-    // Handle Prisma errors
+    // Handle Prisma errors  
     if (error instanceof PrismaClientKnownRequestError) {
         return error.code;
     }
@@ -25,13 +27,57 @@ function getErrorCode(error: unknown): string | undefined {
     return undefined;
 }
 
+type UserWithProfile = Prisma.UserGetPayload<{
+    include: {
+        profile: true;
+        userRoles: {
+            include: {
+                role: true;
+            };
+        };
+    };
+}>;
+
 export async function GET() {
     try {
         const users = await prisma.user.findMany({
             include: {
                 userRoles: {
                     include: {
-                        role: true
+                        role: {
+                            include: {
+                                permissions: {
+                                    include: {
+                                        permission: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                profile: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        image: true,
+                        phone: true,
+                        email: true,
+                        updatedAt: true
+                    }
+                },
+                sessions: {
+                    select: {
+                        expires: true
+                    },
+                    orderBy: {
+                        expires: 'desc'
+                    },
+                    take: 1
+                },
+                accounts: {
+                    select: {
+                        provider: true,
+                        type: true
                     }
                 }
             },
@@ -40,7 +86,37 @@ export async function GET() {
             }
         });
 
-        return NextResponse.json(users);
+        // Transform the data to include profile information at the top level
+        const transformedUsers = users.map(user => ({
+            id: user.id,
+            profile: {
+                fullName: user.profile?.fullName || 'Unnamed User',
+                image: user.profile?.image,
+                email: user.profile?.email || user.email,
+                phone: user.profile?.phone
+            },
+            userRoles: user.userRoles.map(ur => ({
+                role: {
+                    id: ur.role.id,
+                    name: ur.role.name,
+                    description: ur.role.description,
+                    permissions: ur.role.permissions.map(p => ({
+                        permission: {
+                            id: p.permission.id,
+                            name: p.permission.name,
+                            description: p.permission.description
+                        }
+                    }))
+                }
+            })),
+            sessions: user.sessions,
+            accounts: user.accounts,
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+            profileUpdatedAt: user.profile?.updatedAt?.toISOString()
+        }));
+
+        return NextResponse.json(transformedUsers);
     } catch (error) {
         console.error("Error fetching users:", error);
         return NextResponse.json(
@@ -75,17 +151,30 @@ export const POST = withPermission(PERMISSIONS.USER_CREATE)(async (request: Requ
         const user = await prisma.user.create({
             data: {
                 email: data.email,
-                name: data.name,
+                profile: {
+                    create: {
+                        fullName: data.name,
+                        image: data.image,
+                        phone: data.phone,
+                        email: data.email
+                    }
+                }
             },
+            include: {
+                profile: true
+            }
         });
 
         // Ensure the response is JSON serializable
         const responseData = {
             id: user.id,
-            email: user.email,
-            name: user.name,
+            email: user.profile?.email || user.email,
+            name: user.profile?.fullName,
+            image: user.profile?.image,
+            phone: user.profile?.phone,
             createdAt: user.createdAt.toISOString(),
-            updatedAt: user.updatedAt.toISOString()
+            updatedAt: user.updatedAt.toISOString(),
+            profileUpdatedAt: user.profile?.updatedAt?.toISOString()
         };
 
         return NextResponse.json(responseData, { status: 200 });
@@ -93,7 +182,7 @@ export const POST = withPermission(PERMISSIONS.USER_CREATE)(async (request: Requ
         console.error("Error creating user:", error);
 
         // Use getErrorCode utility
-        const errorCode = getErrorCode(error);
+        const errorCode = getErrorCode(error as Error | PrismaClientKnownRequestError | Record<string, any> | null | undefined);
         switch (errorCode) {
             case 'P2002':
                 return NextResponse.json(

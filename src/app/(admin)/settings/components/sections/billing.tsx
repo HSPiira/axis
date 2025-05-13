@@ -172,7 +172,7 @@ export function BillingSettings() {
                                                     </div>
                                                     <div className="space-y-2">
                                                         <Label>Billing Unit</Label>
-                                                        <span className="px-2 py-1 bg-gray-100 rounded text-sm capitalize">
+                                                        <span className="px-2 py-1 rounded text-sm capitalize">
                                                             {rate.billingUnit}
                                                         </span>
                                                     </div>

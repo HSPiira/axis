@@ -6,8 +6,8 @@ import { Prisma } from "@/generated/prisma";
 import { rateLimit } from '@/lib/rate-limit';
 import { sanitizeInput } from '@/lib/sanitize';
 import { auditLog } from '@/lib/audit-log';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { OrgStatus } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
+import { OrgStatus } from '@/generated/prisma';
 
 // Utility to robustly extract error code from error objects, even if nested
 function getErrorCode(error: unknown): string | undefined {

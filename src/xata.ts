@@ -122,64 +122,6 @@ const tables = [
     ],
   },
   {
-    name: "AuditLog",
-    checkConstraints: {},
-    foreignKeys: {
-      AuditLog_userId_fkey: {
-        name: "AuditLog_userId_fkey",
-        columns: ["userId"],
-        referencedTable: "User",
-        referencedColumns: ["id"],
-        onDelete: "SET NULL",
-      },
-    },
-    primaryKey: ["id"],
-    uniqueConstraints: {},
-    columns: [
-      {
-        name: "action",
-        type: "text",
-        notNull: true,
-        unique: false,
-        defaultValue: null,
-        comment: "",
-      },
-      {
-        name: "data",
-        type: "json",
-        notNull: false,
-        unique: false,
-        defaultValue: null,
-        comment: "",
-      },
-      {
-        name: "id",
-        type: "text",
-        notNull: true,
-        unique: true,
-        defaultValue: null,
-        comment: "",
-      },
-      {
-        name: "timestamp",
-        type: "timestamp(3) without time zone",
-        notNull: true,
-        unique: false,
-        defaultValue: "CURRENT_TIMESTAMP",
-        comment: "",
-      },
-      {
-        name: "userId",
-        type: "link",
-        link: { table: "User" },
-        notNull: false,
-        unique: false,
-        defaultValue: null,
-        comment: "",
-      },
-    ],
-  },
-  {
     name: "Contract",
     checkConstraints: {},
     foreignKeys: {
@@ -313,7 +255,7 @@ const tables = [
         notNull: true,
         unique: false,
         defaultValue:
-          "'ACTIVE'::bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss.\"ContractStatus\"",
+          "'Active'::bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss.\"ContractStatus\"",
         comment: "",
       },
       {
@@ -659,6 +601,14 @@ const tables = [
         comment: "",
       },
       {
+        name: "unitType",
+        type: 'bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss."Unit"',
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
         name: "updatedAt",
         type: "timestamp(3) without time zone",
         notNull: true,
@@ -774,7 +724,7 @@ const tables = [
       },
       {
         name: "status",
-        type: 'bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss."KPIStatus"',
+        type: 'bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss."AssignmentStatus"',
         notNull: true,
         unique: false,
         defaultValue: null,
@@ -908,7 +858,7 @@ const tables = [
         notNull: true,
         unique: false,
         defaultValue:
-          "'ACTIVE'::bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss.\"OrgStatus\"",
+          "'Active'::bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss.\"OrgStatus\"",
         comment: "",
       },
       {
@@ -1030,6 +980,245 @@ const tables = [
         name: "roleId",
         type: "link",
         link: { table: "Role" },
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+    ],
+  },
+  {
+    name: "Service",
+    checkConstraints: {},
+    foreignKeys: {
+      Service_categoryId_fkey: {
+        name: "Service_categoryId_fkey",
+        columns: ["categoryId"],
+        referencedTable: "ServiceCategory",
+        referencedColumns: ["id"],
+        onDelete: "RESTRICT",
+      },
+    },
+    primaryKey: ["id"],
+    uniqueConstraints: {},
+    columns: [
+      {
+        name: "categoryId",
+        type: "link",
+        link: { table: "ServiceCategory" },
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "createdAt",
+        type: "timestamp(3) without time zone",
+        notNull: true,
+        unique: false,
+        defaultValue: "CURRENT_TIMESTAMP",
+        comment: "",
+      },
+      {
+        name: "description",
+        type: "text",
+        notNull: false,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "id",
+        type: "text",
+        notNull: true,
+        unique: true,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "name",
+        type: "text",
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "status",
+        type: 'bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss."ServiceStatus"',
+        notNull: true,
+        unique: false,
+        defaultValue:
+          "'Active'::bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss.\"ServiceStatus\"",
+        comment: "",
+      },
+      {
+        name: "updatedAt",
+        type: "timestamp(3) without time zone",
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+    ],
+  },
+  {
+    name: "ServiceAssignment",
+    checkConstraints: {},
+    foreignKeys: {
+      ServiceAssignment_contractId_fkey: {
+        name: "ServiceAssignment_contractId_fkey",
+        columns: ["contractId"],
+        referencedTable: "Contract",
+        referencedColumns: ["id"],
+        onDelete: "RESTRICT",
+      },
+      ServiceAssignment_organizationId_fkey: {
+        name: "ServiceAssignment_organizationId_fkey",
+        columns: ["organizationId"],
+        referencedTable: "Organization",
+        referencedColumns: ["id"],
+        onDelete: "SET NULL",
+      },
+      ServiceAssignment_serviceId_fkey: {
+        name: "ServiceAssignment_serviceId_fkey",
+        columns: ["serviceId"],
+        referencedTable: "Service",
+        referencedColumns: ["id"],
+        onDelete: "RESTRICT",
+      },
+    },
+    primaryKey: ["id"],
+    uniqueConstraints: {},
+    columns: [
+      {
+        name: "contractId",
+        type: "link",
+        link: { table: "Contract" },
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "createdAt",
+        type: "timestamp(3) without time zone",
+        notNull: true,
+        unique: false,
+        defaultValue: "CURRENT_TIMESTAMP",
+        comment: "",
+      },
+      {
+        name: "endDate",
+        type: "timestamp(3) without time zone",
+        notNull: false,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "frequency",
+        type: 'bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss."Frequency"',
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "id",
+        type: "text",
+        notNull: true,
+        unique: true,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "organizationId",
+        type: "link",
+        link: { table: "Organization" },
+        notNull: false,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "serviceId",
+        type: "link",
+        link: { table: "Service" },
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "startDate",
+        type: "timestamp(3) without time zone",
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "status",
+        type: 'bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss."AssignmentStatus"',
+        notNull: true,
+        unique: false,
+        defaultValue:
+          "'Pending'::bb_f7ehcnfied2k99ogdjm0nk8nfk_cdslss.\"AssignmentStatus\"",
+        comment: "",
+      },
+      {
+        name: "updatedAt",
+        type: "timestamp(3) without time zone",
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+    ],
+  },
+  {
+    name: "ServiceCategory",
+    checkConstraints: {},
+    foreignKeys: {},
+    primaryKey: ["id"],
+    uniqueConstraints: {},
+    columns: [
+      {
+        name: "createdAt",
+        type: "timestamp(3) without time zone",
+        notNull: true,
+        unique: false,
+        defaultValue: "CURRENT_TIMESTAMP",
+        comment: "",
+      },
+      {
+        name: "description",
+        type: "text",
+        notNull: false,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "id",
+        type: "text",
+        notNull: true,
+        unique: true,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "name",
+        type: "text",
+        notNull: true,
+        unique: true,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "updatedAt",
+        type: "timestamp(3) without time zone",
         notNull: true,
         unique: false,
         defaultValue: null,
@@ -1235,6 +1424,64 @@ const tables = [
       },
     ],
   },
+  {
+    name: "audit_logs",
+    checkConstraints: {},
+    foreignKeys: {
+      audit_logs_userId_fkey: {
+        name: "audit_logs_userId_fkey",
+        columns: ["userId"],
+        referencedTable: "User",
+        referencedColumns: ["id"],
+        onDelete: "SET NULL",
+      },
+    },
+    primaryKey: ["id"],
+    uniqueConstraints: {},
+    columns: [
+      {
+        name: "action",
+        type: "text",
+        notNull: true,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "data",
+        type: "json",
+        notNull: false,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "id",
+        type: "text",
+        notNull: true,
+        unique: true,
+        defaultValue: null,
+        comment: "",
+      },
+      {
+        name: "timestamp",
+        type: "timestamp(3) without time zone",
+        notNull: true,
+        unique: false,
+        defaultValue: "CURRENT_TIMESTAMP",
+        comment: "",
+      },
+      {
+        name: "userId",
+        type: "link",
+        link: { table: "User" },
+        notNull: false,
+        unique: false,
+        defaultValue: null,
+        comment: "",
+      },
+    ],
+  },
 ] as const;
 
 export type SchemaTables = typeof tables;
@@ -1242,9 +1489,6 @@ export type InferredTypes = SchemaInference<SchemaTables>;
 
 export type Account = InferredTypes["Account"];
 export type AccountRecord = Account & XataRecord;
-
-export type AuditLog = InferredTypes["AuditLog"];
-export type AuditLogRecord = AuditLog & XataRecord;
 
 export type Contract = InferredTypes["Contract"];
 export type ContractRecord = Contract & XataRecord;
@@ -1273,6 +1517,15 @@ export type RoleRecord = Role & XataRecord;
 export type RolePermission = InferredTypes["RolePermission"];
 export type RolePermissionRecord = RolePermission & XataRecord;
 
+export type Service = InferredTypes["Service"];
+export type ServiceRecord = Service & XataRecord;
+
+export type ServiceAssignment = InferredTypes["ServiceAssignment"];
+export type ServiceAssignmentRecord = ServiceAssignment & XataRecord;
+
+export type ServiceCategory = InferredTypes["ServiceCategory"];
+export type ServiceCategoryRecord = ServiceCategory & XataRecord;
+
 export type Session = InferredTypes["Session"];
 export type SessionRecord = Session & XataRecord;
 
@@ -1285,9 +1538,11 @@ export type UserRoleRecord = UserRole & XataRecord;
 export type VerificationToken = InferredTypes["VerificationToken"];
 export type VerificationTokenRecord = VerificationToken & XataRecord;
 
+export type AuditLogs = InferredTypes["audit_logs"];
+export type AuditLogsRecord = AuditLogs & XataRecord;
+
 export type DatabaseSchema = {
   Account: AccountRecord;
-  AuditLog: AuditLogRecord;
   Contract: ContractRecord;
   Document: DocumentRecord;
   Industry: IndustryRecord;
@@ -1297,10 +1552,14 @@ export type DatabaseSchema = {
   Permission: PermissionRecord;
   Role: RoleRecord;
   RolePermission: RolePermissionRecord;
+  Service: ServiceRecord;
+  ServiceAssignment: ServiceAssignmentRecord;
+  ServiceCategory: ServiceCategoryRecord;
   Session: SessionRecord;
   User: UserRecord;
   UserRole: UserRoleRecord;
   VerificationToken: VerificationTokenRecord;
+  audit_logs: AuditLogsRecord;
 };
 
 const DatabaseClient = buildClient();

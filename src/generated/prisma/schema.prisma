@@ -14,22 +14,123 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Gender {
+  MALE   @map("Male") // Male
+  FEMALE @map("Female") // Female
+  OTHER  @map("Other") // Other
+}
+
+enum StaffRole {
+  ADMIN     @map("Admin") // Admin 
+  MANAGER   @map("Manager") // Manager
+  STAFF     @map("Staff") // Staff
+  VOLUNTEER @map("Volunteer") // Volunteer
+}
+
+enum StaffStatus {
+  ACTIVE     @map("Active") // Currently working
+  INACTIVE   @map("Inactive") // Not working
+  ON_LEAVE   @map("On Leave") // On leave
+  TERMINATED @map("Terminated") // Terminated
+  SUSPENDED  @map("Suspended") // Suspended
+  RESIGNED   @map("Resigned") // Resigned
+  OTHER      @map("Other") // Other
+}
+
+enum RelationType {
+  CHILD       @map("Child") // Child
+  SPOUSE      @map("Spouse") // Spouse
+  PARENT      @map("Parent") // Parent
+  SIBLING     @map("Sibling") // Sibling
+  GRANDPARENT @map("Grandparent") // Grandparent
+  GUARDIAN    @map("Guardian") // Guardian
+  FRIEND      @map("Friend") // Friend
+  NEIGHBOR    @map("Neighbor") // Neighbor  
+  COUSIN      @map("Cousin") // Cousin
+  OTHER       @map("Other") // Other
+}
+
+/// Represents a person's profile information
+model Profile {
+  id       String    @id @default(cuid()) // Unique identifier for the profile  
+  fullName String // Full name of the person
+  dob      DateTime? // Date of birth
+  gender   Gender? // Gender of the person
+  phone    String? // Phone number
+  email    String? // Email address
+  image    String? // Profile image URL
+
+  // Relationships
+  user        User?        @relation(fields: [userId], references: [id]) // User associated with the profile
+  userId      String?      @unique // Unique identifier for the user
+  staff       Staff? // Staff member associated with the profile
+  beneficiary Beneficiary? // Beneficiary associated with the profile
+
+  createdAt DateTime @default(now()) // Date and time when the profile was created
+  updatedAt DateTime @updatedAt // Date and time when the profile was last updated  
+}
+
 /// Represents an authenticated user in the system.
 model User {
-  id            String    @id @default(cuid()) // Primary user ID.
-  name          String? // Full name from identity provider or manually set.
-  email         String?   @unique // Email address, usually from the provider.
-  emailVerified DateTime? // Date/time email was verified.
-  image         String? // Profile image URL.
-  createdAt     DateTime  @default(now()) // Timestamp of user creation.
-  updatedAt     DateTime  @updatedAt // Timestamp of last update.
+  id            String    @id @default(cuid()) // Unique identifier for the user
+  email         String?   @unique // Email address of the user
+  password      String? // Password of the user
+  emailVerified DateTime? // Date and time when the email was verified
+  createdAt     DateTime  @default(now()) // Date and time when the user was created
+  updatedAt     DateTime  @updatedAt // Date and time when the user was last updated
 
   // Relations
-  accounts  Account[] // Linked social/enterprise accounts.
-  sessions  Session[] // Active sessions for this user.
-  userRoles UserRole[] // Roles assigned to the user.
-  Document  Document[]
-  auditLogs AuditLog[] // Audit logs created by this user
+  accounts  Account[] // Associated accounts
+  sessions  Session[] // Active sessions
+  userRoles UserRole[] // Assigned roles
+  auditLogs AuditLog[] // Audit logs
+  Document  Document[] // Documents associated with the user
+
+  profile       Profile? // Shared person details
+  staffProfiles Staff[] // Staff profiles associated with the user
+  beneficiaries Beneficiary[] @relation("UserBeneficiaries") // Beneficiaries associated with the user
+  guardianOf    Beneficiary[] @relation("UserGuardians") // Guardians associated with the user
+}
+
+/// Represents a staff member in an organization
+model Staff {
+  id             String      @id @default(cuid()) // Unique identifier for the staff member
+  profileId      String      @unique // Unique identifier for the staff member's profile
+  organizationId String // Identifier for the organization the staff member belongs to
+  role           StaffRole // Role of the staff member
+  startDate      DateTime // Date and time when the staff member started working
+  endDate        DateTime? // Date and time when the staff member's employment ended
+  status         StaffStatus // Current status of the staff member
+  createdAt      DateTime    @default(now()) // Date and time when the staff member was created
+  updatedAt      DateTime    @updatedAt // Date and time when the staff member was last updated
+
+  userId String // Still maintain this for backref to identity
+
+  // Relations
+  user          User          @relation(fields: [userId], references: [id]) // User associated with the staff member
+  profile       Profile       @relation(fields: [profileId], references: [id]) // Profile details of the staff member
+  organization  Organization  @relation(fields: [organizationId], references: [id]) // Organization the staff member belongs to
+  beneficiaries Beneficiary[] // Beneficiaries associated with the staff member
+}
+
+/// Represents a beneficiary in the system
+model Beneficiary {
+  id          String       @id @default(cuid()) // Unique identifier for the beneficiary
+  profileId   String       @unique // Unique identifier for the beneficiary's profile
+  relation    RelationType // Type of relationship between the beneficiary and the staff member
+  isStaffLink Boolean      @default(false) // Whether the beneficiary is linked to a staff member
+  staffId     String // Identifier for the staff member the beneficiary is linked to
+  guardianId  String? // Identifier for the guardian of the beneficiary
+  userLinkId  String? // Identifier for the user the beneficiary is linked to
+
+  // Relations
+  profile  Profile @relation(fields: [profileId], references: [id]) // Profile details of the beneficiary
+  staff    Staff   @relation(fields: [staffId], references: [id]) // Staff member the beneficiary is linked to
+  guardian User?   @relation("UserGuardians", fields: [guardianId], references: [id]) // Guardian of the beneficiary
+  userLink User?   @relation("UserBeneficiaries", fields: [userLinkId], references: [id]) // User the beneficiary is linked to
+
+  createdAt DateTime @default(now()) // Date and time when the beneficiary was created
+  updatedAt DateTime @updatedAt // Date and time when the beneficiary was last updated
 }
 
 /// Links a user to an external identity provider (Microsoft, GitHub, etc).
@@ -151,10 +252,12 @@ model Organization {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  contracts     Contract[] // Active contracts with this organization
-  Document      Document[] // Documents associated with this organization
-  KPI           KPI[]
-  KPIAssignment KPIAssignment[]
+  contracts         Contract[] // Active contracts with this organization
+  Document          Document[] // Documents associated with this organization
+  KPI               KPI[]
+  KPIAssignment     KPIAssignment[]
+  ServiceAssignment ServiceAssignment[]
+  Staff             Staff[]
 
   @@index([status]) // Index for faster status-based queries
   @@index([name]) // Index for faster name-based searches
@@ -186,9 +289,10 @@ model Contract {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  Document      Document[] // Related documents (contract terms, amendments, etc.)
-  KPI           KPI[]
-  KPIAssignment KPIAssignment[]
+  Document          Document[] // Related documents (contract terms, amendments, etc.)
+  KPI               KPI[]
+  KPIAssignment     KPIAssignment[]
+  ServiceAssignment ServiceAssignment[]
 
   @@index([organizationId]) // Index for faster organization contract queries
   @@index([status]) // Index for faster status-based queries
@@ -228,43 +332,43 @@ model Document {
 
 // ENUM: Document types
 enum DocumentType {
-  CONTRACT           @map("contract")
-  CERTIFICATION      @map("certification")
-  KPI_REPORT         @map("kpi_report")
-  FEEDBACK_SUMMARY   @map("feedback_summary")
-  BILLING_REPORT     @map("billing_report")
-  UTILIZATION_REPORT @map("utilization_report")
-  OTHER              @map("other")
+  CONTRACT           @map("contract") // Contract
+  CERTIFICATION      @map("certification") // Certification
+  KPI_REPORT         @map("kpi_report") // KPI Report
+  FEEDBACK_SUMMARY   @map("feedback_summary") // Feedback Summary
+  BILLING_REPORT     @map("billing_report") // Billing Report
+  UTILIZATION_REPORT @map("utilization_report") // Utilization Report
+  OTHER              @map("other") // Other
 }
 
 // ENUM: Organization status
 enum OrgStatus {
-  ACTIVE     @map("Active")
-  INACTIVE   @map("Inactive")
-  TERMINATED @map("Terminated")
-  PENDING    @map("Pending")
+  ACTIVE     @map("Active") // Active
+  INACTIVE   @map("Inactive") // Inactive
+  TERMINATED @map("Terminated") // Terminated
+  PENDING    @map("Pending") // Pending
 }
 
 // ENUM: Contract status
 enum ContractStatus {
-  ACTIVE     @map("Active")
-  EXPIRED    @map("Expired")
-  TERMINATED @map("Terminated")
-  RENEWED    @map("Renewed")
+  ACTIVE     @map("Active") // Active 
+  EXPIRED    @map("Expired") // Expired
+  TERMINATED @map("Terminated") // Terminated
+  RENEWED    @map("Renewed") // Renewed
 }
 
 /// Represents an audit log entry
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  data      Json?
-  timestamp DateTime @default(now())
-  User      User?    @relation(fields: [userId], references: [id])
-  userId    String?
+  id        String   @id @default(cuid()) // Unique identifier for the audit log  
+  action    String // Action performed (e.g., 'create', 'update', 'delete')
+  data      Json? // Additional data related to the action
+  timestamp DateTime @default(now()) // Date and time when the action was performed
+  User      User?    @relation(fields: [userId], references: [id]) // User who performed the action
+  userId    String? // User ID of the user who performed the action 
+  // @@map("audit_logs") // Table name in the database
 
-  @@index([action])
-  @@index([timestamp])
-  @@map("audit_logs") // Table name in the database
+  @@index([action]) // Index for faster action-based queries
+  @@index([timestamp]) // Index for faster timestamp-based queries  
 }
 
 /// Represents a Key Performance Indicator (KPI) in the system
@@ -274,6 +378,7 @@ model KPI {
   description String? // Optional description
   type        String // Category or type of KPI
   unit        String // Unit of measurement (%, $, number, etc.)
+  unitType    Unit // New enum-based unit type
   isActive    Boolean @default(true) // Whether the KPI is active in the catalog
 
   // Relations
@@ -292,12 +397,12 @@ model KPI {
 
 /// Represents an assignment of a KPI to a contract
 model KPIAssignment {
-  id          String    @id @default(cuid())
+  id          String           @id @default(cuid())
   kpiId       String // Reference to the KPI
   contractId  String // Reference to the contract
   targetValue String? // E.g., "12 sessions", "1 report/month"
   frequency   Frequency // How often the KPI is measured
-  status      KPIStatus // Current status of the assignment
+  status      AssignmentStatus // Current status of the assignment
   notes       String? // Additional notes
   startDate   DateTime // When the KPI assignment starts
   endDate     DateTime? // Optional end date for the assignment
@@ -319,17 +424,83 @@ model KPIAssignment {
 
 /// Represents how often a KPI is measured
 enum Frequency {
-  ONCE      @map("Once")
-  WEEKLY    @map("Weekly")
-  MONTHLY   @map("Monthly")
-  QUARTERLY @map("Quarterly")
-  ANNUALLY  @map("Annually")
+  ONCE      @map("Once") // Once
+  WEEKLY    @map("Weekly") // Weekly
+  MONTHLY   @map("Monthly") // Monthly
+  QUARTERLY @map("Quarterly") // Quarterly
+  ANNUALLY  @map("Annually") // Annually
 }
 
-/// Represents the status of a KPI assignment
-enum KPIStatus {
-  PENDING   @map("Pending")
-  ONGOING   @map("Ongoing")
-  COMPLETED @map("Completed")
-  CANCELLED @map("Cancelled")
+/// Represents the status of an assignment
+enum AssignmentStatus {
+  PENDING   @map("Pending") // Pending
+  ONGOING   @map("Ongoing") // Ongoing
+  COMPLETED @map("Completed") // Completed
+  CANCELLED @map("Cancelled") // Cancelled
+}
+
+enum KpiCategory {
+  UTILIZATION      @map("Utilization") // Utilization
+  SERVICE_DELIVERY @map("Service Delivery") // Service Delivery
+  SATISFACTION     @map("Satisfaction") // Satisfaction
+  COMPLIANCE       @map("Compliance") // Compliance
+  ENGAGEMENT       @map("Engagement") // Engagement
+  IMPACT           @map("Impact") // Impact
+}
+
+enum Unit {
+  PERCENTAGE @map("Percentage") // %
+  COUNT      @map("Count") // Integer count
+  SCORE      @map("Score") // e.g., Satisfaction out of 10
+  TIME       @map("Time") // Duration e.g., in minutes/days
+}
+
+enum ServiceStatus {
+  ACTIVE    @map("Active") // Active  
+  INACTIVE  @map("Inactive") // Inactive
+  SUSPENDED @map("Suspended") // Suspended
+}
+
+model ServiceCategory {
+  id          String   @id @default(cuid()) // Unique identifier for the service category
+  name        String   @unique // Name of the service category
+  description String? // Optional description of the service category
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services Service[] // Services associated with this category
+}
+
+model Service {
+  id          String          @id @default(cuid()) // Unique identifier for the service
+  name        String // Name of the service
+  description String? // Optional description of the service
+  categoryId  String // Reference to the service category
+  category    ServiceCategory @relation(fields: [categoryId], references: [id])
+  status      ServiceStatus   @default(ACTIVE) // Current status of the service
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments ServiceAssignment[] // Assignments of this service to contracts
+}
+
+model ServiceAssignment {
+  id         String           @id @default(cuid()) // Unique identifier for the service assignment
+  serviceId  String // Reference to the service
+  contractId String // Reference to the contract
+  service    Service          @relation(fields: [serviceId], references: [id])
+  contract   Contract         @relation(fields: [contractId], references: [id])
+  status     AssignmentStatus @default(PENDING) // Current status of the assignment
+  startDate  DateTime // When the service assignment starts
+  endDate    DateTime? // Optional end date for the assignment
+  frequency  Frequency // How often the service is provided
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  @@index([status]) // For status-based queries
+  @@index([startDate]) // For date-based queries
 }

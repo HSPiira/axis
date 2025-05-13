@@ -1,5 +1,5 @@
 import { POST } from "../app/api/users/route";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { PrismaClientKnownRequestError } from "@/generated/prisma/runtime/library";
 import { prisma } from "@/lib/db";
 
 jest.mock("../middleware/check-permission", () => ({

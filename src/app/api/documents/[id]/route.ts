@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
 import { auditLog } from '@/lib/audit-log';
-import { Prisma, DocumentType } from "@prisma/client";
+import { Prisma, DocumentType } from "@/generated/prisma";
 
 const MAX_TITLE_LENGTH = 255;
 const MAX_DESCRIPTION_LENGTH = 1000;
@@ -18,7 +18,15 @@ export const GET = withPermission(PERMISSIONS.DOCUMENT_READ)(async (
             where: { id: params.id },
             include: {
                 uploadedBy: {
-                    select: { id: true, name: true, email: true },
+                    select: {
+                        id: true,
+                        email: true,
+                        profile: {
+                            select: {
+                                fullName: true
+                            }
+                        }
+                    },
                 },
                 organization: {
                     select: { id: true, name: true },
@@ -108,7 +116,17 @@ export const PATCH = withPermission(PERMISSIONS.DOCUMENT_UPDATE)(async (
             where: { id: params.id },
             data: updateData as any,
             include: {
-                uploadedBy: { select: { id: true, name: true, email: true } },
+                uploadedBy: {
+                    select: {
+                        id: true,
+                        email: true,
+                        profile: {
+                            select: {
+                                fullName: true
+                            }
+                        }
+                    }
+                },
                 organization: { select: { id: true, name: true } },
                 contract: { select: { id: true, organizationId: true } },
             },
@@ -207,7 +225,17 @@ export const PUT = withPermission(PERMISSIONS.DOCUMENT_UPDATE)(async (
             where: { id: params.id },
             data: updateData as any,
             include: {
-                uploadedBy: { select: { id: true, name: true, email: true } },
+                uploadedBy: {
+                    select: {
+                        id: true,
+                        email: true,
+                        profile: {
+                            select: {
+                                fullName: true
+                            }
+                        }
+                    }
+                },
                 organization: { select: { id: true, name: true } },
                 contract: { select: { id: true, organizationId: true } },
             },

@@ -1,101 +1,190 @@
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import { withPermission } from "@/middleware/check-permission";
+import { PERMISSIONS } from "@/lib/constants/roles";
+import type { Prisma } from '@/generated/prisma';
 
-export async function PATCH(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+type UserWithProfile = Prisma.UserGetPayload<{
+    include: {
+        profile: true;
+        userRoles: {
+            include: {
+                role: {
+                    include: {
+                        permissions: {
+                            include: {
+                                permission: true
+                            }
+                        }
+                    }
+                }
+            };
+        };
+    };
+}>;
+
+export async function GET(
+    request: Request,
+    { params }: { params: { id: string } }
 ) {
     try {
-        const { id } = await context.params;
-        const body = await request.json();
-        const { name, roleId } = body;
-
-        // First verify the user exists
-        const existingUser = await prisma.user.findUnique({
-            where: { id },
+        const user = await prisma.user.findUnique({
+            where: {
+                id: params.id
+            },
             include: {
                 userRoles: {
                     include: {
-                        role: true
+                        role: {
+                            include: {
+                                permissions: {
+                                    include: {
+                                        permission: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                profile: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                        image: true,
+                        phone: true,
+                        email: true,
+                        updatedAt: true
+                    }
+                },
+                sessions: {
+                    select: {
+                        expires: true
+                    },
+                    orderBy: {
+                        expires: 'desc'
+                    },
+                    take: 1
+                },
+                accounts: {
+                    select: {
+                        provider: true,
+                        type: true
                     }
                 }
             }
         });
 
-        if (!existingUser) {
+        if (!user) {
             return NextResponse.json(
                 { error: "User not found" },
                 { status: 404 }
             );
         }
 
-        // Prepare update data
-        const updateData: any = {};
-        if (name !== undefined) {
-            updateData.name = name;
-        }
-
-        // Update user
-        const updatedUser = await prisma.user.update({
-            where: { id },
-            data: updateData,
-            include: {
-                userRoles: {
-                    include: {
-                        role: true
-                    }
-                }
-            }
-        });
-
-        // If roleId is provided, update the user's role
-        if (roleId !== undefined) {
-            // First remove existing role
-            await prisma.userRole.deleteMany({
-                where: { userId: id }
-            });
-
-            // Then add new role
-            await prisma.userRole.create({
-                data: {
-                    userId: id,
-                    roleId
-                }
-            });
-
-            // Fetch updated user with new role
-            const userWithNewRole = await prisma.user.findUnique({
-                where: { id },
-                include: {
-                    userRoles: {
-                        include: {
-                            role: true
+        // Transform the data to include profile information at the top level
+        const transformedUser = {
+            id: user.id,
+            profile: {
+                fullName: user.profile?.fullName || 'Unnamed User',
+                image: user.profile?.image,
+                email: user.profile?.email || user.email,
+                phone: user.profile?.phone
+            },
+            userRoles: user.userRoles.map(ur => ({
+                role: {
+                    id: ur.role.id,
+                    name: ur.role.name,
+                    description: ur.role.description,
+                    permissions: ur.role.permissions.map(p => ({
+                        permission: {
+                            id: p.permission.id,
+                            name: p.permission.name,
+                            description: p.permission.description
                         }
-                    }
+                    }))
                 }
-            });
+            })),
+            sessions: user.sessions,
+            accounts: user.accounts,
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+            profileUpdatedAt: user.profile?.updatedAt?.toISOString()
+        };
 
-            return NextResponse.json(userWithNewRole);
+        return NextResponse.json(transformedUser);
+    } catch (error) {
+        console.error("Error fetching user:", error);
+        return NextResponse.json(
+            { error: "Failed to fetch user" },
+            { status: 500 }
+        );
+    }
+}
+
+export const PATCH = withPermission(PERMISSIONS.USER_UPDATE)(async (
+    request: Request,
+    { params }: { params: { id: string } }
+) => {
+    try {
+        const data = await request.json();
+
+        // Validate required fields
+        if (!data.email && !data.name) {
+            return NextResponse.json(
+                { error: "At least one field (email or name) is required" },
+                { status: 400 }
+            );
         }
 
-        return NextResponse.json(updatedUser);
-    } catch (error) {
-        console.error("Error updating user:", error);
-
-        // Handle specific error cases
-        if (error instanceof Error) {
-            if (error.message.includes("Record to update does not exist")) {
+        // Validate email format if provided
+        if (data.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(data.email)) {
                 return NextResponse.json(
-                    { error: "User not found" },
-                    { status: 404 }
+                    { error: "Invalid email format" },
+                    { status: 400 }
                 );
             }
         }
 
-        // Handle unknown errors
+        const user = await prisma.user.update({
+            where: {
+                id: params.id
+            },
+            data: {
+                email: data.email,
+                profile: {
+                    update: {
+                        fullName: data.name,
+                        image: data.image,
+                        phone: data.phone,
+                        email: data.email
+                    }
+                }
+            },
+            include: {
+                profile: true
+            }
+        });
+
+        // Ensure the response is JSON serializable
+        const responseData = {
+            id: user.id,
+            email: user.profile?.email || user.email,
+            name: user.profile?.fullName,
+            image: user.profile?.image,
+            phone: user.profile?.phone,
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+            profileUpdatedAt: user.profile?.updatedAt?.toISOString()
+        };
+
+        return NextResponse.json(responseData);
+    } catch (error) {
+        console.error("Error updating user:", error);
         return NextResponse.json(
-            { error: "An unexpected error occurred while updating user" },
+            { error: "Failed to update user" },
             { status: 500 }
         );
     }
-} 
+}); 

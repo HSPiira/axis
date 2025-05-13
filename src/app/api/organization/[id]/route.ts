@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { PrismaClientKnownRequestError } from "@/generated/prisma/runtime/library";
 import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
 import { ContractStatus, type Prisma } from "@/generated/prisma";
@@ -11,8 +11,9 @@ export const GET = withPermission(PERMISSIONS.ORGANIZATION_READ)(async (
     { params }: { params: { id: string } }
 ) => {
     try {
+        const { id } = await params;
         const organization = await prisma.organization.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 industry: true,
                 contracts: {
@@ -43,7 +44,7 @@ export const GET = withPermission(PERMISSIONS.ORGANIZATION_READ)(async (
     }
 });
 
-// PUT /api/organization/[id]
+// PATCH /api/organization/[id]
 export const PATCH = withPermission(PERMISSIONS.ORGANIZATION_UPDATE)(async (
     request: Request,
     { params }: { params: { id: string } }
@@ -71,8 +72,9 @@ export const PATCH = withPermission(PERMISSIONS.ORGANIZATION_UPDATE)(async (
             notes: body.notes ?? undefined,
         };
 
+        const { id } = await params;
         const organization = await prisma.organization.update({
-            where: { id: params.id },
+            where: { id },
             data,
             include: {
                 industry: true,
@@ -102,10 +104,10 @@ export const DELETE = withPermission(PERMISSIONS.ORGANIZATION_DELETE)(async (
     { params }: { params: { id: string } }
 ) => {
     try {
-        // Check if organization has any active contracts
+        const { id } = await params;
         const activeContracts = await prisma.contract.count({
             where: {
-                organizationId: params.id,
+                organizationId: id,
                 status: ContractStatus.ACTIVE,
             },
         });
@@ -121,7 +123,7 @@ export const DELETE = withPermission(PERMISSIONS.ORGANIZATION_DELETE)(async (
         }
 
         await prisma.organization.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json(

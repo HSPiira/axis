@@ -4,19 +4,23 @@ import { useState, useEffect } from 'react';
 import { useSettingsTab } from './use-settings-tab';
 import { useSession } from 'next-auth/react';
 
-interface UseSettingsDataOptions<T = unknown> {
+interface UseSettingsDataOptions<T extends Record<string, any>> {
     section: string;
     defaultTab: string;
     dataLoaders: {
-        [key: string]: () => Promise<T>;
+        [K in keyof T]: () => Promise<T[K]>;
     };
 }
 
-export function useSettingsData<T = unknown>({ section, defaultTab, dataLoaders }: UseSettingsDataOptions<T>) {
+interface ApiError {
+    error: string;
+}
+
+export function useSettingsData<T extends Record<string, any>>({ section, defaultTab, dataLoaders }: UseSettingsDataOptions<T>) {
     const { activeTab, handleTabChange } = useSettingsTab({ section, defaultTab });
-    const [data, setData] = useState<{ [key: string]: T }>({});
-    const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
-    const [error, setError] = useState<{ [key: string]: Error | null }>({});
+    const [data, setData] = useState<T>({} as T);
+    const [loading, setLoading] = useState<{ [K in keyof T]: boolean }>({} as { [K in keyof T]: boolean });
+    const [error, setError] = useState<{ [K in keyof T]: ApiError | null }>({} as { [K in keyof T]: ApiError | null });
     const { data: session } = useSession();
 
     // Load data for all tabs when component mounts
@@ -29,7 +33,8 @@ export function useSettingsData<T = unknown>({ section, defaultTab, dataLoaders 
                     setData(prev => ({ ...prev, [tab]: result }));
                     setError(prev => ({ ...prev, [tab]: null }));
                 } catch (err) {
-                    setError(prev => ({ ...prev, [tab]: err as Error }));
+                    const apiError = err as ApiError;
+                    setError(prev => ({ ...prev, [tab]: apiError }));
                 } finally {
                     setLoading(prev => ({ ...prev, [tab]: false }));
                 }

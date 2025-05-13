@@ -84,7 +84,7 @@ export function NotificationSettings() {
                 </TabsList>
 
                 <TabsContent value="email">
-                    <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                    <Card>
                         <CardHeader>
                             <CardTitle className="text-gray-900 dark:text-gray-100">SMTP Configuration</CardTitle>
                         </CardHeader>

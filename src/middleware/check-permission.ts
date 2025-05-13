@@ -58,8 +58,8 @@ export async function checkPermission(request: NextRequest, permission: string) 
             );
         }
         return NextResponse.json(
-            { error: 'Unauthorized: No token provided' },
-            { status: 401 }
+            { error: 'Internal server error' },
+            { status: 500 }
         );
     }
 }

@@ -59,9 +59,8 @@ export function RoleDetailsCard({
             style={{ lineHeight: "1.2" }}
           >
             <span
-              className={`${
-                role.name.length > 22 ? "text-sm" : "text-base"
-              } truncate`}
+              className={`${role.name.length > 22 ? "text-sm" : "text-base"
+                } truncate`}
             >
               {role.name}
             </span>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { ROLES } from '@/lib/constants/roles';
 import jwt from 'jsonwebtoken';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
 import { rateLimit } from '@/lib/rate-limit';
 
 type SupportedModel = 'user' | 'organization' | 'industry' | 'role' | 'permission' | 'userRole';

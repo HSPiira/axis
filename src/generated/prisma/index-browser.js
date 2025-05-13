@@ -120,12 +120,49 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
+exports.Prisma.ProfileScalarFieldEnum = {
+  id: 'id',
+  fullName: 'fullName',
+  dob: 'dob',
+  gender: 'gender',
+  phone: 'phone',
+  email: 'email',
+  image: 'image',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
-  name: 'name',
   email: 'email',
+  password: 'password',
   emailVerified: 'emailVerified',
-  image: 'image',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.StaffScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  organizationId: 'organizationId',
+  role: 'role',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  userId: 'userId'
+};
+
+exports.Prisma.BeneficiaryScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  relation: 'relation',
+  isStaffLink: 'isStaffLink',
+  staffId: 'staffId',
+  guardianId: 'guardianId',
+  userLinkId: 'userLinkId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -259,6 +296,7 @@ exports.Prisma.KPIScalarFieldEnum = {
   description: 'description',
   type: 'type',
   unit: 'unit',
+  unitType: 'unitType',
   isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -276,6 +314,37 @@ exports.Prisma.KPIAssignmentScalarFieldEnum = {
   notes: 'notes',
   startDate: 'startDate',
   endDate: 'endDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  organizationId: 'organizationId'
+};
+
+exports.Prisma.ServiceCategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ServiceScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  categoryId: 'categoryId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ServiceAssignmentScalarFieldEnum = {
+  id: 'id',
+  serviceId: 'serviceId',
+  contractId: 'contractId',
+  status: 'status',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  frequency: 'frequency',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   organizationId: 'organizationId'
@@ -306,6 +375,42 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
+exports.Gender = exports.$Enums.Gender = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  OTHER: 'OTHER'
+};
+
+exports.StaffRole = exports.$Enums.StaffRole = {
+  ADMIN: 'ADMIN',
+  MANAGER: 'MANAGER',
+  STAFF: 'STAFF',
+  VOLUNTEER: 'VOLUNTEER'
+};
+
+exports.StaffStatus = exports.$Enums.StaffStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  ON_LEAVE: 'ON_LEAVE',
+  TERMINATED: 'TERMINATED',
+  SUSPENDED: 'SUSPENDED',
+  RESIGNED: 'RESIGNED',
+  OTHER: 'OTHER'
+};
+
+exports.RelationType = exports.$Enums.RelationType = {
+  CHILD: 'CHILD',
+  SPOUSE: 'SPOUSE',
+  PARENT: 'PARENT',
+  SIBLING: 'SIBLING',
+  GRANDPARENT: 'GRANDPARENT',
+  GUARDIAN: 'GUARDIAN',
+  FRIEND: 'FRIEND',
+  NEIGHBOR: 'NEIGHBOR',
+  COUSIN: 'COUSIN',
+  OTHER: 'OTHER'
+};
+
 exports.OrgStatus = exports.$Enums.OrgStatus = {
   ACTIVE: 'ACTIVE',
   INACTIVE: 'INACTIVE',
@@ -330,6 +435,13 @@ exports.DocumentType = exports.$Enums.DocumentType = {
   OTHER: 'OTHER'
 };
 
+exports.Unit = exports.$Enums.Unit = {
+  PERCENTAGE: 'PERCENTAGE',
+  COUNT: 'COUNT',
+  SCORE: 'SCORE',
+  TIME: 'TIME'
+};
+
 exports.Frequency = exports.$Enums.Frequency = {
   ONCE: 'ONCE',
   WEEKLY: 'WEEKLY',
@@ -338,15 +450,24 @@ exports.Frequency = exports.$Enums.Frequency = {
   ANNUALLY: 'ANNUALLY'
 };
 
-exports.KPIStatus = exports.$Enums.KPIStatus = {
+exports.AssignmentStatus = exports.$Enums.AssignmentStatus = {
   PENDING: 'PENDING',
   ONGOING: 'ONGOING',
   COMPLETED: 'COMPLETED',
   CANCELLED: 'CANCELLED'
 };
 
+exports.ServiceStatus = exports.$Enums.ServiceStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SUSPENDED: 'SUSPENDED'
+};
+
 exports.Prisma.ModelName = {
+  Profile: 'Profile',
   User: 'User',
+  Staff: 'Staff',
+  Beneficiary: 'Beneficiary',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
@@ -360,7 +481,10 @@ exports.Prisma.ModelName = {
   Document: 'Document',
   AuditLog: 'AuditLog',
   KPI: 'KPI',
-  KPIAssignment: 'KPIAssignment'
+  KPIAssignment: 'KPIAssignment',
+  ServiceCategory: 'ServiceCategory',
+  Service: 'Service',
+  ServiceAssignment: 'ServiceAssignment'
 };
 
 /**

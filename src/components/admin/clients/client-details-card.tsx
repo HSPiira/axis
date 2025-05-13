@@ -12,6 +12,8 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ClientEditModal } from "./client-edit-modal";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Client {
     id: string;
@@ -42,6 +44,7 @@ interface ClientDetailsCardProps {
 export default function ClientDetailsCard({ client: initialClient, onClose, onSave }: ClientDetailsCardProps) {
     const [client, setClient] = useState(initialClient);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         setClient(initialClient);
@@ -49,7 +52,13 @@ export default function ClientDetailsCard({ client: initialClient, onClose, onSa
 
     return (
         <>
-            <div className="w-full lg:w-[340px] p-4 flex flex-col border border-[#e5e7eb] dark:border-[#18191b] rounded-none bg-white dark:bg-[#000]">
+            <div
+                className="w-full lg:w-[340px] p-4 flex flex-col border border-[#e5e7eb] dark:border-[#18191b] rounded-none bg-white dark:bg-[#000] cursor-pointer"
+                onDoubleClick={() => router.push(`/admin/clients/${client.id}`)}
+                tabIndex={0}
+                role="button"
+                aria-label={`Go to client page for ${client.name}`}
+            >
                 {/* Header Section */}
                 <div className="flex items-center gap-3 mb-3">
                     <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
@@ -194,6 +203,12 @@ export default function ClientDetailsCard({ client: initialClient, onClose, onSa
                         </Tooltip>
                     </TooltipProvider>
                 </div>
+
+                <div className="mt-4">
+                    <Link href={`/clients/${client.id}`} className="text-blue-600 hover:underline text-xs font-medium">
+                        View full client page
+                    </Link>
+                </div>
             </div>
 
             <ClientEditModal
@@ -202,7 +217,7 @@ export default function ClientDetailsCard({ client: initialClient, onClose, onSa
                 client={client}
                 onSave={updated => {
                     setClient(prev => ({ ...prev, ...updated }));
-                    if (onSave) onSave(updated);
+                    if (onSave) onSave({ ...client, ...updated });
                 }}
             />
         </>

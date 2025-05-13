@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
 import { auditLog } from '@/lib/audit-log';
-import { Prisma, ContractStatus } from "@prisma/client";
+import { Prisma, ContractStatus } from "@/generated/prisma";
 
 const MAX_PAYMENT_TERMS_LENGTH = 255;
 const MAX_PAYMENT_FREQUENCY_LENGTH = 100;

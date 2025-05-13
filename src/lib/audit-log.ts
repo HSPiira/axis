@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
 import { auth } from '@/auth';
 
 export type AuditAction =

@@ -16,6 +16,12 @@ export const createResourcePermissions = (resource: string) => ({
     ASSIGN: `${resource}:assign`,
     IMPORT: `${resource}:import`,
     EXPORT: `${resource}:export`,
+    APPROVE: `${resource}:approve`,
+    REJECT: `${resource}:reject`,
+    FORWARD: `${resource}:forward`,
+    SHARE: `${resource}:share`,
+    DOWNLOAD: `${resource}:download`,
+    UPLOAD: `${resource}:upload`,
 } as const);
 
 // Resource-specific permissions

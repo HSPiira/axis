@@ -16,7 +16,7 @@ import {
 } from '../utils/test-utils';
 import { NextRequest } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
 
 // Mock rate limiter
 jest.mock('@/lib/rate-limit', () => {
@@ -275,7 +275,7 @@ describe('Organization API', () => {
             mockUserRoles(ROLES.STAFF, [ORGANIZATION_PERMISSIONS.READ]);
 
             const request = createAuthenticatedRequest('http://localhost:3000/api/organization?search=test&status=ACTIVE');
-            await GET(request);
+            await GET(request, { params: {} });
 
             expect(prisma.organization.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -676,7 +676,7 @@ describe('Organization API', () => {
 
             const request = createAuthenticatedRequest('http://localhost:3000/api/organization');
 
-            const response = await GET(request);
+            const response = await GET(request, { params: {} });
             expect(response.status).toBe(503);
             const data = await response.json();
             expect(data.error).toBe('Service temporarily unavailable');
@@ -701,7 +701,7 @@ describe('Organization API', () => {
 
             const responses = await Promise.all(
                 Array(11).fill(null).map(() =>
-                    GET(createAuthenticatedRequest('http://localhost:3000/api/organization'))
+                    GET(createAuthenticatedRequest('http://localhost:3000/api/organization'), { params: {} })
                 )
             );
 
@@ -751,7 +751,7 @@ describe('Organization API', () => {
                             name: uniqueOrgName,
                             email: uniqueOrgEmail
                         }
-                    ))
+                    ), { params: {} })
                 )
             );
 
@@ -926,7 +926,7 @@ describe('Organization API', () => {
 
             const request = createAuthenticatedRequest('http://localhost:3000/api/organization');
 
-            const response = await GET(request);
+            const response = await GET(request, { params: {} });
             expect(response.status).toBe(503);
             const data = await response.json();
             expect(data.error).toBe('Service temporarily unavailable');

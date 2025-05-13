@@ -24,22 +24,18 @@ import { UserEditModal } from '../modals/user-edit-modal';
 import { RoleEditModal } from '../modals/role-edit-modal';
 import { useSession } from "next-auth/react";
 
-interface User {
+interface Permission {
     id: string;
-    name: string | null;
-    email: string | null;
-    image: string | null;
-    createdAt: string;
-    updatedAt: string;
-    userRoles: {
-        role: {
-            id: string;
-            name: string;
-        };
-    }[];
-    accounts?: {
-        provider: string;
-        type: string;
+    name: string;
+    description: string | null;
+}
+
+interface UserRole {
+    id: string;
+    name: string;
+    description: string | null;
+    permissions: {
+        permission: Permission;
     }[];
 }
 
@@ -48,70 +44,109 @@ interface Role {
     name: string;
     description?: string | null;
     usersCount: number;
-    permissions: {
-        id: string;
-        name: string;
-        description?: string | null;
-    }[];
+    permissions: { id: string; name: string }[];
     createdAt: string;
     updatedAt: string;
 }
 
-interface Permission {
+interface User {
     id: string;
-    name: string;
-    description?: string | null;
+    profile: {
+        fullName: string;
+        image: string | null;
+        email: string | null;
+        phone: string | null;
+    };
+    userRoles: {
+        role: UserRole;
+    }[];
+    sessions: {
+        expires: string;
+    }[];
+    accounts: {
+        provider: string;
+        type: string;
+    }[];
+    createdAt: string;
+    updatedAt: string;
+    profileUpdatedAt: string | null;
+}
+
+interface ApiError {
+    error: string;
 }
 
 export function UserSettings() {
-    const { data: session } = useSession();
-    const {
-        activeTab,
-        handleTabChange,
-        data,
-        loading,
-        error
-    } = useSettingsData({
+    const { data: session, status } = useSession();
+    const settingsData = useSettingsData<{
+        users: User[];
+        roles: Role[];
+        permissions: Permission[];
+        security: Record<string, any>;
+        policies: Record<string, any>[];
+    }>({
         section: 'users',
         defaultTab: 'users',
         dataLoaders: {
             users: async () => {
                 const response = await fetch('/api/users', { credentials: 'include' });
-                if (!response.ok) throw new Error('Failed to fetch users');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw { error: typeof errorData === 'object' && 'error' in errorData ? errorData.error : 'Failed to fetch users' };
+                }
                 const data = await response.json();
                 return Array.isArray(data) ? data : [];
             },
             roles: async () => {
                 const response = await fetch('/api/roles', { credentials: 'include' });
-                if (!response.ok) throw new Error('Failed to fetch roles');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw { error: typeof errorData === 'object' && 'error' in errorData ? errorData.error : 'Failed to fetch roles' };
+                }
                 const data = await response.json();
                 return Array.isArray(data.data) ? data.data : [];
             },
             permissions: async () => {
                 const response = await fetch('/api/permissions', { credentials: 'include' });
-                if (!response.ok) throw new Error('Failed to fetch permissions');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw { error: typeof errorData === 'object' && 'error' in errorData ? errorData.error : 'Failed to fetch permissions' };
+                }
                 const data = await response.json();
                 return Array.isArray(data) ? data : [];
             },
             security: async () => {
                 const response = await fetch('/api/security-settings', { credentials: 'include' });
-                if (!response.ok) throw new Error('Failed to fetch security settings');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw { error: typeof errorData === 'object' && 'error' in errorData ? errorData.error : 'Failed to fetch security settings' };
+                }
                 const data = await response.json();
                 return data || {};
             },
             policies: async () => {
                 const response = await fetch('/api/access-policies', { credentials: 'include' });
-                if (!response.ok) throw new Error('Failed to fetch access policies');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw { error: typeof errorData === 'object' && 'error' in errorData ? errorData.error : 'Failed to fetch access policies' };
+                }
                 const data = await response.json();
                 return Array.isArray(data) ? data : [];
             },
         }
     });
+    const { activeTab, handleTabChange, data, loading } = settingsData;
+    const error: {
+        users: ApiError | null;
+        roles: ApiError | null;
+        permissions: ApiError | null;
+        security: ApiError | null;
+        policies: ApiError | null;
+    } = settingsData.error;
 
     const [selectedRole, setSelectedRole] = React.useState<Role | null>(null);
     const [showPermissionsModal, setShowPermissionsModal] = React.useState(false);
     const [showCreateRoleModal, setShowCreateRoleModal] = React.useState(false);
-    const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
     const [currentPage, setCurrentPage] = React.useState(1);
     const pageSize = 10;
     const [roleSearch, setRoleSearch] = React.useState("");
@@ -120,7 +155,6 @@ export function UserSettings() {
     // Add state for roles and users to allow local refresh
     const [roles, setRoles] = React.useState<Role[]>([]);
     const [users, setUsers] = React.useState<User[]>([]);
-    const [showEditUserModal, setShowEditUserModal] = React.useState(false);
     const [showEditRoleModal, setShowEditRoleModal] = React.useState(false);
 
     // Sync roles and users from data loader
@@ -183,33 +217,6 @@ export function UserSettings() {
         }
     };
 
-    const handleSaveUser = async (userId: string, data: { name?: string; roleId?: string }) => {
-        try {
-            const response = await fetch(`/api/users/${userId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify(data),
-            });
-
-            if (!response.ok) throw new Error('Failed to update user');
-
-            await refreshUsers();
-            setShowEditUserModal(false);
-        } catch (error) {
-            console.error('Error updating user:', error);
-            throw error;
-        }
-    };
-
-    const handleEditUser = async (user: User) => {
-        setSelectedUser(user);
-        await refreshUsers();
-        setShowEditUserModal(true);
-    };
-
     const handleSaveRole = async (roleId: string, data: { name: string; description?: string }) => {
         try {
             const response = await fetch(`/api/roles/${roleId}`, {
@@ -221,7 +228,10 @@ export function UserSettings() {
                 body: JSON.stringify(data),
             });
 
-            if (!response.ok) throw new Error('Failed to update role');
+            if (!response.ok) {
+                const error = await response.json();
+                throw error;
+            }
 
             await refreshRoles();
             setShowEditRoleModal(false);
@@ -242,8 +252,8 @@ export function UserSettings() {
     const filteredUsers = users.filter((user: User) => {
         const q = userSearch.toLowerCase();
         return (
-            (user.name?.toLowerCase().includes(q) ?? false) ||
-            (user.email?.toLowerCase().includes(q) ?? false)
+            (user.profile.fullName?.toLowerCase().includes(q) ?? false) ||
+            (user.profile.email?.toLowerCase().includes(q) ?? false)
         );
     });
     const usersTotalPages = Math.ceil(filteredUsers.length / pageSize);
@@ -266,6 +276,31 @@ export function UserSettings() {
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     );
+
+    // Add loading state handling
+    if (status === "loading" || loading.users) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-sm text-muted-foreground">Loading users...</div>
+            </div>
+        );
+    }
+
+    if (status === "unauthenticated") {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-sm text-muted-foreground">Please sign in to view users.</div>
+            </div>
+        );
+    }
+
+    if ((error as any).users) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-sm text-destructive">Error loading users: {(error as any).users?.error ?? "Unknown error"}</div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4 max-w-6xl mx-auto">
@@ -291,54 +326,43 @@ export function UserSettings() {
                 <TabsContent value="users">
                     {loading.users ? (
                         <div>Loading users...</div>
-                    ) : error.users ? (
-                        <div>Error loading users: {error.users.message}</div>
+                    ) : (error as any).users ? (
+                        <div>Error loading users: {(error as any).users?.error ?? "Unknown error"}</div>
                     ) : (
-                        <div className="flex items-start gap-4">
-                            <div className="flex-1">
-                                <div className="flex items-center justify-between mb-4 gap-2">
-                                    <div className="relative flex-1 max-w-xs flex items-center gap-2">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                            <Search className="h-4 w-4" />
-                                        </span>
-                                        <input
-                                            type="text"
-                                            value={userSearch}
-                                            onChange={e => {
-                                                setUserSearch(e.target.value);
-                                                setCurrentPage(1);
-                                            }}
-                                            placeholder="Search users..."
-                                            className="pl-9 pr-3 py-2 w-full rounded-full border border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                                        />
-                                        <Button
-                                            size="icon"
-                                            className="rounded-full h-10 w-10 ml-2"
-                                            variant="outline"
-                                            onClick={() => {/* TODO: open create user modal */ }}
-                                            aria-label="Add User"
-                                        >
-                                            <Plus className="h-5 w-5" />
-                                        </Button>
-                                    </div>
+                        <div>
+                            <div className="flex items-center justify-between mb-4 gap-2">
+                                <div className="relative flex-1 max-w-xs flex items-center gap-2">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                        <Search className="h-4 w-4" />
+                                    </span>
+                                    <input
+                                        type="text"
+                                        value={userSearch}
+                                        onChange={e => {
+                                            setUserSearch(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                        placeholder="Search users..."
+                                        className="pl-9 pr-3 py-2 w-full rounded-full border border-gray-200 dark:border-gray-700 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                                    />
+                                    <Button
+                                        size="icon"
+                                        className="rounded-full h-10 w-10 ml-2"
+                                        variant="outline"
+                                        onClick={() => {/* TODO: open create user modal */ }}
+                                        aria-label="Add User"
+                                    >
+                                        <Plus className="h-5 w-5" />
+                                    </Button>
                                 </div>
-                                <UsersTable
-                                    users={filteredUsers}
-                                    paginatedUsers={paginatedFilteredUsers}
-                                    currentPage={currentPage}
-                                    totalPages={usersTotalPages}
-                                    setCurrentPage={setCurrentPage}
-                                    selectedUser={selectedUser}
-                                    setSelectedUser={setSelectedUser}
-                                />
                             </div>
-                            {selectedUser && (
-                                <UserDetailsCard
-                                    user={selectedUser}
-                                    onClose={() => setSelectedUser(null)}
-                                    onEdit={() => handleEditUser(selectedUser)}
-                                />
-                            )}
+                            <UsersTable
+                                users={filteredUsers}
+                                paginatedUsers={paginatedFilteredUsers}
+                                currentPage={currentPage}
+                                totalPages={usersTotalPages}
+                                setCurrentPage={setCurrentPage}
+                            />
                         </div>
                     )}
                 </TabsContent>
@@ -347,7 +371,7 @@ export function UserSettings() {
                     {loading.roles || loading.permissions ? (
                         <div>Loading roles and permissions...</div>
                     ) : error.roles || error.permissions ? (
-                        <div>Error loading roles: {error.roles?.message || error.permissions?.message}</div>
+                        <div>Error loading roles: {error.roles?.error ?? error.permissions?.error ?? "Unknown error"}</div>
                     ) : (
                         <>
                             <div className="flex items-center justify-between mb-4 gap-2">
@@ -406,7 +430,7 @@ export function UserSettings() {
                     {loading.security ? (
                         <div>Loading security settings...</div>
                     ) : error.security ? (
-                        <div>Error loading security settings: {error.security.message}</div>
+                        <div>Error loading security settings: {error.security?.error ?? "Unknown error"}</div>
                     ) : (
                         <Card>
                             <CardHeader>
@@ -423,7 +447,7 @@ export function UserSettings() {
                     {loading.policies ? (
                         <div>Loading access policies...</div>
                     ) : error.policies ? (
-                        <div>Error loading access policies: {error.policies.message}</div>
+                        <div>Error loading access policies: {error.policies?.error ?? "Unknown error"}</div>
                     ) : (
                         <Card>
                             <CardHeader>
@@ -479,16 +503,6 @@ export function UserSettings() {
                     }
                 }}
             />
-
-            {selectedUser && (
-                <UserEditModal
-                    open={showEditUserModal}
-                    onClose={() => setShowEditUserModal(false)}
-                    user={selectedUser}
-                    roles={data.roles || []}
-                    onSave={handleSaveUser}
-                />
-            )}
         </div>
     );
 }

@@ -1,7 +1,7 @@
 import { POST, GET as GET_LIST } from '@/app/api/contracts/route';
 import { GET as GET_ONE, PATCH, PUT, DELETE } from '@/app/api/contracts/[id]/route';
 import { prisma } from '@/lib/db';
-import { ContractStatus } from '@prisma/client';
+import { ContractStatus } from '@/generated/prisma';
 import { NextRequest } from 'next/server';
 import { createAuthenticatedRequest, testApiResponse, mockPermissionMiddleware, mockUserRoles, mockPaginationResponse } from '../utils/test-utils';
 import { rateLimit } from '@/lib/rate-limit';

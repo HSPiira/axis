@@ -24,14 +24,14 @@ const navigationItems = [
     icon: <Users className="w-4 h-4" />,
   },
   {
-    href: "/schedule",
-    label: "Schedule",
-    icon: <Calendar className="w-4 h-4" />,
-  },
-  {
     href: "/sessions",
     label: "Sessions",
     icon: <MessageSquare className="w-4 h-4" />,
+  },
+  {
+    href: "/schedule",
+    label: "Schedule",
+    icon: <Calendar className="w-4 h-4" />,
   },
 ];
 
