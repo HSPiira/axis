@@ -14,48 +14,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// =========================================
+// Common Enums
+// =========================================
+
 enum Gender {
   MALE   @map("Male") // Male
   FEMALE @map("Female") // Female
   OTHER  @map("Other") // Other
-}
-
-enum StaffRole {
-  ADMIN     @map("Admin") // Admin 
-  MANAGER   @map("Manager") // Manager
-  STAFF     @map("Staff") // Staff
-  VOLUNTEER @map("Volunteer") // Volunteer
-}
-
-enum StaffStatus {
-  ACTIVE     @map("Active") // Currently working
-  INACTIVE   @map("Inactive") // Not working
-  ON_LEAVE   @map("On Leave") // On leave
-  TERMINATED @map("Terminated") // Terminated
-  SUSPENDED  @map("Suspended") // Suspended
-  RESIGNED   @map("Resigned") // Resigned
-  OTHER      @map("Other") // Other
-}
-
-enum RelationType {
-  CHILD       @map("Child") // Child
-  SPOUSE      @map("Spouse") // Spouse
-  PARENT      @map("Parent") // Parent
-  SIBLING     @map("Sibling") // Sibling
-  GRANDPARENT @map("Grandparent") // Grandparent
-  GUARDIAN    @map("Guardian") // Guardian
-  FRIEND      @map("Friend") // Friend
-  NEIGHBOR    @map("Neighbor") // Neighbor  
-  COUSIN      @map("Cousin") // Cousin
-  OTHER       @map("Other") // Other
-}
-
-enum ContactMethod {
-  EMAIL    @map("Email") // Email
-  PHONE    @map("Phone") // Phone
-  SMS      @map("SMS") // SMS
-  WHATSAPP @map("WhatsApp") // WhatsApp
-  OTHER    @map("Other") // Other
 }
 
 enum Language {
@@ -66,65 +32,32 @@ enum Language {
   OTHER   @map("Other") // Other
 }
 
-enum PaymentStatus {
-  PENDING   @map("Pending") // Pending
-  PAID      @map("Paid") // Paid
-  OVERDUE   @map("Overdue") // Overdue
-  CANCELLED @map("Cancelled") // Cancelled
-  REFUNDED  @map("Refunded") // Refunded
+enum ContactMethod {
+  EMAIL    @map("Email") // Email
+  PHONE    @map("Phone") // Phone
+  SMS      @map("SMS") // SMS
+  WHATSAPP @map("WhatsApp") // WhatsApp
+  OTHER    @map("Other") // Other
 }
 
-enum DocumentStatus {
-  DRAFT     @map("Draft") // Draft
-  PUBLISHED @map("Published") // Published
-  ARCHIVED  @map("Archived") // Archived
-  EXPIRED   @map("Expired") // Expired
+enum Frequency {
+  ONCE      @map("Once") // Once
+  WEEKLY    @map("Weekly") // Weekly
+  MONTHLY   @map("Monthly") // Monthly
+  QUARTERLY @map("Quarterly") // Quarterly
+  ANNUALLY  @map("Annually") // Annually
 }
 
-enum ActionType {
-  CREATE  @map("Create") // Create
-  UPDATE  @map("Update") // Update
-  DELETE  @map("Delete") // Delete
-  LOGIN   @map("Login") // Login
-  LOGOUT  @map("Logout") // Logout
-  APPROVE @map("Approve") // Approve
-  REJECT  @map("Reject") // Reject
-  OTHER   @map("Other") // Other
+enum Unit {
+  PERCENTAGE @map("Percentage") // %
+  COUNT      @map("Count") // Integer count
+  SCORE      @map("Score") // e.g., Satisfaction out of 10
+  TIME       @map("Time") // Duration e.g., in minutes/days
 }
 
-/// Represents a person's profile information
-model Profile {
-  id                     String         @id @default(cuid()) // Unique identifier for the profile  
-  fullName               String // Full name of the person
-  preferredName          String? // Preferred name or nickname
-  dob                    DateTime? // Date of birth
-  gender                 Gender? // Gender of the person
-  phone                  String? // Phone number
-  email                  String? // Email address
-  image                  String? // Profile image URL
-  address                String? // Physical address
-  emergencyContactName   String? // Emergency contact name
-  emergencyContactPhone  String? // Emergency contact phone
-  emergencyContactEmail  String? // Emergency contact email
-  preferredLanguage      Language? // Preferred language for communication
-  preferredContactMethod ContactMethod? // Preferred method of contact
-  isActive               Boolean        @default(true) // Whether the profile is active
-  metadata               Json? // Additional metadata in JSON format
-  deletedAt              DateTime? // Soft delete timestamp
-
-  // Relationships
-  user        User?        @relation(fields: [userId], references: [id]) // User associated with the profile
-  userId      String?      @unique // Unique identifier for the user
-  staff       Staff? // Staff member associated with the profile
-  beneficiary Beneficiary? // Beneficiary associated with the profile
-
-  createdAt DateTime @default(now()) // Date and time when the profile was created
-  updatedAt DateTime @updatedAt // Date and time when the profile was last updated
-
-  @@index([isActive]) // Index for faster active status queries
-  @@index([preferredLanguage]) // Index for faster language-based queries
-  @@index([preferredContactMethod]) // Index for faster contact method queries
-}
+// =========================================
+// Authentication & Authorization Domain
+// =========================================
 
 /// Represents an authenticated user in the system.
 model User {
@@ -159,159 +92,134 @@ model User {
   @@index([twoFactorEnabled]) // Index for faster 2FA status queries
 }
 
-/// Represents a staff member in an organization
-model Staff {
-  id                    String      @id @default(cuid()) // Unique identifier for the staff member
-  profileId             String      @unique // Unique identifier for the staff member's profile
-  organizationId        String // Identifier for the organization the staff member belongs to
-  role                  StaffRole // Role of the staff member
-  startDate             DateTime // Date and time when the staff member started working
-  endDate               DateTime? // Date and time when the staff member's employment ended
-  status                StaffStatus // Current status of the staff member
-  qualifications        String[] // List of qualifications
-  specializations       String[] // List of specializations
-  preferredWorkingHours Json? // Preferred working hours in JSON format
-  isAvailable           Boolean     @default(true) // Whether the staff member is available
-  emergencyContactName  String? // Emergency contact name
-  emergencyContactPhone String? // Emergency contact phone
-  emergencyContactEmail String? // Emergency contact email
-  metadata              Json? // Additional metadata in JSON format
-  deletedAt             DateTime? // Soft delete timestamp
-  createdAt             DateTime    @default(now()) // Date and time when the staff member was created
-  updatedAt             DateTime    @updatedAt // Date and time when the staff member was last updated
-
-  userId String // Still maintain this for backref to identity
-
-  // Relations
-  user           User             @relation(fields: [userId], references: [id]) // User associated with the staff member
-  profile        Profile          @relation(fields: [profileId], references: [id]) // Profile details of the staff member
-  organization   Organization     @relation(fields: [organizationId], references: [id]) // Organization the staff member belongs to
-  beneficiaries  Beneficiary[] // Beneficiaries associated with the staff member
-  ServiceSession ServiceSession[]
-
-  @@index([status]) // Index for faster status-based queries
-  @@index([role]) // Index for faster role-based queries
-  @@index([isAvailable]) // Index for faster availability queries
-  @@index([organizationId]) // Index for faster organization-based queries
-}
-
-/// Represents a beneficiary in the system
-model Beneficiary {
-  id                String       @id @default(cuid()) // Unique identifier for the beneficiary
-  profileId         String       @unique // Unique identifier for the beneficiary's profile
-  relation          RelationType // Type of relationship between the beneficiary and the staff member
-  isStaffLink       Boolean      @default(false) // Whether the beneficiary is linked to a staff member
-  staffId           String // Identifier for the staff member the beneficiary is linked to
-  guardianId        String? // Identifier for the guardian of the beneficiary
-  userLinkId        String? // Identifier for the user the beneficiary is linked to
-  status            String       @default("ACTIVE") // Current status of the beneficiary
-  lastServiceDate   DateTime? // Date of last service received
-  preferredLanguage Language? // Preferred language for communication
-  isActive          Boolean      @default(true) // Whether the beneficiary is active
-  notes             String? // Additional notes about the beneficiary
-  deletedAt         DateTime? // Soft delete timestamp
-
-  // Relations
-  profile  Profile @relation(fields: [profileId], references: [id]) // Profile details of the beneficiary
-  staff    Staff   @relation(fields: [staffId], references: [id]) // Staff member the beneficiary is linked to
-  guardian User?   @relation("UserGuardians", fields: [guardianId], references: [id]) // Guardian of the beneficiary
-  userLink User?   @relation("UserBeneficiaries", fields: [userLinkId], references: [id]) // User the beneficiary is linked to
-
-  createdAt      DateTime         @default(now()) // Date and time when the beneficiary was created
-  updatedAt      DateTime         @updatedAt // Date and time when the beneficiary was last updated
-  ServiceSession ServiceSession[]
-
-  @@index([status]) // Index for faster status-based queries
-  @@index([lastServiceDate]) // Index for faster last service date queries
-  @@index([isActive]) // Index for faster active status queries
-}
-
 /// Links a user to an external identity provider (Microsoft, GitHub, etc).
 model Account {
-  id                String    @id @default(cuid()) // Unique account ID.
-  userId            String // FK to User.
-  type              String // Account type ('oauth', 'oidc', etc).
-  provider          String // Provider name (e.g. 'microsoft').
-  providerAccountId String // User ID on the provider side.
-  refresh_token     String? // OAuth refresh token.
-  access_token      String? // OAuth access token.
-  expires_at        Int? // Expiry timestamp (UNIX).
-  token_type        String? // Type of token (Bearer, etc).
-  scope             String? // OAuth scopes.
-  id_token          String? // ID token (JWT).
-  session_state     String? // Used for OIDC session management.
+  id                String    @id @default(cuid()) // Unique account ID
+  userId            String // FK to User
+  type              String // Account type ('oauth', 'oidc', etc)
+  provider          String // Provider name (e.g. 'microsoft')
+  providerAccountId String // User ID on the provider side
+  refresh_token     String? // OAuth refresh token
+  access_token      String? // OAuth access token
+  expires_at        Int? // Expiry timestamp (UNIX)
+  token_type        String? // Type of token (Bearer, etc)
+  scope             String? // OAuth scopes
+  id_token          String? // ID token (JWT)
+  session_state     String? // Used for OIDC session management
   lastLoginAt       DateTime? // Last login timestamp
   isActive          Boolean   @default(true) // Whether the account is active
   createdAt         DateTime  @default(now()) // When the account was created
   updatedAt         DateTime  @updatedAt // When the account was last updated
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // Relation to User.
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // Relation to User
 
-  @@unique([provider, providerAccountId]) // Prevents duplicates per provider+user combo.
+  @@unique([provider, providerAccountId]) // Prevents duplicates per provider+user combo
   @@index([lastLoginAt]) // Index for faster last login queries
 }
 
 /// Stores active sessions for stateless authentication (JWT or DB).
 model Session {
-  id           String   @id @default(cuid()) // Unique session ID.
-  sessionToken String   @unique // Token stored in cookie.
-  userId       String // FK to User.
-  expires      DateTime // Expiration date of session.
+  id           String   @id @default(cuid()) // Unique session ID
+  sessionToken String   @unique // Token stored in cookie
+  userId       String // FK to User
+  expires      DateTime // Expiration date of session
 
   user User @relation(fields: [userId], references: [id])
 }
 
 /// Used for email/passwordless login flows or account recovery.
 model VerificationToken {
-  identifier String // Email or phone identifier.
-  token      String   @unique // One-time token (sent via email/SMS).
-  expires    DateTime // Expiration timestamp.
+  identifier String // Email or phone identifier
+  token      String   @unique // One-time token (sent via email/SMS)
+  expires    DateTime // Expiration timestamp
 
-  @@unique([identifier, token]) // Ensures no reuse per email/token combo.
+  @@unique([identifier, token]) // Ensures no reuse per email/token combo
 }
 
 /// Represents a group of permissions (e.g. 'Admin', 'Manager', 'User').
 model Role {
-  id          String  @id @default(cuid()) // Unique role ID.
-  name        String  @unique // Role name.
-  description String? // Optional description.
+  id          String  @id @default(cuid()) // Unique role ID
+  name        String  @unique // Role name
+  description String? // Optional description
 
-  permissions RolePermission[] // Assigned permissions.
-  users       UserRole[] // Users with this role.
+  permissions RolePermission[] // Assigned permissions
+  users       UserRole[] // Users with this role
 }
 
 /// Represents a single action a user can perform (e.g. 'view_users', 'edit_asset').
 model Permission {
-  id          String  @id @default(cuid()) // Unique permission ID.
-  name        String  @unique // Permission name/code.
-  description String? // Optional details.
+  id          String  @id @default(cuid()) // Unique permission ID
+  name        String  @unique // Permission name/code
+  description String? // Optional details
 
-  roles RolePermission[] // Roles that include this permission.
+  roles RolePermission[] // Roles that include this permission
 }
 
 /// Pivot table assigning permissions to roles.
 model RolePermission {
-  id           String @id @default(cuid()) // Unique ID.
-  roleId       String // FK to Role.
-  permissionId String // FK to Permission.
+  id           String @id @default(cuid()) // Unique ID
+  roleId       String // FK to Role
+  permissionId String // FK to Permission
 
   role       Role       @relation(fields: [roleId], references: [id])
   permission Permission @relation(fields: [permissionId], references: [id])
 
-  @@unique([roleId, permissionId]) // Prevent duplicate entries.
+  @@unique([roleId, permissionId]) // Prevent duplicate entries
 }
 
 /// Assigns one or more roles to a user.
 model UserRole {
-  id     String @id @default(cuid()) // Unique ID.
-  userId String // FK to User.
-  roleId String // FK to Role.
+  id     String @id @default(cuid()) // Unique ID
+  userId String // FK to User
+  roleId String // FK to Role
 
   user User @relation(fields: [userId], references: [id])
   role Role @relation(fields: [roleId], references: [id])
 
-  @@unique([userId, roleId]) // Prevent duplicate role assignments.
+  @@unique([userId, roleId]) // Prevent duplicate role assignments
 }
+
+// =========================================
+// Profile & Identity Domain
+// =========================================
+
+/// Represents a person's profile information
+model Profile {
+  id                     String         @id @default(cuid()) // Unique identifier for the profile
+  fullName               String // Full name of the person
+  preferredName          String? // Preferred name or nickname
+  dob                    DateTime? // Date of birth
+  gender                 Gender? // Gender of the person
+  phone                  String? // Phone number
+  email                  String? // Email address
+  image                  String? // Profile image URL
+  address                String? // Physical address
+  emergencyContactName   String? // Emergency contact name
+  emergencyContactPhone  String? // Emergency contact phone
+  emergencyContactEmail  String? // Emergency contact email
+  preferredLanguage      Language? // Preferred language for communication
+  preferredContactMethod ContactMethod? // Preferred method of contact
+  isActive               Boolean        @default(true) // Whether the profile is active
+  metadata               Json? // Additional metadata in JSON format
+  deletedAt              DateTime? // Soft delete timestamp
+
+  // Relationships
+  user        User?        @relation(fields: [userId], references: [id]) // User associated with the profile
+  userId      String?      @unique // Unique identifier for the user
+  staff       Staff? // Staff member associated with the profile
+  beneficiary Beneficiary? // Beneficiary associated with the profile
+
+  createdAt DateTime @default(now()) // Date and time when the profile was created
+  updatedAt DateTime @updatedAt // Date and time when the profile was last updated
+
+  @@index([isActive]) // Index for faster active status queries
+  @@index([preferredLanguage]) // Index for faster language-based queries
+  @@index([preferredContactMethod]) // Index for faster contact method queries
+}
+
+// =========================================
+// Organization & Business Domain
+// =========================================
 
 /// Represents an industry classification
 model Industry {
@@ -333,9 +241,9 @@ model Industry {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([name])
-  @@index([code])
-  @@index([parentId])
+  @@index([name]) // Index for faster name-based searches
+  @@index([code]) // Index for faster code-based searches
+  @@index([parentId]) // Index for faster parent-child queries
   @@index([isActive]) // Index for faster active status queries
   @@index([externalId]) // Index for faster external ID queries
 }
@@ -367,10 +275,10 @@ model Organization {
 
   contracts         Contract[] // Active contracts with this organization
   Document          Document[] // Documents associated with this organization
-  KPI               KPI[]
-  KPIAssignment     KPIAssignment[]
-  ServiceAssignment ServiceAssignment[]
-  Staff             Staff[]
+  KPI               KPI[] // KPIs associated with this organization
+  KPIAssignment     KPIAssignment[] // KPI assignments for this organization
+  ServiceAssignment ServiceAssignment[] // Service assignments for this organization
+  Staff             Staff[] // Staff members in this organization
 
   @@index([status]) // Index for faster status-based queries
   @@index([name]) // Index for faster name-based searches
@@ -413,9 +321,9 @@ model Contract {
   updatedAt DateTime @updatedAt
 
   Document          Document[] // Related documents (contract terms, amendments, etc.)
-  KPI               KPI[]
-  KPIAssignment     KPIAssignment[]
-  ServiceAssignment ServiceAssignment[]
+  KPI               KPI[] // KPIs associated with this contract
+  KPIAssignment     KPIAssignment[] // KPI assignments for this contract
+  ServiceAssignment ServiceAssignment[] // Service assignments for this contract
 
   @@index([organizationId]) // Index for faster organization contract queries
   @@index([status]) // Index for faster status-based queries
@@ -424,91 +332,228 @@ model Contract {
   @@index([isRenewable]) // Index for faster renewable status queries
 }
 
-/// Represents a document in the system (contracts, reports, certifications, etc.)
-model Document {
-  id                String       @id @default(cuid())
-  title             String // Document title/name
-  description       String? // Optional document description
-  type              DocumentType // Type of document (contract, report, etc.)
-  url               String // Storage link (S3, etc.)
-  fileSize          Int? // File size in bytes
-  fileType          String? // MIME type of the file
-  version           Int          @default(1) // Document version number
-  isLatest          Boolean      @default(true) // Indicates if this is the latest version
-  previousVersionId String? // Reference to previous version
-  previousVersion   Document?    @relation("DocumentVersions", fields: [previousVersionId], references: [id])
-  nextVersions      Document[]   @relation("DocumentVersions")
+// =========================================
+// Service Management Domain
+// =========================================
 
-  status         DocumentStatus @default(DRAFT) // Current status of the document
-  expiryDate     DateTime? // When the document expires
-  isConfidential Boolean        @default(false) // Whether the document is confidential
-  tags           String[] // Tags for categorization
-  metadata       Json? // Additional metadata in JSON format
-  deletedAt      DateTime? // Soft delete timestamp
+model ServiceCategory {
+  id          String    @id @default(cuid()) // Unique identifier for the service category
+  name        String    @unique // Name of the service category
+  description String? // Optional description of the service category
+  isActive    Boolean   @default(true) // Whether the category is active
+  deletedAt   DateTime? // Soft delete timestamp
+  metadata    Json? // Additional metadata in JSON format
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  uploadedById   String? // User ID who uploaded the document
-  uploadedBy     User?         @relation(fields: [uploadedById], references: [id])
-  organizationId String? // Associated organization
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  contractId     String? // Associated contract
-  contract       Contract?     @relation(fields: [contractId], references: [id])
+  services Service[] // Services associated with this category
+
+  @@index([isActive]) // Index for faster active status queries
+  @@index([deletedAt]) // Index for faster soft delete queries
+}
+
+model Service {
+  id            String          @id @default(cuid()) // Unique identifier for the service
+  name          String // Name of the service
+  description   String? // Optional description of the service
+  categoryId    String // Reference to the service category
+  category      ServiceCategory @relation(fields: [categoryId], references: [id])
+  status        ServiceStatus   @default(ACTIVE) // Current status of the service
+  duration      Int? // Expected duration in minutes
+  capacity      Int? // Maximum number of participants for group services
+  prerequisites String? // Prerequisites for the service
+  isPublic      Boolean         @default(true) // Whether the service is publicly visible
+  price         Float? // Price of the service
+  metadata      Json? // Additional metadata in JSON format
+  deletedAt     DateTime? // Soft delete timestamp
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([type]) // Index for faster document type queries
-  @@index([organizationId]) // Index for faster organization document queries
-  @@index([contractId]) // Index for faster contract document queries
-  @@index([uploadedById]) // Index for faster user document queries
+  assignments       ServiceAssignment[] // Assignments of this service to contracts
+  ServiceProvider   ServiceProvider?    @relation(fields: [serviceProviderId], references: [id])
+  serviceProviderId String?
+  ServiceSession    ServiceSession[] // Sessions of this service
+
   @@index([status]) // Index for faster status-based queries
-  @@index([isConfidential]) // Index for faster confidentiality queries
-  @@index([expiryDate]) // Index for faster expiry date queries
+  @@index([isPublic]) // Index for faster public status queries
+  @@index([categoryId]) // Index for faster category-based queries
 }
 
-// ENUM: Document types
-enum DocumentType {
-  CONTRACT           @map("contract") // Contract
-  CERTIFICATION      @map("certification") // Certification
-  KPI_REPORT         @map("kpi_report") // KPI Report
-  FEEDBACK_SUMMARY   @map("feedback_summary") // Feedback Summary
-  BILLING_REPORT     @map("billing_report") // Billing Report
-  UTILIZATION_REPORT @map("utilization_report") // Utilization Report
-  OTHER              @map("other") // Other
+model ServiceAssignment {
+  id         String           @id @default(cuid()) // Unique identifier for the service assignment
+  serviceId  String // Reference to the service
+  contractId String // Reference to the contract
+  service    Service          @relation(fields: [serviceId], references: [id])
+  contract   Contract         @relation(fields: [contractId], references: [id])
+  status     AssignmentStatus @default(PENDING) // Current status of the assignment
+  startDate  DateTime // When the service assignment starts
+  endDate    DateTime? // Optional end date for the assignment
+  frequency  Frequency // How often the service is provided
+  isActive   Boolean          @default(true) // Whether the assignment is active
+  deletedAt  DateTime? // Soft delete timestamp
+  metadata   Json? // Additional metadata in JSON format
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  Organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  @@index([status]) // For status-based queries
+  @@index([startDate]) // For date-based queries
+  @@index([isActive]) // For active status queries
+  @@index([deletedAt]) // For soft delete queries
 }
 
-// ENUM: Organization status
-enum OrgStatus {
-  ACTIVE     @map("Active") // Active
-  INACTIVE   @map("Inactive") // Inactive
-  TERMINATED @map("Terminated") // Terminated
-  PENDING    @map("Pending") // Pending
+model ServiceProvider {
+  id              String              @id @default(cuid()) // Unique identifier for the service provider
+  name            String // Name of the service provider
+  type            ServiceProviderType // e.g., Counselor, Clinic, WellnessCoach, etc.
+  contactEmail    String? // Email of the service provider
+  contactPhone    String? // Phone number of the service provider
+  location        String? // Location of the service provider
+  active          Boolean             @default(true) // Whether the service provider is active
+  qualifications  String[] // List of qualifications
+  specializations String[] // List of specializations
+  availability    Json? // Availability schedule in JSON format
+  rating          Float? // Average rating
+  isVerified      Boolean             @default(false) // Whether the provider is verified
+  metadata        Json? // Additional metadata in JSON format
+  deletedAt       DateTime? // Soft delete timestamp
+
+  services Service[] // Services provided by the service provider
+  sessions ServiceSession[] // Sessions provided by the service provider
+
+  @@index([type]) // Index for faster type-based queries
+  @@index([active]) // Index for faster active status queries
+  @@index([isVerified]) // Index for faster verification status queries
+  @@index([rating]) // Index for faster rating-based queries
 }
 
-// ENUM: Contract status
-enum ContractStatus {
-  ACTIVE     @map("Active") // Active 
-  EXPIRED    @map("Expired") // Expired
-  TERMINATED @map("Terminated") // Terminated
-  RENEWED    @map("Renewed") // Renewed
+model ServiceSession {
+  id                 String        @id @default(cuid()) // Unique identifier for the service session
+  serviceId          String // Reference to the service
+  providerId         String // Reference to the service provider
+  scheduledAt        DateTime // Date and time when the session is scheduled
+  completedAt        DateTime? // Date and time when the session is completed
+  status             SessionStatus // Current status of the session
+  notes              String? // Additional notes about the session
+  feedback           String?
+  duration           Int? // Actual duration in minutes
+  location           String? // Physical or virtual location
+  cancellationReason String? // Reason for cancellation
+  rescheduleCount    Int           @default(0) // Number of times the session was rescheduled
+  isGroupSession     Boolean       @default(false) // Whether this is a group session
+  metadata           Json? // Additional metadata in JSON format
+  deletedAt          DateTime? // Soft delete timestamp
+
+  // Who attended
+  staffId       String? // Reference to the staff member who attended the session
+  beneficiaryId String? // Reference to the beneficiary who attended the session
+
+  staff           Staff?            @relation(fields: [staffId], references: [id]) // Staff member who attended the session
+  beneficiary     Beneficiary?      @relation(fields: [beneficiaryId], references: [id]) // Beneficiary who attended the session
+  service         Service           @relation(fields: [serviceId], references: [id]) // Service that was provided
+  provider        ServiceProvider   @relation(fields: [providerId], references: [id]) // Service provider who provided the session
+  SessionFeedback SessionFeedback[] // Feedback about the session
+
+  @@index([status]) // Index for faster status-based queries
+  @@index([scheduledAt]) // Index for faster scheduling queries
+  @@index([isGroupSession]) // Index for faster group session queries
+  @@index([providerId]) // Index for faster provider-based queries
+  @@index([serviceId]) // Index for faster service-based queries
 }
 
-/// Represents an audit log entry
-model AuditLog {
-  id         String     @id @default(cuid()) // Unique identifier for the audit log  
-  action     ActionType // Action performed (e.g., 'create', 'update', 'delete')
-  entityType String? // Type of entity being acted upon
-  entityId   String? // ID of entity being acted upon
-  data       Json? // Additional data related to the action
-  ipAddress  String? // IP address of the user
-  userAgent  String? // User agent of the browser/client
-  timestamp  DateTime   @default(now()) // Date and time when the action was performed
-  User       User?      @relation(fields: [userId], references: [id]) // User who performed the action
-  userId     String? // User ID of the user who performed the action 
+model SessionFeedback {
+  id        String    @id @default(cuid()) // Unique identifier for the session feedback
+  sessionId String // Reference to the session
+  rating    Int // 1–5
+  comment   String? // Additional comments about the session
+  isActive  Boolean   @default(true) // Whether the feedback is active
+  deletedAt DateTime? // Soft delete timestamp
+  metadata  Json? // Additional metadata in JSON format
+  createdAt DateTime  @default(now()) // Date and time when the feedback was created
 
-  @@index([action]) // Index for faster action-based queries
-  @@index([timestamp]) // Index for faster timestamp-based queries
-  @@index([entityType, entityId]) // Index for faster entity-based queries
+  session ServiceSession @relation(fields: [sessionId], references: [id]) // Session that the feedback is about
+
+  @@index([isActive]) // Index for faster active status queries
+  @@index([deletedAt]) // Index for faster soft delete queries
 }
+
+// =========================================
+// Staff & Beneficiary Management Domain
+// =========================================
+
+/// Represents a staff member in an organization
+model Staff {
+  id                    String      @id @default(cuid()) // Unique identifier for the staff member
+  profileId             String      @unique // Unique identifier for the staff member's profile
+  organizationId        String // Identifier for the organization the staff member belongs to
+  role                  StaffRole // Role of the staff member
+  startDate             DateTime // Date and time when the staff member started working
+  endDate               DateTime? // Date and time when the staff member's employment ended
+  status                StaffStatus // Current status of the staff member
+  qualifications        String[] // List of qualifications
+  specializations       String[] // List of specializations
+  preferredWorkingHours Json? // Preferred working hours in JSON format
+  isAvailable           Boolean     @default(true) // Whether the staff member is available
+  emergencyContactName  String? // Emergency contact name
+  emergencyContactPhone String? // Emergency contact phone
+  emergencyContactEmail String? // Emergency contact email
+  metadata              Json? // Additional metadata in JSON format
+  deletedAt             DateTime? // Soft delete timestamp
+  createdAt             DateTime    @default(now()) // Date and time when the staff member was created
+  updatedAt             DateTime    @updatedAt // Date and time when the staff member was last updated
+
+  userId String // Still maintain this for backref to identity
+
+  // Relations
+  user           User             @relation(fields: [userId], references: [id]) // User associated with the staff member
+  profile        Profile          @relation(fields: [profileId], references: [id]) // Profile details of the staff member
+  organization   Organization     @relation(fields: [organizationId], references: [id]) // Organization the staff member belongs to
+  beneficiaries  Beneficiary[] // Beneficiaries associated with the staff member
+  ServiceSession ServiceSession[] // Service sessions conducted by the staff member
+
+  @@index([status]) // Index for faster status-based queries
+  @@index([role]) // Index for faster role-based queries
+  @@index([isAvailable]) // Index for faster availability queries
+  @@index([organizationId]) // Index for faster organization-based queries
+}
+
+/// Represents a beneficiary in the system
+model Beneficiary {
+  id                String       @id @default(cuid()) // Unique identifier for the beneficiary
+  profileId         String       @unique // Unique identifier for the beneficiary's profile
+  relation          RelationType // Type of relationship between the beneficiary and the staff member
+  isStaffLink       Boolean      @default(false) // Whether the beneficiary is linked to a staff member
+  staffId           String // Identifier for the staff member the beneficiary is linked to
+  guardianId        String? // Identifier for the guardian of the beneficiary
+  userLinkId        String? // Identifier for the user the beneficiary is linked to
+  status            String       @default("ACTIVE") // Current status of the beneficiary
+  lastServiceDate   DateTime? // Date of last service received
+  preferredLanguage Language? // Preferred language for communication
+  isActive          Boolean      @default(true) // Whether the beneficiary is active
+  notes             String? // Additional notes about the beneficiary
+  deletedAt         DateTime? // Soft delete timestamp
+
+  // Relations
+  profile  Profile @relation(fields: [profileId], references: [id]) // Profile details of the beneficiary
+  staff    Staff   @relation(fields: [staffId], references: [id]) // Staff member the beneficiary is linked to
+  guardian User?   @relation("UserGuardians", fields: [guardianId], references: [id]) // Guardian of the beneficiary
+  userLink User?   @relation("UserBeneficiaries", fields: [userLinkId], references: [id]) // User the beneficiary is linked to
+
+  createdAt      DateTime         @default(now()) // Date and time when the beneficiary was created
+  updatedAt      DateTime         @updatedAt // Date and time when the beneficiary was last updated
+  ServiceSession ServiceSession[] // Service sessions attended by the beneficiary
+
+  @@index([status]) // Index for faster status-based queries
+  @@index([lastServiceDate]) // Index for faster last service date queries
+  @@index([isActive]) // Index for faster active status queries
+}
+
+// =========================================
+// KPI & Performance Management Domain
+// =========================================
 
 /// Represents a Key Performance Indicator (KPI) in the system
 model KPI {
@@ -592,38 +637,75 @@ model KPIAssignment {
   @@index([contractId]) // For contract assignments
   @@index([status]) // For status-based queries
   @@index([startDate]) // For date-based queries
-  @@index([isActive])
-  @@index([deletedAt])
+  @@index([isActive]) // For active status queries
+  @@index([deletedAt]) // For soft delete queries
 }
 
-/// Represents how often a KPI is measured
-enum Frequency {
-  ONCE      @map("Once") // Once
-  WEEKLY    @map("Weekly") // Weekly
-  MONTHLY   @map("Monthly") // Monthly
-  QUARTERLY @map("Quarterly") // Quarterly
-  ANNUALLY  @map("Annually") // Annually
+// =========================================
+// Document Management Domain
+// =========================================
+
+/// Represents a document in the system (contracts, reports, certifications, etc.)
+model Document {
+  id                String       @id @default(cuid())
+  title             String // Document title/name
+  description       String? // Optional document description
+  type              DocumentType // Type of document (contract, report, etc.)
+  url               String // Storage link (S3, etc.)
+  fileSize          Int? // File size in bytes
+  fileType          String? // MIME type of the file
+  version           Int          @default(1) // Document version number
+  isLatest          Boolean      @default(true) // Indicates if this is the latest version
+  previousVersionId String? // Reference to previous version
+  previousVersion   Document?    @relation("DocumentVersions", fields: [previousVersionId], references: [id])
+  nextVersions      Document[]   @relation("DocumentVersions")
+
+  status         DocumentStatus @default(DRAFT) // Current status of the document
+  expiryDate     DateTime? // When the document expires
+  isConfidential Boolean        @default(false) // Whether the document is confidential
+  tags           String[] // Tags for categorization
+  metadata       Json? // Additional metadata in JSON format
+  deletedAt      DateTime? // Soft delete timestamp
+
+  uploadedById   String? // User ID who uploaded the document
+  uploadedBy     User?         @relation(fields: [uploadedById], references: [id])
+  organizationId String? // Associated organization
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  contractId     String? // Associated contract
+  contract       Contract?     @relation(fields: [contractId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type]) // Index for faster document type queries
+  @@index([organizationId]) // Index for faster organization document queries
+  @@index([contractId]) // Index for faster contract document queries
+  @@index([uploadedById]) // Index for faster user document queries
+  @@index([status]) // Index for faster status-based queries
+  @@index([isConfidential]) // Index for faster confidentiality queries
+  @@index([expiryDate]) // Index for faster expiry date queries
 }
 
-/// Represents the status of an assignment
-enum AssignmentStatus {
-  PENDING   @map("Pending") // Pending
-  ONGOING   @map("Ongoing") // Ongoing
-  COMPLETED @map("Completed") // Completed
-  CANCELLED @map("Cancelled") // Cancelled
-}
+// =========================================
+// Audit & Change Tracking Domain
+// =========================================
 
-enum Unit {
-  PERCENTAGE @map("Percentage") // %
-  COUNT      @map("Count") // Integer count
-  SCORE      @map("Score") // e.g., Satisfaction out of 10
-  TIME       @map("Time") // Duration e.g., in minutes/days
-}
+/// Represents an audit log entry
+model AuditLog {
+  id         String     @id @default(cuid()) // Unique identifier for the audit log
+  action     ActionType // Action performed (e.g., 'create', 'update', 'delete')
+  entityType String? // Type of entity being acted upon
+  entityId   String? // ID of entity being acted upon
+  data       Json? // Additional data related to the action
+  ipAddress  String? // IP address of the user
+  userAgent  String? // User agent of the browser/client
+  timestamp  DateTime   @default(now()) // Date and time when the action was performed
+  User       User?      @relation(fields: [userId], references: [id]) // User who performed the action
+  userId     String? // User ID of the user who performed the action
 
-enum ServiceStatus {
-  ACTIVE    @map("Active") // Active  
-  INACTIVE  @map("Inactive") // Inactive
-  SUSPENDED @map("Suspended") // Suspended
+  @@index([action]) // Index for faster action-based queries
+  @@index([timestamp]) // Index for faster timestamp-based queries
+  @@index([entityType, entityId]) // Index for faster entity-based queries
 }
 
 /// Tracks all entity changes across the system
@@ -641,7 +723,6 @@ model EntityChange {
   isActive     Boolean    @default(true) // Whether the entity is active after this change
   deletedAt    DateTime? // When the entity was soft deleted (if applicable)
 
-  // Relations
   fieldChanges FieldChange[] // Field-level changes associated with this change
 
   @@unique([entityType, entityId, changedAt])
@@ -669,159 +750,94 @@ model FieldChange {
   @@index([changeType])
 }
 
-enum ChangeType {
-  CREATE     @map("Create") // Create
-  UPDATE     @map("Update") // Update
-  DELETE     @map("Delete") // Delete
-  RESTORE    @map("Restore") // Restore
-  ARCHIVE    @map("Archive") // Archive
-  UNARCHIVE  @map("Unarchive") // Unarchive
-  DEACTIVATE @map("Deactivate") // Deactivate
-  ACTIVATE   @map("Activate") // Activate
+// =========================================
+// Status & Type Enums
+// =========================================
+
+enum StaffRole {
+  ADMIN     @map("Admin") // Admin
+  MANAGER   @map("Manager") // Manager
+  STAFF     @map("Staff") // Staff
+  VOLUNTEER @map("Volunteer") // Volunteer
 }
 
-model ServiceCategory {
-  id          String    @id @default(cuid()) // Unique identifier for the service category
-  name        String    @unique // Name of the service category
-  description String? // Optional description of the service category
-  isActive    Boolean   @default(true) // Whether the category is active
-  deletedAt   DateTime? // Soft delete timestamp
-  metadata    Json? // Additional metadata in JSON format
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  services Service[] // Services associated with this category
-
-  @@index([isActive])
-  @@index([deletedAt])
+enum StaffStatus {
+  ACTIVE     @map("Active") // Currently working
+  INACTIVE   @map("Inactive") // Not working
+  ON_LEAVE   @map("On Leave") // On leave
+  TERMINATED @map("Terminated") // Terminated
+  SUSPENDED  @map("Suspended") // Suspended
+  RESIGNED   @map("Resigned") // Resigned
+  OTHER      @map("Other") // Other
 }
 
-model Service {
-  id            String          @id @default(cuid()) // Unique identifier for the service
-  name          String // Name of the service
-  description   String? // Optional description of the service
-  categoryId    String // Reference to the service category
-  category      ServiceCategory @relation(fields: [categoryId], references: [id])
-  status        ServiceStatus   @default(ACTIVE) // Current status of the service
-  duration      Int? // Expected duration in minutes
-  capacity      Int? // Maximum number of participants for group services
-  prerequisites String? // Prerequisites for the service
-  isPublic      Boolean         @default(true) // Whether the service is publicly visible
-  price         Float? // Price of the service
-  metadata      Json? // Additional metadata in JSON format
-  deletedAt     DateTime? // Soft delete timestamp
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  assignments       ServiceAssignment[] // Assignments of this service to contracts
-  ServiceProvider   ServiceProvider?    @relation(fields: [serviceProviderId], references: [id])
-  serviceProviderId String?
-  ServiceSession    ServiceSession[]
-
-  @@index([status]) // Index for faster status-based queries
-  @@index([isPublic]) // Index for faster public status queries
-  @@index([categoryId]) // Index for faster category-based queries
+enum RelationType {
+  CHILD       @map("Child") // Child
+  SPOUSE      @map("Spouse") // Spouse
+  PARENT      @map("Parent") // Parent
+  SIBLING     @map("Sibling") // Sibling
+  GRANDPARENT @map("Grandparent") // Grandparent
+  GUARDIAN    @map("Guardian") // Guardian
+  FRIEND      @map("Friend") // Friend
+  NEIGHBOR    @map("Neighbor") // Neighbor
+  COUSIN      @map("Cousin") // Cousin
+  OTHER       @map("Other") // Other
 }
 
-model ServiceAssignment {
-  id         String           @id @default(cuid()) // Unique identifier for the service assignment
-  serviceId  String // Reference to the service
-  contractId String // Reference to the contract
-  service    Service          @relation(fields: [serviceId], references: [id])
-  contract   Contract         @relation(fields: [contractId], references: [id])
-  status     AssignmentStatus @default(PENDING) // Current status of the assignment
-  startDate  DateTime // When the service assignment starts
-  endDate    DateTime? // Optional end date for the assignment
-  frequency  Frequency // How often the service is provided
-  isActive   Boolean          @default(true) // Whether the assignment is active
-  deletedAt  DateTime? // Soft delete timestamp
-  metadata   Json? // Additional metadata in JSON format
-
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  Organization   Organization? @relation(fields: [organizationId], references: [id])
-  organizationId String?
-
-  @@index([status]) // For status-based queries
-  @@index([startDate]) // For date-based queries
-  @@index([isActive])
-  @@index([deletedAt])
+enum PaymentStatus {
+  PENDING   @map("Pending") // Pending
+  PAID      @map("Paid") // Paid
+  OVERDUE   @map("Overdue") // Overdue
+  CANCELLED @map("Cancelled") // Cancelled
+  REFUNDED  @map("Refunded") // Refunded
 }
 
-model ServiceProvider {
-  id              String              @id @default(cuid()) // Unique identifier for the service provider
-  name            String // Name of the service provider
-  type            ServiceProviderType // e.g., Counselor, Clinic, WellnessCoach, etc.
-  contactEmail    String? // Email of the service provider
-  contactPhone    String? // Phone number of the service provider
-  location        String? // Location of the service provider
-  active          Boolean             @default(true) // Whether the service provider is active
-  qualifications  String[] // List of qualifications
-  specializations String[] // List of specializations
-  availability    Json? // Availability schedule in JSON format
-  rating          Float? // Average rating
-  isVerified      Boolean             @default(false) // Whether the provider is verified
-  metadata        Json? // Additional metadata in JSON format
-  deletedAt       DateTime? // Soft delete timestamp
-
-  services Service[] // Services provided by the service provider
-  sessions ServiceSession[] // Sessions provided by the service provider
-
-  @@index([type]) // Index for faster type-based queries
-  @@index([active]) // Index for faster active status queries
-  @@index([isVerified]) // Index for faster verification status queries
-  @@index([rating]) // Index for faster rating-based queries
+enum DocumentStatus {
+  DRAFT     @map("Draft") // Draft
+  PUBLISHED @map("Published") // Published
+  ARCHIVED  @map("Archived") // Archived
+  EXPIRED   @map("Expired") // Expired
 }
 
-model ServiceSession {
-  id                 String        @id @default(cuid()) // Unique identifier for the service session
-  serviceId          String // Reference to the service
-  providerId         String // Reference to the service provider
-  scheduledAt        DateTime // Date and time when the session is scheduled
-  completedAt        DateTime? // Date and time when the session is completed
-  status             SessionStatus // Current status of the session
-  notes              String? // Additional notes about the session
-  feedback           String?
-  duration           Int? // Actual duration in minutes
-  location           String? // Physical or virtual location
-  cancellationReason String? // Reason for cancellation
-  rescheduleCount    Int           @default(0) // Number of times the session was rescheduled
-  isGroupSession     Boolean       @default(false) // Whether this is a group session
-  metadata           Json? // Additional metadata in JSON format
-  deletedAt          DateTime? // Soft delete timestamp
-
-  // Who attended
-  staffId       String? // Reference to the staff member who attended the session
-  beneficiaryId String? // Reference to the beneficiary who attended the session
-
-  staff           Staff?            @relation(fields: [staffId], references: [id]) // Staff member who attended the session 
-  beneficiary     Beneficiary?      @relation(fields: [beneficiaryId], references: [id]) // Beneficiary who attended the session
-  service         Service           @relation(fields: [serviceId], references: [id]) // Service that was provided
-  provider        ServiceProvider   @relation(fields: [providerId], references: [id]) // Service provider who provided the session
-  SessionFeedback SessionFeedback[] // Feedback about the session
-
-  @@index([status]) // Index for faster status-based queries
-  @@index([scheduledAt]) // Index for faster scheduling queries
-  @@index([isGroupSession]) // Index for faster group session queries
-  @@index([providerId]) // Index for faster provider-based queries
-  @@index([serviceId]) // Index for faster service-based queries
+enum ActionType {
+  CREATE  @map("Create") // Create
+  UPDATE  @map("Update") // Update
+  DELETE  @map("Delete") // Delete
+  LOGIN   @map("Login") // Login
+  LOGOUT  @map("Logout") // Logout
+  APPROVE @map("Approve") // Approve
+  REJECT  @map("Reject") // Reject
+  OTHER   @map("Other") // Other
 }
 
-model SessionFeedback {
-  id        String    @id @default(cuid()) // Unique identifier for the session feedback
-  sessionId String // Reference to the session
-  rating    Int // 1–5
-  comment   String? // Additional comments about the session
-  isActive  Boolean   @default(true) // Whether the feedback is active
-  deletedAt DateTime? // Soft delete timestamp
-  metadata  Json? // Additional metadata in JSON format
-  createdAt DateTime  @default(now()) // Date and time when the feedback was created
+enum DocumentType {
+  CONTRACT           @map("contract") // Contract
+  CERTIFICATION      @map("certification") // Certification
+  KPI_REPORT         @map("kpi_report") // KPI Report
+  FEEDBACK_SUMMARY   @map("feedback_summary") // Feedback Summary
+  BILLING_REPORT     @map("billing_report") // Billing Report
+  UTILIZATION_REPORT @map("utilization_report") // Utilization Report
+  OTHER              @map("other") // Other
+}
 
-  session ServiceSession @relation(fields: [sessionId], references: [id]) // Session that the feedback is about
+enum OrgStatus {
+  ACTIVE     @map("Active") // Active
+  INACTIVE   @map("Inactive") // Inactive
+  TERMINATED @map("Terminated") // Terminated
+  PENDING    @map("Pending") // Pending
+}
 
-  @@index([isActive])
-  @@index([deletedAt])
+enum ContractStatus {
+  ACTIVE     @map("Active") // Active
+  EXPIRED    @map("Expired") // Expired
+  TERMINATED @map("Terminated") // Terminated
+  RENEWED    @map("Renewed") // Renewed
+}
+
+enum ServiceStatus {
+  ACTIVE    @map("Active") // Active
+  INACTIVE  @map("Inactive") // Inactive
+  SUSPENDED @map("Suspended") // Suspended
 }
 
 enum ServiceProviderType {
@@ -833,10 +849,28 @@ enum ServiceProviderType {
 }
 
 enum SessionStatus {
-  SCHEDULED   @map("Scheduled") // Scheduled  
+  SCHEDULED   @map("Scheduled") // Scheduled
   RESCHEDULED @map("Rescheduled") // Rescheduled
   COMPLETED   @map("Completed") // Completed
   CANCELED    @map("Canceled") // Canceled
   NO_SHOW     @map("No Show") // No Show
   POSTPONED   @map("Postponed") // Postponed
+}
+
+enum AssignmentStatus {
+  PENDING   @map("Pending") // Pending
+  ONGOING   @map("Ongoing") // Ongoing
+  COMPLETED @map("Completed") // Completed
+  CANCELLED @map("Cancelled") // Cancelled
+}
+
+enum ChangeType {
+  CREATE     @map("Create") // Create
+  UPDATE     @map("Update") // Update
+  DELETE     @map("Delete") // Delete
+  RESTORE    @map("Restore") // Restore
+  ARCHIVE    @map("Archive") // Archive
+  UNARCHIVE  @map("Unarchive") // Unarchive
+  DEACTIVATE @map("Deactivate") // Deactivate
+  ACTIVATE   @map("Activate") // Activate
 }

@@ -120,29 +120,6 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
-exports.Prisma.ProfileScalarFieldEnum = {
-  id: 'id',
-  fullName: 'fullName',
-  preferredName: 'preferredName',
-  dob: 'dob',
-  gender: 'gender',
-  phone: 'phone',
-  email: 'email',
-  image: 'image',
-  address: 'address',
-  emergencyContactName: 'emergencyContactName',
-  emergencyContactPhone: 'emergencyContactPhone',
-  emergencyContactEmail: 'emergencyContactEmail',
-  preferredLanguage: 'preferredLanguage',
-  preferredContactMethod: 'preferredContactMethod',
-  isActive: 'isActive',
-  metadata: 'metadata',
-  deletedAt: 'deletedAt',
-  userId: 'userId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   email: 'email',
@@ -154,46 +131,6 @@ exports.Prisma.UserScalarFieldEnum = {
   isActive: 'isActive',
   twoFactorEnabled: 'twoFactorEnabled',
   metadata: 'metadata',
-  deletedAt: 'deletedAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.StaffScalarFieldEnum = {
-  id: 'id',
-  profileId: 'profileId',
-  organizationId: 'organizationId',
-  role: 'role',
-  startDate: 'startDate',
-  endDate: 'endDate',
-  status: 'status',
-  qualifications: 'qualifications',
-  specializations: 'specializations',
-  preferredWorkingHours: 'preferredWorkingHours',
-  isAvailable: 'isAvailable',
-  emergencyContactName: 'emergencyContactName',
-  emergencyContactPhone: 'emergencyContactPhone',
-  emergencyContactEmail: 'emergencyContactEmail',
-  metadata: 'metadata',
-  deletedAt: 'deletedAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  userId: 'userId'
-};
-
-exports.Prisma.BeneficiaryScalarFieldEnum = {
-  id: 'id',
-  profileId: 'profileId',
-  relation: 'relation',
-  isStaffLink: 'isStaffLink',
-  staffId: 'staffId',
-  guardianId: 'guardianId',
-  userLinkId: 'userLinkId',
-  status: 'status',
-  lastServiceDate: 'lastServiceDate',
-  preferredLanguage: 'preferredLanguage',
-  isActive: 'isActive',
-  notes: 'notes',
   deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -253,6 +190,29 @@ exports.Prisma.UserRoleScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   roleId: 'roleId'
+};
+
+exports.Prisma.ProfileScalarFieldEnum = {
+  id: 'id',
+  fullName: 'fullName',
+  preferredName: 'preferredName',
+  dob: 'dob',
+  gender: 'gender',
+  phone: 'phone',
+  email: 'email',
+  image: 'image',
+  address: 'address',
+  emergencyContactName: 'emergencyContactName',
+  emergencyContactPhone: 'emergencyContactPhone',
+  emergencyContactEmail: 'emergencyContactEmail',
+  preferredLanguage: 'preferredLanguage',
+  preferredContactMethod: 'preferredContactMethod',
+  isActive: 'isActive',
+  metadata: 'metadata',
+  deletedAt: 'deletedAt',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.IndustryScalarFieldEnum = {
@@ -317,116 +277,6 @@ exports.Prisma.ContractScalarFieldEnum = {
   deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
-};
-
-exports.Prisma.DocumentScalarFieldEnum = {
-  id: 'id',
-  title: 'title',
-  description: 'description',
-  type: 'type',
-  url: 'url',
-  fileSize: 'fileSize',
-  fileType: 'fileType',
-  version: 'version',
-  isLatest: 'isLatest',
-  previousVersionId: 'previousVersionId',
-  status: 'status',
-  expiryDate: 'expiryDate',
-  isConfidential: 'isConfidential',
-  tags: 'tags',
-  metadata: 'metadata',
-  deletedAt: 'deletedAt',
-  uploadedById: 'uploadedById',
-  organizationId: 'organizationId',
-  contractId: 'contractId',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.AuditLogScalarFieldEnum = {
-  id: 'id',
-  action: 'action',
-  entityType: 'entityType',
-  entityId: 'entityId',
-  data: 'data',
-  ipAddress: 'ipAddress',
-  userAgent: 'userAgent',
-  timestamp: 'timestamp',
-  userId: 'userId'
-};
-
-exports.Prisma.KPIScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  typeId: 'typeId',
-  unit: 'unit',
-  unitType: 'unitType',
-  isActive: 'isActive',
-  targetValue: 'targetValue',
-  isPublic: 'isPublic',
-  calculationMethod: 'calculationMethod',
-  frequency: 'frequency',
-  metadata: 'metadata',
-  deletedAt: 'deletedAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  organizationId: 'organizationId',
-  contractId: 'contractId'
-};
-
-exports.Prisma.KpiTypeScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  weight: 'weight',
-  isActive: 'isActive',
-  metadata: 'metadata',
-  deletedAt: 'deletedAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.KPIAssignmentScalarFieldEnum = {
-  id: 'id',
-  kpiId: 'kpiId',
-  contractId: 'contractId',
-  targetValue: 'targetValue',
-  frequency: 'frequency',
-  status: 'status',
-  notes: 'notes',
-  startDate: 'startDate',
-  endDate: 'endDate',
-  isActive: 'isActive',
-  deletedAt: 'deletedAt',
-  metadata: 'metadata',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  organizationId: 'organizationId'
-};
-
-exports.Prisma.EntityChangeScalarFieldEnum = {
-  id: 'id',
-  entityType: 'entityType',
-  entityId: 'entityId',
-  changeType: 'changeType',
-  changedAt: 'changedAt',
-  changedBy: 'changedBy',
-  changeReason: 'changeReason',
-  oldData: 'oldData',
-  newData: 'newData',
-  metadata: 'metadata',
-  isActive: 'isActive',
-  deletedAt: 'deletedAt'
-};
-
-exports.Prisma.FieldChangeScalarFieldEnum = {
-  id: 'id',
-  entityChangeId: 'entityChangeId',
-  fieldName: 'fieldName',
-  oldValue: 'oldValue',
-  newValue: 'newValue',
-  changeType: 'changeType'
 };
 
 exports.Prisma.ServiceCategoryScalarFieldEnum = {
@@ -522,6 +372,156 @@ exports.Prisma.SessionFeedbackScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.StaffScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  organizationId: 'organizationId',
+  role: 'role',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  status: 'status',
+  qualifications: 'qualifications',
+  specializations: 'specializations',
+  preferredWorkingHours: 'preferredWorkingHours',
+  isAvailable: 'isAvailable',
+  emergencyContactName: 'emergencyContactName',
+  emergencyContactPhone: 'emergencyContactPhone',
+  emergencyContactEmail: 'emergencyContactEmail',
+  metadata: 'metadata',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  userId: 'userId'
+};
+
+exports.Prisma.BeneficiaryScalarFieldEnum = {
+  id: 'id',
+  profileId: 'profileId',
+  relation: 'relation',
+  isStaffLink: 'isStaffLink',
+  staffId: 'staffId',
+  guardianId: 'guardianId',
+  userLinkId: 'userLinkId',
+  status: 'status',
+  lastServiceDate: 'lastServiceDate',
+  preferredLanguage: 'preferredLanguage',
+  isActive: 'isActive',
+  notes: 'notes',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.KPIScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  typeId: 'typeId',
+  unit: 'unit',
+  unitType: 'unitType',
+  isActive: 'isActive',
+  targetValue: 'targetValue',
+  isPublic: 'isPublic',
+  calculationMethod: 'calculationMethod',
+  frequency: 'frequency',
+  metadata: 'metadata',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  organizationId: 'organizationId',
+  contractId: 'contractId'
+};
+
+exports.Prisma.KpiTypeScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  weight: 'weight',
+  isActive: 'isActive',
+  metadata: 'metadata',
+  deletedAt: 'deletedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.KPIAssignmentScalarFieldEnum = {
+  id: 'id',
+  kpiId: 'kpiId',
+  contractId: 'contractId',
+  targetValue: 'targetValue',
+  frequency: 'frequency',
+  status: 'status',
+  notes: 'notes',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  isActive: 'isActive',
+  deletedAt: 'deletedAt',
+  metadata: 'metadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  organizationId: 'organizationId'
+};
+
+exports.Prisma.DocumentScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  type: 'type',
+  url: 'url',
+  fileSize: 'fileSize',
+  fileType: 'fileType',
+  version: 'version',
+  isLatest: 'isLatest',
+  previousVersionId: 'previousVersionId',
+  status: 'status',
+  expiryDate: 'expiryDate',
+  isConfidential: 'isConfidential',
+  tags: 'tags',
+  metadata: 'metadata',
+  deletedAt: 'deletedAt',
+  uploadedById: 'uploadedById',
+  organizationId: 'organizationId',
+  contractId: 'contractId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AuditLogScalarFieldEnum = {
+  id: 'id',
+  action: 'action',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  data: 'data',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  timestamp: 'timestamp',
+  userId: 'userId'
+};
+
+exports.Prisma.EntityChangeScalarFieldEnum = {
+  id: 'id',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  changeType: 'changeType',
+  changedAt: 'changedAt',
+  changedBy: 'changedBy',
+  changeReason: 'changeReason',
+  oldData: 'oldData',
+  newData: 'newData',
+  metadata: 'metadata',
+  isActive: 'isActive',
+  deletedAt: 'deletedAt'
+};
+
+exports.Prisma.FieldChangeScalarFieldEnum = {
+  id: 'id',
+  entityChangeId: 'entityChangeId',
+  fieldName: 'fieldName',
+  oldValue: 'oldValue',
+  newValue: 'newValue',
+  changeType: 'changeType'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -547,17 +547,17 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
-exports.Gender = exports.$Enums.Gender = {
-  MALE: 'MALE',
-  FEMALE: 'FEMALE',
-  OTHER: 'OTHER'
-};
-
 exports.Language = exports.$Enums.Language = {
   ENGLISH: 'ENGLISH',
   SPANISH: 'SPANISH',
   FRENCH: 'FRENCH',
   GERMAN: 'GERMAN',
+  OTHER: 'OTHER'
+};
+
+exports.Gender = exports.$Enums.Gender = {
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
   OTHER: 'OTHER'
 };
 
@@ -567,6 +567,66 @@ exports.ContactMethod = exports.$Enums.ContactMethod = {
   SMS: 'SMS',
   WHATSAPP: 'WHATSAPP',
   OTHER: 'OTHER'
+};
+
+exports.OrgStatus = exports.$Enums.OrgStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  TERMINATED: 'TERMINATED',
+  PENDING: 'PENDING'
+};
+
+exports.PaymentStatus = exports.$Enums.PaymentStatus = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  OVERDUE: 'OVERDUE',
+  CANCELLED: 'CANCELLED',
+  REFUNDED: 'REFUNDED'
+};
+
+exports.ContractStatus = exports.$Enums.ContractStatus = {
+  ACTIVE: 'ACTIVE',
+  EXPIRED: 'EXPIRED',
+  TERMINATED: 'TERMINATED',
+  RENEWED: 'RENEWED'
+};
+
+exports.ServiceStatus = exports.$Enums.ServiceStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SUSPENDED: 'SUSPENDED'
+};
+
+exports.AssignmentStatus = exports.$Enums.AssignmentStatus = {
+  PENDING: 'PENDING',
+  ONGOING: 'ONGOING',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+};
+
+exports.Frequency = exports.$Enums.Frequency = {
+  ONCE: 'ONCE',
+  WEEKLY: 'WEEKLY',
+  MONTHLY: 'MONTHLY',
+  QUARTERLY: 'QUARTERLY',
+  ANNUALLY: 'ANNUALLY'
+};
+
+exports.ServiceProviderType = exports.$Enums.ServiceProviderType = {
+  COUNSELOR: 'COUNSELOR',
+  CLINIC: 'CLINIC',
+  HOTLINE: 'HOTLINE',
+  COACH: 'COACH',
+  OTHER: 'OTHER'
+};
+
+exports.SessionStatus = exports.$Enums.SessionStatus = {
+  SCHEDULED: 'SCHEDULED',
+  RESCHEDULED: 'RESCHEDULED',
+  COMPLETED: 'COMPLETED',
+  CANCELED: 'CANCELED',
+  NO_SHOW: 'NO_SHOW',
+  POSTPONED: 'POSTPONED'
 };
 
 exports.StaffRole = exports.$Enums.StaffRole = {
@@ -599,26 +659,11 @@ exports.RelationType = exports.$Enums.RelationType = {
   OTHER: 'OTHER'
 };
 
-exports.OrgStatus = exports.$Enums.OrgStatus = {
-  ACTIVE: 'ACTIVE',
-  INACTIVE: 'INACTIVE',
-  TERMINATED: 'TERMINATED',
-  PENDING: 'PENDING'
-};
-
-exports.PaymentStatus = exports.$Enums.PaymentStatus = {
-  PENDING: 'PENDING',
-  PAID: 'PAID',
-  OVERDUE: 'OVERDUE',
-  CANCELLED: 'CANCELLED',
-  REFUNDED: 'REFUNDED'
-};
-
-exports.ContractStatus = exports.$Enums.ContractStatus = {
-  ACTIVE: 'ACTIVE',
-  EXPIRED: 'EXPIRED',
-  TERMINATED: 'TERMINATED',
-  RENEWED: 'RENEWED'
+exports.Unit = exports.$Enums.Unit = {
+  PERCENTAGE: 'PERCENTAGE',
+  COUNT: 'COUNT',
+  SCORE: 'SCORE',
+  TIME: 'TIME'
 };
 
 exports.DocumentType = exports.$Enums.DocumentType = {
@@ -649,28 +694,6 @@ exports.ActionType = exports.$Enums.ActionType = {
   OTHER: 'OTHER'
 };
 
-exports.Unit = exports.$Enums.Unit = {
-  PERCENTAGE: 'PERCENTAGE',
-  COUNT: 'COUNT',
-  SCORE: 'SCORE',
-  TIME: 'TIME'
-};
-
-exports.Frequency = exports.$Enums.Frequency = {
-  ONCE: 'ONCE',
-  WEEKLY: 'WEEKLY',
-  MONTHLY: 'MONTHLY',
-  QUARTERLY: 'QUARTERLY',
-  ANNUALLY: 'ANNUALLY'
-};
-
-exports.AssignmentStatus = exports.$Enums.AssignmentStatus = {
-  PENDING: 'PENDING',
-  ONGOING: 'ONGOING',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED'
-};
-
 exports.ChangeType = exports.$Enums.ChangeType = {
   CREATE: 'CREATE',
   UPDATE: 'UPDATE',
@@ -682,34 +705,8 @@ exports.ChangeType = exports.$Enums.ChangeType = {
   ACTIVATE: 'ACTIVATE'
 };
 
-exports.ServiceStatus = exports.$Enums.ServiceStatus = {
-  ACTIVE: 'ACTIVE',
-  INACTIVE: 'INACTIVE',
-  SUSPENDED: 'SUSPENDED'
-};
-
-exports.ServiceProviderType = exports.$Enums.ServiceProviderType = {
-  COUNSELOR: 'COUNSELOR',
-  CLINIC: 'CLINIC',
-  HOTLINE: 'HOTLINE',
-  COACH: 'COACH',
-  OTHER: 'OTHER'
-};
-
-exports.SessionStatus = exports.$Enums.SessionStatus = {
-  SCHEDULED: 'SCHEDULED',
-  RESCHEDULED: 'RESCHEDULED',
-  COMPLETED: 'COMPLETED',
-  CANCELED: 'CANCELED',
-  NO_SHOW: 'NO_SHOW',
-  POSTPONED: 'POSTPONED'
-};
-
 exports.Prisma.ModelName = {
-  Profile: 'Profile',
   User: 'User',
-  Staff: 'Staff',
-  Beneficiary: 'Beneficiary',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
@@ -717,22 +714,25 @@ exports.Prisma.ModelName = {
   Permission: 'Permission',
   RolePermission: 'RolePermission',
   UserRole: 'UserRole',
+  Profile: 'Profile',
   Industry: 'Industry',
   Organization: 'Organization',
   Contract: 'Contract',
-  Document: 'Document',
-  AuditLog: 'AuditLog',
-  KPI: 'KPI',
-  KpiType: 'KpiType',
-  KPIAssignment: 'KPIAssignment',
-  EntityChange: 'EntityChange',
-  FieldChange: 'FieldChange',
   ServiceCategory: 'ServiceCategory',
   Service: 'Service',
   ServiceAssignment: 'ServiceAssignment',
   ServiceProvider: 'ServiceProvider',
   ServiceSession: 'ServiceSession',
-  SessionFeedback: 'SessionFeedback'
+  SessionFeedback: 'SessionFeedback',
+  Staff: 'Staff',
+  Beneficiary: 'Beneficiary',
+  KPI: 'KPI',
+  KpiType: 'KpiType',
+  KPIAssignment: 'KPIAssignment',
+  Document: 'Document',
+  AuditLog: 'AuditLog',
+  EntityChange: 'EntityChange',
+  FieldChange: 'FieldChange'
 };
 
 /**

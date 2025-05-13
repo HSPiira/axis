@@ -70,3 +70,7 @@ tmp/
 .DS_Store
 Thumbs.db
 *.pem
+
+# Configuration files with sensitive data
+config/.xatarc
+config/.env*
