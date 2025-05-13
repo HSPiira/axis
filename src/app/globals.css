@@ -123,7 +123,7 @@
 
   /* Apply Montserrat to all elements */
   * {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-family: -apple-system, BlinkMacSystemFont, "ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji";
   }
 
   /* Ensure form elements use Montserrat */
@@ -131,7 +131,7 @@
   select,
   textarea,
   button {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-family: -apple-system, BlinkMacSystemFont, "ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji";
   }
 
   /* Ensure headings use Montserrat */
@@ -141,7 +141,7 @@
   h4,
   h5,
   h6 {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-family: -apple-system, BlinkMacSystemFont, "ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji";
   }
 
   /* Button styles */
