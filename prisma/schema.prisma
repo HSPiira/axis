@@ -924,6 +924,7 @@ enum ActionType {
   LOGOUT  @map("Logout") // Logout
   APPROVE @map("Approve") // Approve
   REJECT  @map("Reject") // Reject
+  LIST    @map("List") // List/View
   OTHER   @map("Other") // Other
 }
 

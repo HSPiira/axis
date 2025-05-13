@@ -7,7 +7,7 @@ import { assignRoleToUser } from "@/lib/auth/setup-roles";
 import { ROLES } from "@/lib/constants/roles";
 import bcrypt from "bcryptjs";
 import type { Adapter } from "next-auth/adapters";
-import type { User, Prisma } from "@/generated/prisma";
+import type { User, Prisma, ActionType } from "@/generated/prisma";
 
 // Define types for our custom user data
 type CustomUser = User & {
@@ -17,35 +17,8 @@ type CustomUser = User & {
   } | null;
 };
 
-// Create a custom adapter that extends the PrismaAdapter
-const customPrismaAdapter = {
-  ...PrismaAdapter(prisma as any), // Type assertion needed for compatibility
-  createUser: async (data: any) => {
-    // Create the user first
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        emailVerified: data.emailVerified,
-        password: data.password,
-      },
-    });
-
-    // Create the profile with the user's name
-    await prisma.profile.create({
-      data: {
-        fullName: data.name,
-        email: data.email,
-        image: data.image,
-        userId: user.id,
-      },
-    });
-
-    return user;
-  },
-} as Adapter;
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: customPrismaAdapter,
+  adapter: PrismaAdapter(prisma as any),
   providers: [
     MicrosoftEntraID({
       clientId: process.env["AUTH_MICROSOFT_ENTRA_ID_ID"],
@@ -53,7 +26,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       issuer: process.env["AUTH_MICROSOFT_ENTRA_ID_TENANT_ID"],
       profilePhotoSize: 96,
       authorization: {
-        defaultScopes: ["openid", "profile", "email"],
+        params: {
+          scope: "openid profile email User.Read",
+          response_type: "code",
+          response_mode: "query"
+        }
+      },
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        };
       },
     }),
     Credentials({
@@ -82,6 +67,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }) as CustomUser | null;
 
         if (!user || !user.password) {
+          if (user?.id) {
+            await prisma.auditLog.create({
+              data: {
+                action: 'LOGIN' as ActionType,
+                entityType: 'User',
+                entityId: user.id,
+                data: {
+                  email: credentials.email,
+                  timestamp: new Date(),
+                  status: 'failed',
+                },
+              },
+            });
+          }
           return null;
         }
 
@@ -91,8 +90,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         );
 
         if (!isValid) {
+          await prisma.auditLog.create({
+            data: {
+              action: 'LOGIN' as ActionType,
+              entityType: 'User',
+              entityId: user.id,
+              data: {
+                email: credentials.email,
+                timestamp: new Date(),
+                status: 'failed',
+              },
+            },
+          });
           return null;
         }
+
+        await prisma.auditLog.create({
+          data: {
+            action: 'LOGIN' as ActionType,
+            entityType: 'User',
+            entityId: user.id,
+            data: {
+              email: credentials.email,
+              timestamp: new Date(),
+              status: 'success',
+            },
+          },
+        });
 
         return {
           id: user.id,
@@ -102,20 +126,59 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
     }),
   ],
+  session: {
+    strategy: "jwt",
+    maxAge: 24 * 60 * 60, // 24 hours
+    updateAge: 60 * 60, // 1 hour
+  },
   events: {
     createUser: async ({ user }) => {
       if (user.id) {
-        // Assign staff role to new users
         await assignRoleToUser(user.id, ROLES.STAFF);
+        await prisma.auditLog.create({
+          data: {
+            action: 'CREATE' as ActionType,
+            entityType: 'User',
+            entityId: user.id,
+            data: {
+              email: user.email,
+              timestamp: new Date(),
+            },
+          },
+        });
+      }
+    },
+    signOut: async ({ session, token }: { session?: any; token?: any }) => {
+      if (token?.sub) {
+        await prisma.auditLog.create({
+          data: {
+            action: 'LOGOUT' as ActionType,
+            entityType: 'User',
+            entityId: token.sub,
+            data: {
+              timestamp: new Date(),
+            },
+          },
+        });
       }
     },
   },
   callbacks: {
-    async session({ session, user }) {
+    async session({ session, token }) {
+      console.log('Auth Debug - Session Callback:', {
+        sessionExists: !!session,
+        tokenExists: !!token,
+        tokenSub: token?.sub,
+        sessionUser: session?.user ? {
+          email: session.user.email,
+          name: session.user.name,
+          id: session.user.id
+        } : null
+      });
+
       if (session?.user) {
-        // Add user's roles to the session
         const userRoles = await prisma.userRole.findMany({
-          where: { userId: user.id },
+          where: { userId: token.sub },
           include: {
             role: {
               include: {
@@ -129,11 +192,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
         });
 
+        await prisma.user.update({
+          where: { id: token.sub },
+          data: { lastLoginAt: new Date() },
+        });
+
         return {
           ...session,
           user: {
             ...session.user,
-            id: user.id,
+            id: token.sub,
             roles: userRoles.map(ur => ({
               id: ur.role.id,
               name: ur.role.name,
@@ -147,10 +215,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
+    async jwt({ token, user, account }) {
+      console.log('Auth Debug - JWT Callback:', {
+        tokenExists: !!token,
+        userExists: !!user,
+        accountExists: !!account,
+        accountProvider: account?.provider,
+        tokenSub: token?.sub
+      });
+
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
   },
   secret: process.env["AUTH_SECRET"],
   pages: {
     signIn: '/login',
+    error: '/auth/error',
   },
+  debug: process.env.NODE_ENV === "development",
   trustHost: true,
 });

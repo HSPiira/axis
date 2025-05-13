@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { withPermission } from "@/middleware/check-permission";
 import { PERMISSIONS } from "@/lib/constants/roles";
 import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
-import type { Prisma } from '@/generated/prisma';
+import type { Prisma, User } from '@/generated/prisma';
+import { ApiResponse, ApiErrorResponse } from '@/lib/types/user';
+import { createSuccessResponse, createErrorResponse } from '@/lib/utils/user-response';
 
 // Utility to robustly extract error code from error objects, even if nested
 function getErrorCode(
@@ -116,11 +118,11 @@ export async function GET() {
             profileUpdatedAt: user.profile?.updatedAt?.toISOString()
         }));
 
-        return NextResponse.json(transformedUsers);
+        return NextResponse.json(createSuccessResponse(transformedUsers));
     } catch (error) {
         console.error("Error fetching users:", error);
         return NextResponse.json(
-            { error: "Failed to fetch users" },
+            createErrorResponse("Failed to fetch users", "FETCH_ERROR"),
             { status: 500 }
         );
     }
@@ -134,7 +136,7 @@ export const POST = withPermission(PERMISSIONS.USER_CREATE)(async (request: Requ
         // Validate required fields
         if (!data.email || !data.name) {
             return NextResponse.json(
-                { error: "Email and name are required" },
+                createErrorResponse("Email and name are required", "VALIDATION_ERROR"),
                 { status: 400 }
             );
         }
@@ -143,7 +145,7 @@ export const POST = withPermission(PERMISSIONS.USER_CREATE)(async (request: Requ
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(data.email)) {
             return NextResponse.json(
-                { error: "Invalid email format" },
+                createErrorResponse("Invalid email format", "VALIDATION_ERROR"),
                 { status: 400 }
             );
         }
@@ -177,7 +179,7 @@ export const POST = withPermission(PERMISSIONS.USER_CREATE)(async (request: Requ
             profileUpdatedAt: user.profile?.updatedAt?.toISOString()
         };
 
-        return NextResponse.json(responseData, { status: 200 });
+        return NextResponse.json(createSuccessResponse(responseData), { status: 201 });
     } catch (error) {
         console.error("Error creating user:", error);
 
@@ -186,17 +188,17 @@ export const POST = withPermission(PERMISSIONS.USER_CREATE)(async (request: Requ
         switch (errorCode) {
             case 'P2002':
                 return NextResponse.json(
-                    { error: "User with this email already exists" },
+                    createErrorResponse("User with this email already exists", "DUPLICATE_ERROR"),
                     { status: 409 }
                 );
             case 'P1001':
                 return NextResponse.json(
-                    { error: "Service temporarily unavailable" },
+                    createErrorResponse("Service temporarily unavailable", "SERVICE_ERROR"),
                     { status: 503 }
                 );
             default:
                 return NextResponse.json(
-                    { error: "Failed to create user" },
+                    createErrorResponse("Failed to create user", "CREATE_ERROR"),
                     { status: 500 }
                 );
         }

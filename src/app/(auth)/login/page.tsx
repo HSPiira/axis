@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui";
 import { ChevronLeft, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { loginSchema } from "@/lib/validations/auth";
@@ -24,6 +24,8 @@ interface FormErrors {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -55,16 +57,18 @@ export default function LoginPage() {
       setErrors({});
 
       const result = await signIn("credentials", {
-        email: parsed.email, // ✅ keep only if backend expects `email`
+        email: parsed.email,
         password: parsed.password,
         redirect: false,
-        callbackUrl: "/dashboard", // allows the server to over-ride if needed
+        callbackUrl,
       });
 
       if (result?.error) {
         setErrors({ submit: result.error });
-      } else {
-        router.push(result.url || "/dashboard");
+      } else if (result?.ok) {
+        // Wait a brief moment to ensure the session is established
+        await new Promise(resolve => setTimeout(resolve, 100));
+        router.push(result.url || callbackUrl);
       }
     } catch (err: unknown) {
       if (err instanceof ZodError) {

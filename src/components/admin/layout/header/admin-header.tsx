@@ -4,12 +4,18 @@ import { Bell, LogIn, LogOut, MessageCircle, Menu } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { BrandGradientText } from "@/components/ui/brand-gradient-text";
 import { CompanyLogo } from "@/components/admin/layout/sidebar/company-logo";
+import { useRouter } from "next/navigation";
 
 export function AdminHeader({ title, onSidebarToggle }: { title: string; onSidebarToggle: () => void }) {
   const { data: session } = useSession();
+  const router = useRouter();
   const isAuthenticated = !!session?.user;
   const handleLogin = () => signIn("microsoft-entra-id");
-  const handleLogout = () => signOut();
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    router.push('/login');
+  };
 
   return (
     <header
