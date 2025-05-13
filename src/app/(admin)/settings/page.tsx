@@ -64,7 +64,7 @@ export default function SettingsPage() {
           />
         </div>
         {/* Main content: offset for both sidebars and header, margin matches sidebar width */}
-        <div className={`flex-1 w-full md:mt-4 transition-all duration-300 ${sidebarExpanded ? 'md:ml-[16rem]' : 'md:ml-16'}`}>
+        <div className={`flex-1 w-full md:mt-2 transition-all duration-300 ${sidebarExpanded ? 'md:ml-[16rem]' : 'md:ml-16'}`}>
           <ActiveSettingsComponent />
         </div>
       </div>

@@ -22,6 +22,7 @@ import { RoleDetailsCard } from "../detail-cards/role-detail-card";
 import { Plus, Search } from "lucide-react";
 import { UserEditModal } from '../modals/user-edit-modal';
 import { RoleEditModal } from '../modals/role-edit-modal';
+import { useSession } from "next-auth/react";
 
 interface User {
     id: string;
@@ -63,6 +64,7 @@ interface Permission {
 }
 
 export function UserSettings() {
+    const { data: session } = useSession();
     const {
         activeTab,
         handleTabChange,
@@ -74,30 +76,35 @@ export function UserSettings() {
         defaultTab: 'users',
         dataLoaders: {
             users: async () => {
-                const response = await fetch('/api/users');
+                const response = await fetch('/api/users', { credentials: 'include' });
                 if (!response.ok) throw new Error('Failed to fetch users');
-                return response.json();
+                const data = await response.json();
+                return Array.isArray(data) ? data : [];
             },
             roles: async () => {
-                const response = await fetch('/api/roles');
+                const response = await fetch('/api/roles', { credentials: 'include' });
                 if (!response.ok) throw new Error('Failed to fetch roles');
-                return response.json();
+                const data = await response.json();
+                return Array.isArray(data.data) ? data.data : [];
             },
             permissions: async () => {
-                const response = await fetch('/api/permissions');
+                const response = await fetch('/api/permissions', { credentials: 'include' });
                 if (!response.ok) throw new Error('Failed to fetch permissions');
-                return response.json();
+                const data = await response.json();
+                return Array.isArray(data) ? data : [];
             },
             security: async () => {
-                const response = await fetch('/api/security-settings');
+                const response = await fetch('/api/security-settings', { credentials: 'include' });
                 if (!response.ok) throw new Error('Failed to fetch security settings');
-                return response.json();
+                const data = await response.json();
+                return data || {};
             },
             policies: async () => {
-                const response = await fetch('/api/access-policies');
+                const response = await fetch('/api/access-policies', { credentials: 'include' });
                 if (!response.ok) throw new Error('Failed to fetch access policies');
-                return response.json();
-            }
+                const data = await response.json();
+                return Array.isArray(data) ? data : [];
+            },
         }
     });
 
@@ -112,41 +119,43 @@ export function UserSettings() {
 
     // Add state for roles and users to allow local refresh
     const [roles, setRoles] = React.useState<Role[]>([]);
-    const [usersState, setUsersState] = React.useState<User[]>([]);
+    const [users, setUsers] = React.useState<User[]>([]);
     const [showEditUserModal, setShowEditUserModal] = React.useState(false);
     const [showEditRoleModal, setShowEditRoleModal] = React.useState(false);
 
     // Sync roles and users from data loader
     React.useEffect(() => {
-        if (data.roles) setRoles(data.roles);
-        if (data.users) setUsersState(data.users);
+        if (data.roles) {
+            setRoles(Array.isArray(data.roles) ? data.roles : []);
+        }
+        if (data.users) {
+            setUsers(Array.isArray(data.users) ? data.users : []);
+        }
     }, [data.roles, data.users]);
 
     // Refresh roles from API and update details card if needed
-    const refreshRoles = async (selectId?: string) => {
-        const response = await fetch('/api/roles');
-        const updatedRoles = await response.json();
-        setRoles(updatedRoles);
-        if (selectId) {
-            const updated = updatedRoles.find((r: Role) => r.id === selectId);
-            if (updated) setSelectedRole(updated);
-        } else if (selectedRole) {
-            const updated = updatedRoles.find((r: Role) => r.id === selectedRole.id);
-            if (updated) setSelectedRole(updated);
+    const refreshRoles = async () => {
+        try {
+            const response = await fetch('/api/roles', { credentials: 'include' });
+            if (!response.ok) throw new Error('Failed to fetch roles');
+            const data = await response.json();
+            setRoles(Array.isArray(data.data) ? data.data : []);
+        } catch (error) {
+            console.error('Error refreshing roles:', error);
+            setRoles([]);
         }
     };
 
     // Refresh users from API and update details card if needed
-    const refreshUsers = async (selectId?: string) => {
-        const response = await fetch('/api/users');
-        const updatedUsers = await response.json();
-        setUsersState(updatedUsers);
-        if (selectId) {
-            const updated = updatedUsers.find((u: User) => u.id === selectId);
-            if (updated) setSelectedUser(updated);
-        } else if (selectedUser) {
-            const updated = updatedUsers.find((u: User) => u.id === selectedUser.id);
-            if (updated) setSelectedUser(updated);
+    const refreshUsers = async () => {
+        try {
+            const response = await fetch('/api/users', { credentials: 'include' });
+            if (!response.ok) throw new Error('Failed to fetch users');
+            const data = await response.json();
+            setUsers(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error('Error refreshing users:', error);
+            setUsers([]);
         }
     };
 
@@ -159,13 +168,16 @@ export function UserSettings() {
         try {
             const response = await fetch(`/api/roles/${roleId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
                 body: JSON.stringify({ permissionIds }),
             });
 
             if (!response.ok) throw new Error('Failed to update permissions');
 
-            await refreshRoles(roleId);
+            await refreshRoles();
         } catch (error) {
             console.error('Error updating permissions:', error);
         }
@@ -175,13 +187,16 @@ export function UserSettings() {
         try {
             const response = await fetch(`/api/users/${userId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
                 body: JSON.stringify(data),
             });
 
             if (!response.ok) throw new Error('Failed to update user');
 
-            await refreshUsers(userId);
+            await refreshUsers();
             setShowEditUserModal(false);
         } catch (error) {
             console.error('Error updating user:', error);
@@ -191,7 +206,7 @@ export function UserSettings() {
 
     const handleEditUser = async (user: User) => {
         setSelectedUser(user);
-        await refreshUsers(user.id);
+        await refreshUsers();
         setShowEditUserModal(true);
     };
 
@@ -199,13 +214,16 @@ export function UserSettings() {
         try {
             const response = await fetch(`/api/roles/${roleId}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
                 body: JSON.stringify(data),
             });
 
             if (!response.ok) throw new Error('Failed to update role');
 
-            await refreshRoles(roleId);
+            await refreshRoles();
             setShowEditRoleModal(false);
         } catch (error) {
             console.error('Error updating role:', error);
@@ -214,7 +232,6 @@ export function UserSettings() {
     };
 
     // Calculate pagination values
-    const users = usersState || [];
     const totalPages = Math.ceil(users.length / pageSize);
     const paginatedUsers = users.slice(
         (currentPage - 1) * pageSize,
@@ -236,13 +253,14 @@ export function UserSettings() {
     );
 
     // Filter roles by search
-    const filteredRoles = (roles || []).filter((role: Role) => {
+    const filteredRoles = Array.isArray(roles) ? roles.filter((role: Role) => {
         const q = roleSearch.toLowerCase();
         return (
             role.name.toLowerCase().includes(q) ||
             (role.description?.toLowerCase().includes(q) ?? false)
         );
-    });
+    }) : [];
+
     const rolesTotalPages = Math.ceil(filteredRoles.length / pageSize);
     const paginatedRoles = filteredRoles.slice(
         (currentPage - 1) * pageSize,
@@ -445,13 +463,16 @@ export function UserSettings() {
                     try {
                         const response = await fetch('/api/roles', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            credentials: 'include',
                             body: JSON.stringify(roleData),
                         });
 
                         if (!response.ok) throw new Error('Failed to create role');
                         const newRole = await response.json();
-                        await refreshRoles(newRole.id);
+                        await refreshRoles();
                         setShowCreateRoleModal(false);
                     } catch (error) {
                         console.error('Error creating role:', error);

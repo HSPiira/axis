@@ -24,13 +24,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                const user = {
-                    id: "1",
-                    name: "John Doe",
-                    email: "test@test.com",
-                    password: "password",
-                };
-                if (user.email === credentials?.email && user.password === credentials?.password) {
+                if (credentials?.email === "test@test.com" && credentials?.password === "password") {
+                    // Create or get test user
+                    let user = await prisma.user.findUnique({
+                        where: { email: "test@test.com" },
+                    });
+
+                    if (!user) {
+                        user = await prisma.user.create({
+                            data: {
+                                email: "test@test.com",
+                                name: "Test User",
+                            },
+                        });
+
+                        // Assign admin role to test user
+                        await assignRoleToUser(user.id, ROLES.ADMIN);
+                    }
+
                     return user;
                 }
                 return null;

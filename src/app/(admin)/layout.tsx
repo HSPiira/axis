@@ -11,19 +11,22 @@ import { HomeIcon, Users, CalendarIcon } from "lucide-react";
 import { AdminHeader } from "@/components/admin/layout/header/admin-header";
 import { COMPANY_NAME } from "@/lib/constants";
 import { AuthGuard, AuthProvider } from "@/components/auth";
+import { useState } from "react";
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const menuItems: MenuItem[] = [
     { title: "Dashboard", href: "/dashboard", icon: HomeIcon },
     { icon: Users, title: "People", href: "/people" },
     { icon: CalendarIcon, title: "Sessions", href: "/sessions" },
   ];
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
     <AuthProvider>
       <AuthGuard>
         <div className="flex h-screen min-h-screen bg-background text-foreground">
-          <AdminSidebar menuItems={menuItems} title={COMPANY_NAME} />
+          <AdminSidebar menuItems={menuItems} title={COMPANY_NAME} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
           <div className="flex-1 flex flex-col min-h-screen">
-            <AdminHeader title={COMPANY_NAME} />
+            <AdminHeader title={COMPANY_NAME} onSidebarToggle={() => setIsSidebarOpen((open) => !open)} />
             <main className="flex-1 pt-16 sm:pt-20 px-4 sm:px-6 md:px-8 overflow-auto">
               <div className="max-w-7xl mx-auto">
                 {children}

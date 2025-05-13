@@ -48,9 +48,9 @@ export function SettingsSidebar({ activeSection, onSectionChange, isExpanded, se
             {/* Mobile Menu Button */}
             <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden fixed top-4 left-4 z-50 bg-white dark:bg-gray-800 rounded-full p-2 shadow-md border border-gray-200 dark:border-gray-700"
+                className="md:hidden fixed top-4 left-4 z-50 bg-white dark:bg-slate-800 rounded-full p-2 shadow-md border border-slate-200 dark:border-slate-700"
             >
-                <Bars3Icon className="h-5 w-5 text-gray-500" />
+                <Bars3Icon className="h-5 w-5 text-slate-500" />
             </button>
 
             {/* Mobile Menu Overlay */}
@@ -59,9 +59,9 @@ export function SettingsSidebar({ activeSection, onSectionChange, isExpanded, se
             )}
 
             {/* Sidebar Content */}
-            <div className={`transition-all duration-300 flex flex-col h-full z-40 border-r border-gray-200 dark:border-gray-800`}>
+            <div className={`transition-all duration-300 flex flex-col h-full z-40 border-r border-slate-200 dark:border-slate-800`}>
                 {/* Scrollable Navigation */}
-                <nav className="flex-1 overflow-y-auto py-2">
+                <nav className="flex-1 overflow-y-auto py-1">
                     <div className="space-y-0.5 w-full">
                         {sections.map((section, idx) => {
                             const Icon = section.icon;
@@ -74,8 +74,8 @@ export function SettingsSidebar({ activeSection, onSectionChange, isExpanded, se
                                     }}
                                     className={`flex items-center px-2 py-2 text-xs font-semibold whitespace-nowrap transition-all duration-200
                                         ${activeSection === section.id
-                                            ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white mx-2 rounded'
-                                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-md'
+                                            ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white mx-2 rounded'
+                                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-md'
                                         }
                                         ${isExpanded ? 'w-full' : 'mx-auto'}
                                         ${idx === 0 ? 'mt-4' : ''}
@@ -95,15 +95,15 @@ export function SettingsSidebar({ activeSection, onSectionChange, isExpanded, se
                     </div>
                 </nav>
                 {/* Collapsible Toggle Button at the Bottom */}
-                <div className="mt-auto flex items-center justify-start h-12 relative border-t border-gray-200 dark:border-gray-700">
+                <div className="mt-auto flex items-center justify-start h-12 relative border-t border-slate-200 dark:border-slate-700">
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-gray-800 rounded-full p-1 shadow-md border border-gray-200 dark:border-gray-700 hidden md:block"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white dark:bg-slate-800 rounded-full p-1 shadow-md border border-slate-200 dark:border-slate-700 hidden md:block"
                     >
                         {isExpanded ? (
-                            <ChevronLeftIcon className="h-4 w-4 text-gray-500" />
+                            <ChevronLeftIcon className="h-4 w-4 text-slate-500" />
                         ) : (
-                            <ChevronRightIcon className="h-4 w-4 text-gray-500" />
+                            <ChevronRightIcon className="h-4 w-4 text-slate-500" />
                         )}
                     </button>
                 </div>

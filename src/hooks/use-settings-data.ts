@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSettingsTab } from './use-settings-tab';
+import { useSession } from 'next-auth/react';
 
 interface UseSettingsDataOptions {
     section: string;
@@ -16,6 +17,7 @@ export function useSettingsData({ section, defaultTab, dataLoaders }: UseSetting
     const [data, setData] = useState<{ [key: string]: any }>({});
     const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
     const [error, setError] = useState<{ [key: string]: Error | null }>({});
+    const { data: session } = useSession();
 
     // Load data for all tabs when component mounts
     useEffect(() => {
@@ -36,8 +38,10 @@ export function useSettingsData({ section, defaultTab, dataLoaders }: UseSetting
             await Promise.all(loadPromises);
         };
 
-        loadAllData();
-    }, []); // Empty dependency array means this runs once on mount
+        if (session) {
+            loadAllData();
+        }
+    }, [session]); // Add session as a dependency
 
     return {
         activeTab,

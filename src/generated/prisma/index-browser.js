@@ -182,9 +182,113 @@ exports.Prisma.UserRoleScalarFieldEnum = {
   roleId: 'roleId'
 };
 
+exports.Prisma.IndustryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  code: 'code',
+  description: 'description',
+  parentId: 'parentId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.OrganizationScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  phone: 'phone',
+  address: 'address',
+  contactPerson: 'contactPerson',
+  contactEmail: 'contactEmail',
+  contactPhone: 'contactPhone',
+  industryId: 'industryId',
+  status: 'status',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ContractScalarFieldEnum = {
+  id: 'id',
+  organizationId: 'organizationId',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  renewalDate: 'renewalDate',
+  billingRate: 'billingRate',
+  isRenewable: 'isRenewable',
+  paymentFrequency: 'paymentFrequency',
+  paymentTerms: 'paymentTerms',
+  currency: 'currency',
+  lastBillingDate: 'lastBillingDate',
+  nextBillingDate: 'nextBillingDate',
+  documentUrl: 'documentUrl',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.DocumentScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  type: 'type',
+  url: 'url',
+  fileSize: 'fileSize',
+  fileType: 'fileType',
+  version: 'version',
+  isLatest: 'isLatest',
+  previousVersionId: 'previousVersionId',
+  uploadedById: 'uploadedById',
+  organizationId: 'organizationId',
+  contractId: 'contractId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AuditLogScalarFieldEnum = {
+  id: 'id',
+  action: 'action',
+  data: 'data',
+  timestamp: 'timestamp',
+  userId: 'userId'
+};
+
+exports.Prisma.KPIScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  type: 'type',
+  unit: 'unit',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  organizationId: 'organizationId',
+  contractId: 'contractId'
+};
+
+exports.Prisma.KPIAssignmentScalarFieldEnum = {
+  id: 'id',
+  kpiId: 'kpiId',
+  contractId: 'contractId',
+  targetValue: 'targetValue',
+  frequency: 'frequency',
+  status: 'status',
+  notes: 'notes',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  organizationId: 'organizationId'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.QueryMode = {
@@ -197,6 +301,49 @@ exports.Prisma.NullsOrder = {
   last: 'last'
 };
 
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
+};
+exports.OrgStatus = exports.$Enums.OrgStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  TERMINATED: 'TERMINATED',
+  PENDING: 'PENDING'
+};
+
+exports.ContractStatus = exports.$Enums.ContractStatus = {
+  ACTIVE: 'ACTIVE',
+  EXPIRED: 'EXPIRED',
+  TERMINATED: 'TERMINATED',
+  RENEWED: 'RENEWED'
+};
+
+exports.DocumentType = exports.$Enums.DocumentType = {
+  CONTRACT: 'CONTRACT',
+  CERTIFICATION: 'CERTIFICATION',
+  KPI_REPORT: 'KPI_REPORT',
+  FEEDBACK_SUMMARY: 'FEEDBACK_SUMMARY',
+  BILLING_REPORT: 'BILLING_REPORT',
+  UTILIZATION_REPORT: 'UTILIZATION_REPORT',
+  OTHER: 'OTHER'
+};
+
+exports.Frequency = exports.$Enums.Frequency = {
+  ONE_TIME: 'ONE_TIME',
+  WEEKLY: 'WEEKLY',
+  MONTHLY: 'MONTHLY',
+  QUARTERLY: 'QUARTERLY',
+  ANNUALLY: 'ANNUALLY'
+};
+
+exports.KPIStatus = exports.$Enums.KPIStatus = {
+  PENDING: 'PENDING',
+  ONGOING: 'ONGOING',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+};
 
 exports.Prisma.ModelName = {
   User: 'User',
@@ -206,7 +353,14 @@ exports.Prisma.ModelName = {
   Role: 'Role',
   Permission: 'Permission',
   RolePermission: 'RolePermission',
-  UserRole: 'UserRole'
+  UserRole: 'UserRole',
+  Industry: 'Industry',
+  Organization: 'Organization',
+  Contract: 'Contract',
+  Document: 'Document',
+  AuditLog: 'AuditLog',
+  KPI: 'KPI',
+  KPIAssignment: 'KPIAssignment'
 };
 
 /**

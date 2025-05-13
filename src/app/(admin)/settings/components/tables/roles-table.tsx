@@ -49,7 +49,6 @@ export function RolesTable({
                         <th className="h-10 px-3 text-left align-middle font-medium tracking-wider whitespace-nowrap">Description</th>
                         <th className="h-10 px-3 text-center align-middle font-medium tracking-wider whitespace-nowrap">Users</th>
                         <th className="h-10 px-3 text-center align-middle font-medium tracking-wider whitespace-nowrap">Permissions</th>
-                        <th className="h-10 px-3 text-center align-middle font-medium tracking-wider whitespace-nowrap">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,49 +58,27 @@ export function RolesTable({
                             className={`border-b hover:bg-muted/50 transition-colors cursor-pointer ${selectedRole && selectedRole.id === role.id ? 'bg-muted/30' : ''}`}
                             onClick={() => setSelectedRole(selectedRole && selectedRole.id === role.id ? null : role)}
                         >
-                            <td className="p-2">
+                            <td className="p-1.5">
                                 <div className="flex items-center gap-2 whitespace-nowrap">
                                     <span className="font-medium truncate max-w-[150px]">{role.name}</span>
                                 </div>
                             </td>
-                            <td className="p-2">
+                            <td className="p-1.5">
                                 <div title={role.description || '-'}>
                                     <span className="font-medium text-muted-foreground">
                                         {role.description || '-'}
                                     </span>
                                 </div>
                             </td>
-                            <td className="p-2 text-center">
+                            <td className="p-1.5 text-center">
                                 <span className="font-medium text-muted-foreground whitespace-nowrap">
                                     {role.usersCount}
                                 </span>
                             </td>
-                            <td className="p-2 text-center">
+                            <td className="p-1.5 text-center">
                                 <span className="font-medium text-muted-foreground whitespace-nowrap">
                                     {role.permissions.length}
                                 </span>
-                            </td>
-                            <td className="p-2 text-center">
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                size="icon"
-                                                variant="outline"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onEditPermissions(role);
-                                                }}
-                                                className="h-8 w-8 bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 dark:text-blue-400 dark:border-blue-800"
-                                            >
-                                                <KeyRound className="h-4 w-4" />
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Edit Permissions</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
                             </td>
                         </tr>
                     ))}
