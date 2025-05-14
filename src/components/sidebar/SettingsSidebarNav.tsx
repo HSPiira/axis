@@ -10,7 +10,7 @@ const SettingsSidebarNav = () => {
     const router = useRouter();
     const pathname = usePathname();
     return (
-        <aside className="hidden md:flex flex-col w-56 h-screen bg-white dark:bg-black border-r border-gray-200 dark:border-gray-800 shadow-sm fixed left-0 top-0 z-30">
+        <aside className="hidden lg:flex flex-col w-56 h-screen bg-white dark:bg-black border-r border-gray-200 dark:border-gray-800 shadow-sm fixed left-0 top-0 z-30">
             <div className="flex flex-col gap-2 p-4">
                 {/* Back link */}
                 <div
