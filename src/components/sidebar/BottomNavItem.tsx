@@ -15,10 +15,10 @@ const BottomNavItem: React.FC<BottomNavItemProps> = ({ icon, label, to, active }
     return (
         <Link
             href={to}
-            className={`group flex flex-col items-center justify-center rounded-md px-2 py-[7px] text-base text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 hover:text-black dark:hover:text-white transition-colors ${active ? 'bg-white dark:bg-gray-800 text-black dark:text-white font-semibold' : ''
-                }`}
+            className={`group flex flex-col items-center justify-center rounded-md px-2 py-[7px] text-base transition-colors
+                ${active ? 'text-blue-600 dark:text-blue-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}
         >
-            <Icon className="w-6 h-6 mb-1" />
+            <Icon className={`w-5 h-5 mb-1 ${active ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`} />
             <span>{label}</span>
         </Link>
     );

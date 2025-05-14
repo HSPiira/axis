@@ -1,11 +1,10 @@
 export const settingsSections = [
     {
-        title: '',
+        title: 'Account',
         items: [
             { label: 'Profile', icon: 'FiUser', href: '/admin/settings/profile' },
             { label: 'General', icon: 'FiSettings', href: '/admin/settings/general' },
             { label: 'Calendars', icon: 'FiCalendar', href: '/admin/settings/calendars' },
-            { label: 'Conferencing', icon: 'FiVideo', href: '/admin/settings/conferencing' },
             { label: 'Appearance', icon: 'FiEye', href: '/admin/settings/appearance' },
             { label: 'Out of office', icon: 'FiCalendar', href: '/admin/settings/out-of-office' },
             { label: 'Push Notifications', icon: 'FiBell', href: '/admin/settings/push-notifications' },
