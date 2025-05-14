@@ -8,7 +8,7 @@ const user = {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="min-h-screen flex flex-row bg-gray-50">
+        <div className="min-h-screen flex flex-row bg-white dark:bg-black">
             <ClientNav user={user} />
             <main className="flex-1 px-1 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2">
                 {children}

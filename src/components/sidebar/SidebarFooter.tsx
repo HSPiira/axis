@@ -6,7 +6,7 @@ interface SidebarFooterProps {
 
 const SidebarFooter: React.FC<SidebarFooterProps> = ({ children }) => {
     return (
-        <div className="px-4 py-4 border-t border-gray-100 flex flex-col gap-2">
+        <div className="px-4 py-4 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
             {children}
         </div>
     );
