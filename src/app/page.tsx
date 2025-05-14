@@ -1,12 +1,7 @@
 import { auth } from "@/auth";
-import SignIn from "@/components/auth/sign-in";
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { CompanyLogo } from "@/components/admin/layout/sidebar/company-logo";
-import { COMPANY_NAME } from "@/lib/constants";
 import { CheckCircle2, ChevronRight } from "lucide-react";
-import { BrandGradientText } from "@/components/ui/brand-gradient-text";
-import { Button } from "react-day-picker";
 import Link from "next/link";
 
 export default async function Home() {
@@ -19,10 +14,9 @@ export default async function Home() {
       <main className="flex-1 flex flex-col items-center justify-center py-12 px-4">
         <div className="bg-white/80 dark:bg-black/70 shadow-xl rounded-2xl p-8 sm:p-12 flex flex-col items-center max-w-lg w-full border border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3 mb-4">
-            <CompanyLogo companyName={COMPANY_NAME} size="lg" />
-            <BrandGradientText className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              {COMPANY_NAME}
-            </BrandGradientText>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500">
+              careAxis
+            </h1>
           </div>
           <p className="text-base sm:text-lg text-muted-foreground mb-6 text-center">
             Your confidential, modern counseling platform.

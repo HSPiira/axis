@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ui";
-import { AuthProvider } from "@/components/auth/session-provider";
+// import { AuthProvider } from "@/components/auth/session-provider";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -34,16 +34,14 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className={`${montserrat.variable} min-h-screen bg-background text-foreground`}>
-        <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
