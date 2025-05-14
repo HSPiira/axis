@@ -2,6 +2,7 @@
 import React from 'react';
 import { SidebarNav, SidebarNavItem, SidebarFooter, BottomNav, BottomNavItem, UserProfile } from '@/components/sidebar';
 import { usePathname } from 'next/navigation';
+import { FiMoreHorizontal } from 'react-icons/fi';
 
 const navItems = [
     { icon: 'FiHome', label: 'Home', to: '/admin' },
@@ -12,6 +13,14 @@ const navItems = [
 
 export default function ClientNav({ user }: { user: any }) {
     const pathname = usePathname();
+    // Settings nav item
+    const settingsNav = { icon: 'FiSettings', label: 'Settings', to: '/admin/settings' };
+    // Combine navItems and settings for bottom nav
+    const allNavItems = [...navItems, settingsNav];
+    const maxVisible = 4;
+    const visibleNavItems = allNavItems.slice(0, maxVisible - 1);
+    const extraNavItems = allNavItems.slice(maxVisible - 1);
+    const isMoreActive = pathname === '/admin/more' || extraNavItems.some(item => pathname.startsWith(item.to));
     return (
         <>
             {/* Sidebar for large screens - with fixed positioning */}
@@ -40,19 +49,23 @@ export default function ClientNav({ user }: { user: any }) {
             <div className="hidden md:block w-16 lg:w-56 flex-shrink-0"></div>
             {/* Bottom navigation for small screens */}
             <BottomNav>
-                {navItems.map((item) => (
+                {visibleNavItems.map((item) => (
                     <BottomNavItem
                         key={item.label}
                         icon={item.icon}
                         label={item.label}
                         to={item.to}
-                        active={
-                            item.to === '/admin'
-                                ? pathname === '/admin'
-                                : pathname.startsWith(item.to)
-                        }
+                        active={item.to === '/admin' ? pathname === '/admin' : pathname.startsWith(item.to)}
                     />
                 ))}
+                {extraNavItems.length > 0 && (
+                    <BottomNavItem
+                        icon="FiMoreHorizontal"
+                        label="More"
+                        to="/admin/more"
+                        active={isMoreActive}
+                    />
+                )}
             </BottomNav>
         </>
     );
