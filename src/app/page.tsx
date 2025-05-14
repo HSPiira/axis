@@ -5,10 +5,10 @@ import { CheckCircle2, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function Home() {
-  const session = await auth();
-  if (session) {
-    redirect("/dashboard");
-  }
+  // const session = await auth();
+  // if (session) {
+  //   redirect("/dashboard");
+  // }
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-950 dark:via-black dark:to-gray-900 flex flex-col justify-between">
       <main className="flex-1 flex flex-col items-center justify-center py-12 px-4">
