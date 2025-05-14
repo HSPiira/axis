@@ -12,7 +12,8 @@ export default function MorePage() {
         <div className="max-w-xl mx-auto p-4 pt-8">
             <div className="bg-white dark:bg-black rounded-xl shadow border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
                 {extraNavItems.map((item) => {
-                    const Icon = (Icons as any)[item.icon] || Icons.FiCircle;
+                    // Type-safe approach to dynamic icon imports
+                    const Icon = Icons[item.icon as keyof typeof Icons] || Icons.FiCircle;
                     return (
                         <Link
                             key={item.label}
