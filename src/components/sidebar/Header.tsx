@@ -32,6 +32,7 @@ const Header: React.FC<HeaderProps> = ({ logo, user }) => {
                             e.currentTarget.src = '/placeholder-avatar.png'; // Fallback avatar
                         }}
                     />
+                )}
             </div>
         </header>
     );
