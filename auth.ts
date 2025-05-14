@@ -1,6 +1,6 @@
 import NextAuth from "next-auth"
 import type { DefaultSession, NextAuthConfig } from "next-auth"
-import AzureAD from "next-auth/providers/azure-ad"
+import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
 
 declare module "next-auth" {
     interface Session {
@@ -12,7 +12,7 @@ declare module "next-auth" {
 
 export const config = {
     providers: [
-        AzureAD({
+        MicrosoftEntraID({
             clientId: process.env.AZURE_AD_CLIENT_ID,
             clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
             issuer: process.env.AZURE_AD_ISSUER,

@@ -31,9 +31,18 @@ export default function SignInPage() {
                     <div className="relative p-8">
                         <div className="text-center mb-8">
                             <Link href="/" className="inline-block mb-6">
-                                <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">
-                                    careAxis
-                                </h1>
+                                <div className="flex items-center justify-center gap-3">
+                                    <Image
+                                        src="/logo.svg"
+                                        alt="careAxis logo"
+                                        width={40}
+                                        height={40}
+                                        className="w-10 h-10"
+                                    />
+                                    <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">
+                                        careAxis
+                                    </h1>
+                                </div>
                             </Link>
                             <p className="text-sm text-gray-600 dark:text-gray-300">
                                 Sign in to access your account
