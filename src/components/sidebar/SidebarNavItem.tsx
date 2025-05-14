@@ -22,7 +22,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({ icon, label, to, active
                 <span className="hidden lg:inline text-sm">{label}</span>
             </Link>
             {/* Tooltip for md screens */}
-            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap rounded bg-black dark:bg-white text-white dark:text-black text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity md:block lg:hidden z-50">
+            <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap rounded bg-black dark:bg-white text-white dark:text-black text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-50 md:block lg:hidden">
                 {label}
             </span>
         </div>
