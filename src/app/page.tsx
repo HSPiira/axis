@@ -1,6 +1,4 @@
-import { auth } from "@/auth";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import { CheckCircle2, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
