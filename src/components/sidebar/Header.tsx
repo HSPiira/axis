@@ -28,8 +28,10 @@ const Header: React.FC<HeaderProps> = ({ logo, user }) => {
                         src={user.avatar}
                         alt={user.name}
                         className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700"
+                        onError={(e) => {
+                            e.currentTarget.src = '/placeholder-avatar.png'; // Fallback avatar
+                        }}
                     />
-                )}
             </div>
         </header>
     );
