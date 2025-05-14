@@ -36,7 +36,7 @@ export default async function Home() {
           </ul>
 
           <Link
-            href="/login"
+            href="/admin"
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <span>Get Started</span>
