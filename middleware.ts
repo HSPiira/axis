@@ -1,8 +1,23 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { withSecurityHeaders } from "./middleware/security"
+import { rateLimit } from "./lib/rate-limit"
+
+// Auth-specific rate limit configuration
+const authRateLimit = {
+    maxRequests: 5,    // 5 requests
+    windowMs: 60000,   // per minute
+}
 
 export default async function middleware(request: NextRequest) {
+    // Apply rate limiting for auth endpoints
+    if (request.nextUrl.pathname.startsWith('/auth') ||
+        request.nextUrl.pathname.startsWith('/api/auth')) {
+        const rateLimitResult = await rateLimit(request, authRateLimit)
+        if (rateLimitResult) return rateLimitResult
+    }
+
     const session = await auth()
 
     // List of public paths that don't require authentication
@@ -26,19 +41,22 @@ export default async function middleware(request: NextRequest) {
         request.nextUrl.pathname.startsWith(path + "/")
     )
 
+    let response: NextResponse
+
     if (!session && !isPublicPath) {
         // Redirect to signin page if trying to access protected route without session
         const signInUrl = new URL("/auth/signin", request.url)
         signInUrl.searchParams.set("callbackUrl", request.url)
-        return NextResponse.redirect(signInUrl)
-    }
-
-    if (session && request.nextUrl.pathname === "/auth/signin") {
+        response = NextResponse.redirect(signInUrl)
+    } else if (session && request.nextUrl.pathname === "/auth/signin") {
         // Redirect to home if trying to access signin page with active session
-        return NextResponse.redirect(new URL("/admin/dashboard", request.url))
+        response = NextResponse.redirect(new URL("/admin/dashboard", request.url))
+    } else {
+        response = NextResponse.next()
     }
 
-    return NextResponse.next()
+    // Apply security headers to all responses
+    return withSecurityHeaders(request, response)
 }
 
 // Configure which paths the middleware should run on
