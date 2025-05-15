@@ -17,6 +17,21 @@ if (typeof window !== 'undefined') {
     global.URL = URL
 }
 
+// Mock next/server
+class NextRequest extends Request {
+    constructor(input: RequestInfo | URL, init?: RequestInit) {
+        super(input, init)
+    }
+}
+
+jest.mock('next/server', () => ({
+    NextRequest,
+    NextResponse: {
+        json: (body: any, init?: ResponseInit) => new Response(JSON.stringify(body), init),
+        redirect: (url: string) => new Response(null, { status: 302, headers: { Location: url } }),
+    },
+}))
+
 // Create the mock client
 const mockPrismaClient = {
     user: {

@@ -19,8 +19,8 @@
     "setup-rbac": "ts-node -r tsconfig-paths/register scripts/setup-rbac.ts",
     "verify-rbac": "ts-node -r tsconfig-paths/register scripts/verify-rbac.ts",
     "test-rbac": "ts-node -r tsconfig-paths/register scripts/test-rbac.ts",
-    "test": "NODE_OPTIONS='--experimental-vm-modules --no-warnings' jest",
-    "test:watch": "jest --watch"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@auth/core": "^0.39.1",
@@ -80,6 +80,7 @@
     "@eslint/js": "^9.26.0",
     "@jest/globals": "^29.7.0",
     "@jest/types": "^29.6.3",
+    "@swc/jest": "^0.2.38",
     "@tailwindcss/postcss": "^4.1.6",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
@@ -106,6 +107,7 @@
     "tsx": "^4.19.4",
     "tw-animate-css": "^1.2.9",
     "typescript": "^5",
-    "typescript-eslint": "^8.32.1"
+    "typescript-eslint": "^8.32.1",
+    "vitest": "^3.1.3"
   }
 }

@@ -4,15 +4,16 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
 import type { UserStatus } from "@/generated/prisma"
 import type { NextAuthConfig } from "next-auth"
-import type { JWT } from "next-auth/jwt"
-import type { DefaultSession, Session } from "next-auth"
+import type { DefaultSession } from "next-auth"
 
 // Extend the built-in session types
 declare module "next-auth" {
-    interface Session extends DefaultSession {
+    interface Session {
         user: {
             id: string
             roles?: string[]
+            status?: UserStatus
+            access_token?: string
         } & DefaultSession["user"]
     }
 
@@ -22,6 +23,8 @@ declare module "next-auth" {
         email: string
         name?: string | null
         image?: string | null
+        status?: UserStatus
+        access_token?: string
     }
 }
 
@@ -34,6 +37,7 @@ declare module "@auth/core/jwt" {
         email?: string | null
         picture?: string | null
         sub?: string
+        access_token?: string
     }
 }
 
@@ -44,6 +48,14 @@ export const createConfig = (prismaClient = prisma): NextAuthConfig => ({
             clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
             clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
             issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
+            authorization: {
+                params: {
+                    scope: "openid profile email",
+                    prompt: "select_account",
+                    response_type: "code",
+                    response_mode: "query",
+                }
+            },
         }),
     ],
     pages: {
@@ -52,88 +64,138 @@ export const createConfig = (prismaClient = prisma): NextAuthConfig => ({
     },
     callbacks: {
         async signIn({ user, account, profile }) {
-            // Update user's last login time and ensure active status
-            await prismaClient.user.upsert({
-                where: { id: user.id },
-                create: {
-                    id: user.id,
-                    email: user.email ?? "",
-                    status: 'ACTIVE' as UserStatus,
-                    emailVerified: null,
-                    lastLoginAt: new Date(),
-                },
-                update: {
-                    lastLoginAt: new Date(),
-                },
-            })
+            try {
+                if (!user.email) {
+                    return false
+                }
 
-            // Create audit log for login
-            await prismaClient.auditLog.create({
-                data: {
-                    action: "LOGIN",
-                    entityType: "User",
-                    entityId: user.id,
-                    userId: user.id,
+                // Check if a user with this email exists
+                const existingUser = await prismaClient.user.findUnique({
+                    where: { email: user.email },
+                    include: { accounts: true }
+                })
+
+                if (existingUser) {
+                    // Check if the user already has a Microsoft account
+                    const hasMicrosoftAccount = existingUser.accounts.some(
+                        acc => acc.provider === "microsoft-entra-id"
+                    )
+
+                    if (!hasMicrosoftAccount) {
+                        // Link the Microsoft account to the existing user
+                        await prismaClient.account.create({
+                            data: {
+                                userId: existingUser.id,
+                                type: account?.type ?? "oauth",
+                                provider: account?.provider ?? "microsoft-entra-id",
+                                providerAccountId: account?.providerAccountId ?? "",
+                                access_token: account?.access_token,
+                                expires_at: account?.expires_at,
+                                token_type: account?.token_type,
+                                scope: account?.scope,
+                                id_token: account?.id_token,
+                                session_state: account?.session_state?.toString() ?? null,
+                            }
+                        })
+                    }
+
+                    // Update last login time
+                    await prismaClient.user.update({
+                        where: { id: existingUser.id },
+                        data: {
+                            lastLoginAt: new Date(),
+                            status: 'ACTIVE' as UserStatus,
+                        },
+                    })
+
+                    // Create audit log
+                    await prismaClient.auditLog.create({
+                        data: {
+                            action: "LOGIN",
+                            entityType: "User",
+                            entityId: existingUser.id,
+                            userId: existingUser.id,
+                            data: {
+                                provider: account?.provider,
+                                email: user.email,
+                                isLinked: !hasMicrosoftAccount,
+                            },
+                        },
+                    })
+
+                    return true
+                }
+
+                // Create new user
+                const newUser = await prismaClient.user.create({
                     data: {
-                        provider: account?.provider,
+                        id: user.id,
                         email: user.email,
+                        status: 'ACTIVE' as UserStatus,
+                        emailVerified: new Date(),
+                        lastLoginAt: new Date(),
                     },
-                },
-            })
+                })
 
-            // Create profile for new users if it doesn't exist
-            const existingProfile = await prismaClient.profile.findUnique({
-                where: { userId: user.id },
-            })
+                // Create audit log for new user
+                await prismaClient.auditLog.create({
+                    data: {
+                        action: "LOGIN",
+                        entityType: "User",
+                        entityId: newUser.id,
+                        userId: newUser.id,
+                        data: {
+                            provider: account?.provider,
+                            email: user.email,
+                            isNewUser: true,
+                        },
+                    },
+                })
 
-            if (!existingProfile) {
+                // Create profile for new user
                 await prismaClient.profile.create({
                     data: {
-                        userId: user.id,
+                        userId: newUser.id,
                         fullName: user.name ?? "",
-                        email: user.email ?? null,
+                        email: user.email,
                         image: user.image ?? null,
                     },
                 })
+
+                return true
+            } catch (error) {
+                console.error('Error in signIn callback:', error)
+                return false
             }
-
-            return true
-        },
-
-        async signOut({ token }) {
-            const dbUser = await prismaClient.user.findUnique({
-                where: { id: token.id },
-            })
-
-            if (dbUser) {
-                await prismaClient.auditLog.create({
-                    data: {
-                        action: "LOGOUT",
-                        entityType: "User",
-                        entityId: dbUser.id,
-                        userId: dbUser.id,
-                        data: {
-                            email: dbUser.email,
-                        }
-                    }
-                })
-            }
-
-            return true
         },
 
         async session({ session, token }) {
             if (session?.user) {
                 session.user.id = token.id as string
                 session.user.roles = token.roles as string[]
+                if (token.access_token) {
+                    session.user.access_token = token.access_token
+                }
+
+                // Get user status from database
+                const dbUser = await prismaClient.user.findUnique({
+                    where: { id: token.id },
+                    select: { status: true },
+                })
+                if (dbUser?.status) {
+                    session.user.status = dbUser.status
+                }
             }
             return session
         },
 
-        async jwt({ token, user }) {
+        async jwt({ token, user, account }) {
             if (user) {
                 token.id = user.id
                 token.email = user.email
+            }
+            if (account?.access_token) {
+                token.access_token = account.access_token
             }
             return token
         },
@@ -165,49 +227,6 @@ export const createConfig = (prismaClient = prisma): NextAuthConfig => ({
         updateAge: 60 * 60, // 1 hour
     },
     events: {
-        async signIn({ user, account, profile, isNewUser }) {
-            // Create or update the user first
-            const dbUser = await prismaClient.user.upsert({
-                where: { id: user.id },
-                create: {
-                    id: user.id,
-                    email: user.email,
-                    emailVerified: new Date(),
-                    lastLoginAt: new Date(),
-                    status: 'ACTIVE',
-                },
-                update: {
-                    lastLoginAt: new Date(),
-                },
-            })
-
-            // Create audit log for sign in
-            await prismaClient.auditLog.create({
-                data: {
-                    action: "LOGIN",
-                    entityType: "User",
-                    entityId: dbUser.id,
-                    userId: dbUser.id,
-                    data: {
-                        isNewUser,
-                        provider: account?.provider,
-                        email: dbUser.email,
-                    },
-                }
-            })
-
-            // If this is a new user, create their profile
-            if (isNewUser) {
-                await prismaClient.profile.create({
-                    data: {
-                        userId: dbUser.id,
-                        fullName: profile?.name || user.email?.split('@')[0] || 'Unknown',
-                        email: dbUser.email,
-                        image: user.image,
-                    }
-                })
-            }
-        },
         async signOut(message) {
             if ('token' in message && message.token?.id) {
                 // Get the user from the database
@@ -229,7 +248,7 @@ export const createConfig = (prismaClient = prisma): NextAuthConfig => ({
                     })
                 }
             }
-        },
+        }
     },
 })
 

@@ -1,4 +1,4 @@
-import { describe, test, expect } from '@jest/globals'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { prismaMock } from './singleton'
 import { createMockUserWithRelations } from './utils/mock-data'
 

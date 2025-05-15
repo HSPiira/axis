@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import type { JWT } from '@auth/core/jwt'
 import type { Session, Account } from 'next-auth'
 import type { NextRequest } from 'next/server'
@@ -38,7 +38,7 @@ const config = createConfig(prismaMock)
 describe('Authentication', () => {
     beforeEach(() => {
         // Clear all mocks before each test
-        jest.clearAllMocks()
+        vi.clearAllMocks()
     })
 
     describe('Sign In', () => {

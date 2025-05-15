@@ -1,22 +1,18 @@
-export default {
-    clearMocks: true,
-    preset: 'ts-jest',
-    testEnvironment: 'node',
-    setupFilesAfterEnv: ['<rootDir>/src/__tests__/singleton.ts'],
+/** @type {import('jest').Config} */
+const config = {
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+    testEnvironment: 'jest-environment-jsdom',
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
-        '^.prisma/client/default$': '<rootDir>/src/generated/prisma/default.js',
-        '^.prisma/client$': '<rootDir>/src/generated/prisma',
-        '@prisma/client': '<rootDir>/src/generated/prisma',
     },
-    testMatch: ['**/__tests__/**/*.test.ts'],
+    testMatch: [
+        '**/__tests__/**/*.test.[jt]s?(x)',
+    ],
     transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
-            useESM: true,
-        }],
+        '^.+\\.(t|j)sx?$': ['@swc/jest'],
     },
     extensionsToTreatAsEsm: ['.ts', '.tsx'],
-    transformIgnorePatterns: [
-        '/node_modules/(?!(jose|next-auth|@auth/core|@auth/prisma-adapter|next|@prisma/client)/)',
-    ],
-} 
+    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+}
+
+export default config 
