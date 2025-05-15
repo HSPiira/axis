@@ -3,7 +3,8 @@ import type { JWT } from '@auth/core/jwt'
 import type { Session, Account } from 'next-auth'
 import type { NextRequest } from 'next/server'
 import type { AdapterUser, AdapterSession } from '@auth/core/adapters'
-import type { UserStatus, Language } from '@/generated/prisma'
+import type { UserStatus, Language, ActionType } from '@/generated/prisma'
+import type { JsonValue } from '@/generated/prisma/runtime/library'
 import { prismaMock } from './singleton'
 
 type MockUser = {
@@ -20,7 +21,7 @@ type MockUser = {
     inactiveReason: string | null;
     suspensionReason: string | null;
     banReason: string | null;
-    metadata: any | null;
+    metadata: JsonValue | null;
     deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
@@ -29,7 +30,7 @@ type MockUser = {
 }
 
 // Import the config after mocking
-import { createConfig } from '../../auth'
+import { createConfig } from '@/lib/auth'
 
 // Create a test config with the mocked prisma client
 const config = createConfig(prismaMock)
@@ -73,10 +74,10 @@ describe('Authentication', () => {
             // Mock user upsert
             prismaMock.user.upsert.mockResolvedValue(mockUser)
             // Mock audit log create
-            prismaMock.auditLog.create.mockResolvedValue({} as any)
+            prismaMock.auditLog.create.mockResolvedValue({} as { id: string; userId: string | null; ipAddress: string | null; userAgent: string | null; action: ActionType; entityType: string | null; entityId: string | null; data: JsonValue; timestamp: Date })
 
             // Test the signIn event
-            await config.events?.signIn({
+            await config.events?.signIn!({
                 user: mockUser as AdapterUser,
                 account: mockAccount,
                 profile: { ...mockUser, [Symbol.iterator]: undefined },
@@ -168,7 +169,7 @@ describe('Authentication', () => {
             })
 
             // Test the signIn event for a new user
-            await config.events?.signIn({
+            await config.events?.signIn!({
                 user: mockUser as AdapterUser,
                 account: mockAccount,
                 profile: { ...mockUser, [Symbol.iterator]: undefined },
@@ -215,7 +216,7 @@ describe('Authentication', () => {
             prismaMock.user.findUnique.mockResolvedValue(mockUser)
 
             // Test the signOut event
-            await config.events?.signOut({
+            await config.events?.signOut!({
                 token: { id: mockUser.id },
             })
 
@@ -256,7 +257,7 @@ describe('Authentication', () => {
                 name: 'Test User',
             }
 
-            const result = await config.callbacks?.jwt({
+            const result = await config.callbacks?.jwt!({
                 token,
                 user: mockUser,
                 account: mockAccount,
@@ -296,16 +297,17 @@ describe('Authentication', () => {
                 userId: mockUser.id,
             } as unknown as Session & AdapterSession & { user: AdapterUser }
 
-            const result = config.callbacks?.session({
+            const sessionResult = config.callbacks?.session!({
                 session: mockSession,
                 token,
                 trigger: 'update',
                 user: mockUser as AdapterUser,
                 newSession: mockSession,
             })
-
-            expect(result?.user?.id).toBe(token.id)
-            expect(result?.user?.roles).toEqual(token.roles)
+            return Promise.resolve(sessionResult).then(result => {
+                expect(result?.user?.id).toBe(token.id)
+                expect(result?.user?.roles).toEqual(token.roles)
+            })
         })
     })
 
@@ -331,7 +333,7 @@ describe('Authentication', () => {
                 expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             }
 
-            const result = config.callbacks?.authorized({
+            const result = config.callbacks?.authorized!({
                 auth: mockSession,
                 request: mockRequest,
             })
@@ -347,7 +349,7 @@ describe('Authentication', () => {
                 },
             } as unknown as NextRequest
 
-            const result = config.callbacks?.authorized({
+            const result = config.callbacks?.authorized!({
                 auth: null,
                 request: mockRequest,
             })

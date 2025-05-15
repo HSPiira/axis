@@ -1,88 +1,124 @@
 import NextAuth from "next-auth"
-import type { DefaultSession, NextAuthConfig, Session } from "next-auth"
-import type { JWT } from "@auth/core/jwt"
-import type { AdapterSession } from "@auth/core/adapters"
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma as defaultPrisma } from "./src/lib/prisma"
-import type { PrismaClient } from "@/generated/prisma"
+import { prisma } from "@/lib/prisma"
+import type { UserStatus } from "@/generated/prisma"
+import type { NextAuthConfig } from "next-auth"
+import type { DefaultSession } from "next-auth"
 
-// Extend the built-in session types
 declare module "next-auth" {
-    interface Session extends DefaultSession {
+    /**
+     * Returned by `useSession`, `auth`, contains information about the active session.
+     */
+    interface Session {
         user: {
             id: string
             roles?: string[]
         } & DefaultSession["user"]
     }
 
+    /**
+     * The shape of the user object returned in the OAuth providers' `profile` callback,
+     * or the second parameter of the `session` callback, when using a database.
+     */
     interface User {
-        id: string
+        status?: UserStatus
+        access_token?: string
         roles?: string[]
-        email: string
-        name?: string | null
-        image?: string | null
     }
 }
 
 declare module "@auth/core/jwt" {
+    /** Returned by the `jwt` callback and `auth`, when using JWT sessions */
     interface JWT {
-        id: string
-        roles?: string[]
+        /** OpenID ID Token */
         idToken?: string
+        /** User's roles in the system */
+        roles?: string[]
+        /** User's unique identifier */
+        id: string
+        /** User's name */
         name?: string | null
+        /** User's email */
         email?: string | null
+        /** User's profile picture */
         picture?: string | null
+        /** Subject identifier */
         sub?: string
+        /** Access token */
+        access_token?: string
     }
 }
 
-export const createConfig = (prisma: PrismaClient = defaultPrisma) => ({
-    adapter: PrismaAdapter(prisma),
+// Configure Auth.js with custom session handling
+export const createConfig = (prismaClient = prisma): NextAuthConfig => ({
+    adapter: PrismaAdapter(prismaClient),
     providers: [
         MicrosoftEntraID({
             clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
             clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
             issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
-            profilePhotoSize: 96,
-            authorization: {
-                params: {
-                    scope: "openid profile email",
-                    response_type: "code",
-                    response_mode: "query",
-                }
-            },
-        })
+            authorization: { params: { scope: "openid profile email" } },
+        }),
     ],
-    pages: {
-        signIn: "/auth/signin",
-        error: "/auth/error",
-    },
     callbacks: {
-        jwt: async ({ token, user, account }) => {
-            if (account && user) {
-                return {
-                    ...token,
+        async signIn({ user }) {
+            // Update user's last login time and ensure active status
+            await prismaClient.user.upsert({
+                where: { id: user.id },
+                create: {
                     id: user.id,
-                    roles: user.roles,
-                    idToken: account.id_token,
+                    email: user.email ?? "",
+                    emailVerified: new Date(),
+                    status: "ACTIVE" as UserStatus,
+                    lastLoginAt: new Date(),
+                },
+                update: {
+                    lastLoginAt: new Date(),
+                    status: "ACTIVE" as UserStatus,
+                },
+            })
+
+            // Create audit log for sign in
+            await prismaClient.auditLog.create({
+                data: {
+                    action: "LOGIN",
+                    entityType: "User",
+                    entityId: user.id,
+                    userId: user.id,
+                    data: {
+                        email: user.email,
+                    },
+                },
+            })
+
+            return true
+        },
+        async session({ session, token }) {
+            if (token?.sub) {
+                session.user.id = token.sub
+                const dbUser = await prismaClient.user.findUnique({
+                    where: { id: token.sub },
+                    select: { status: true },
+                })
+                if (dbUser?.status) {
+                    session.user.status = dbUser.status
                 }
+                if (token.access_token) {
+                    session.user.access_token = token.access_token
+                }
+            }
+            return session
+        },
+        async jwt({ token, account }) {
+            if (account?.access_token) {
+                token.access_token = account.access_token
             }
             return token
         },
-        session: ({ session, token }): Session => {
-            return {
-                ...session,
-                user: {
-                    ...session.user,
-                    id: token.id as string,
-                    roles: token.roles,
-                }
-            }
-        },
-        authorized: ({ auth, request: { nextUrl } }) => {
+        async authorized({ auth, request }) {
             const isLoggedIn = !!auth?.user
-            const isOnDashboard = nextUrl.pathname.startsWith('/admin')
+            const isOnDashboard = request.nextUrl.pathname.startsWith('/admin')
 
             if (isOnDashboard) {
                 return isLoggedIn
@@ -90,81 +126,30 @@ export const createConfig = (prisma: PrismaClient = defaultPrisma) => ({
 
             // For non-dashboard routes, allow public access
             return true
-        }
+        },
+    },
+    pages: {
+        signIn: "/signin",
     },
     session: {
         strategy: "jwt",
-        maxAge: 24 * 60 * 60, // 24 hours
-        updateAge: 60 * 60, // 1 hour
     },
-    events: {
-        async signIn({ user, account, profile, isNewUser }) {
-            // Create or update the user first
-            const dbUser = await prisma.user.upsert({
-                where: { id: user.id },
-                create: {
-                    id: user.id,
-                    email: user.email,
-                    emailVerified: new Date(),
-                    lastLoginAt: new Date(),
-                    status: 'ACTIVE',
-                },
-                update: {
-                    lastLoginAt: new Date(),
-                },
-            })
+})
 
-            // Create audit log for sign in
-            await prisma.auditLog.create({
-                data: {
-                    action: "LOGIN",
-                    entityType: "User",
-                    entityId: dbUser.id,
-                    userId: dbUser.id,
-                    data: {
-                        isNewUser,
-                        provider: account?.provider,
-                        email: dbUser.email,
-                    },
-                }
-            })
+const config = createConfig()
+export const { handlers, auth, signIn, signOut } = NextAuth(config)
 
-            // If this is a new user, create their profile
-            if (isNewUser) {
-                await prisma.profile.create({
-                    data: {
-                        userId: dbUser.id,
-                        fullName: profile?.name || user.email?.split('@')[0] || 'Unknown',
-                        email: dbUser.email,
-                        image: user.image,
-                    }
-                })
-            }
+// Helper function to log user logout
+export async function auditUserLogout(userId: string, email?: string | null) {
+    await prisma.auditLog.create({
+        data: {
+            action: "LOGOUT",
+            entityType: "User",
+            entityId: userId,
+            userId: userId,
+            data: {
+                email,
+            },
         },
-        async signOut(message) {
-            if ('token' in message && message.token?.id) {
-                // Get the user from the database
-                const dbUser = await prisma.user.findUnique({
-                    where: { id: message.token.id }
-                })
-
-                if (dbUser) {
-                    await prisma.auditLog.create({
-                        data: {
-                            action: "LOGOUT",
-                            entityType: "User",
-                            entityId: dbUser.id,
-                            userId: dbUser.id,
-                            data: {
-                                email: dbUser.email,
-                            }
-                        }
-                    })
-                }
-            }
-        },
-    },
-}) satisfies NextAuthConfig
-
-export const config = createConfig()
-export const { handlers, signIn, signOut, auth } = NextAuth(config) 
+    })
+} 
