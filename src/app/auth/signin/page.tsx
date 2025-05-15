@@ -1,6 +1,6 @@
 "use client"
 
-import { signIn } from "@/auth"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { useState } from "react"
@@ -10,14 +10,20 @@ import Link from "next/link"
 export default function SignInPage() {
     const [isLoading, setIsLoading] = useState(false)
 
-    const handleSignIn = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleAuth = async () => {
+        if (isLoading) return
         setIsLoading(true)
         try {
-            await signIn("azure-ad", { redirectTo: "/" })
+            await signIn("microsoft-entra-id", { redirectTo: "/admin/dashboard" })
         } catch (error) {
+            console.error("Sign in error:", error)
             setIsLoading(false)
         }
+    }
+
+    const handleSignIn = async (e: React.FormEvent) => {
+        e.preventDefault()
+        await handleAuth()
     }
 
     return (
@@ -54,6 +60,7 @@ export default function SignInPage() {
                                 type="submit"
                                 className="w-full relative bg-white hover:bg-gray-50 text-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
                                 disabled={isLoading}
+                                onClick={handleAuth}
                             >
                                 {!isLoading && (
                                     <Image

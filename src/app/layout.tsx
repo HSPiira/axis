@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ui";
-// import { AuthProvider } from "@/components/auth/session-provider";
+import { AuthProvider } from "@/components/auth/session-provider";
 import { Inter } from "next/font/google";
 
 const montserrat = Montserrat({
@@ -35,24 +35,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html
-      lang="en"
-      className={`${montserrat.variable} antialiased`}
-      suppressHydrationWarning
-    >
-      <body className={`${montserrat.variable} min-h-screen bg-background text-foreground`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${montserrat.variable} ${inter.className}`}>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

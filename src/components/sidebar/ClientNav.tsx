@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { FiMoreHorizontal } from 'react-icons/fi';
 
 const navItems = [
-    { icon: 'FiHome', label: 'Home', to: '/admin' },
-    { icon: 'FiCalendar', label: 'Sessions', to: '/admin/sessions/upcoming' },
+    { icon: 'FiHome', label: 'Home', to: '/admin/dashboard' },
+    { icon: 'FiCalendar', label: 'Sessions', to: '/admin/sessions' },
     { icon: 'FiUsers', label: 'Clients', to: '/admin/clients' },
     { icon: 'FiBarChart', label: 'Insights', to: '/admin/insights' },
 ];
@@ -21,6 +21,18 @@ export default function ClientNav({ user }: { user: any }) {
     const visibleNavItems = allNavItems.slice(0, maxVisible - 1);
     const extraNavItems = allNavItems.slice(maxVisible - 1);
     const isMoreActive = pathname === '/admin/more' || extraNavItems.some(item => pathname.startsWith(item.to));
+
+    const isItemActive = (itemPath: string) => {
+        // Special case for sessions to handle sub-routes
+        if (itemPath === '/admin/sessions') {
+            return pathname.startsWith('/admin/sessions/');
+        }
+        // For other items, use exact match for root paths and startsWith for sub-paths
+        return itemPath === '/admin/dashboard'
+            ? pathname === itemPath
+            : pathname.startsWith(itemPath);
+    };
+
     return (
         <>
             {/* Sidebar for large screens - with fixed positioning */}
@@ -32,12 +44,8 @@ export default function ClientNav({ user }: { user: any }) {
                             key={item.label}
                             icon={item.icon}
                             label={item.label}
-                            to={item.to}
-                            active={
-                                item.to === '/admin'
-                                    ? pathname === '/admin'
-                                    : pathname.startsWith(item.to)
-                            }
+                            to={item.to === '/admin/sessions' ? '/admin/sessions/upcoming' : item.to}
+                            active={isItemActive(item.to)}
                         />
                     ))}
                 </SidebarNav>
@@ -54,8 +62,8 @@ export default function ClientNav({ user }: { user: any }) {
                         key={item.label}
                         icon={item.icon}
                         label={item.label}
-                        to={item.to}
-                        active={item.to === '/admin' ? pathname === '/admin' : pathname.startsWith(item.to)}
+                        to={item.to === '/admin/sessions' ? '/admin/sessions/upcoming' : item.to}
+                        active={isItemActive(item.to)}
                     />
                 ))}
                 {extraNavItems.length > 0 && (

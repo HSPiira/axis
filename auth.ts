@@ -13,10 +13,17 @@ declare module "next-auth" {
 export const config = {
     providers: [
         MicrosoftEntraID({
-            clientId: process.env.AZURE_AD_CLIENT_ID,
-            clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
-            issuer: process.env.AZURE_AD_ISSUER,
-            authorization: { params: { scope: "openid profile email" } },
+            clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
+            clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
+            issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
+            profilePhotoSize: 96,
+            authorization: {
+                params: {
+                    scope: "openid profile email",
+                    response_type: "code",
+                    response_mode: "query",
+                }
+            },
         })
     ],
     pages: {
