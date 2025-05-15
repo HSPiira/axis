@@ -12,7 +12,7 @@ const ProfilePage = () => {
     return (
         <div className="max-w-2xl mx-auto bg-white dark:bg-black rounded-lg shadow p-6 mt-6">
             <h1 className="text-2xl font-semibold mb-1 text-gray-900 dark:text-white">Profile</h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">Manage settings for your Cal.com profile</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">Manage settings for your careAxis profile</p>
             <div className="flex items-center gap-4 mb-6">
                 <img src={avatar} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
                 <div>
@@ -23,10 +23,10 @@ const ProfilePage = () => {
             <div className="mb-4">
                 <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Username</label>
                 <div className="flex items-center gap-2">
-                    <span className="text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-l">cal.com/</span>
+                    <span className="text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-l">careAxis/</span>
                     <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="flex-1 border border-gray-300 dark:border-gray-700 px-2 py-1 rounded-r bg-white dark:bg-black text-gray-900 dark:text-gray-200" />
                 </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Tip: You can add a '+' between usernames: cal.com/anna+brian to make a dynamic group meeting</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Tip: You can add a '+' between usernames: careAxis/henry+ssekibo to make a dynamic group meeting</p>
             </div>
             <div className="mb-4">
                 <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-gray-200">Full name</label>
