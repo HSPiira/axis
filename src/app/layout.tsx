@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ui";
 import { AuthProvider } from "@/components/auth/session-provider";
 import { Inter } from "next/font/google";
+import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -42,14 +43,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${montserrat.variable} ${inter.className}`}>
         <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
+          <ReactQueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+          </ReactQueryProvider>
         </AuthProvider>
       </body>
     </html>

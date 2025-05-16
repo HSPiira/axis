@@ -19,7 +19,7 @@ const filterVariants = {
     show: { opacity: 1, y: 0 }
 };
 
-export function ClientFilters({ onFilterChange }: ClientFiltersProps) {
+export default function ClientFilters({ onFilterChange }: ClientFiltersProps) {
     const [search, setSearch] = React.useState('');
     const [status, setStatus] = React.useState<BaseStatus>();
     const [industryId, setIndustryId] = React.useState<string>();

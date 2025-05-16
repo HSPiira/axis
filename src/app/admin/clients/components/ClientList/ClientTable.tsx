@@ -26,7 +26,7 @@ const rowVariants = {
     show: { opacity: 1, x: 0 }
 };
 
-export function ClientTable({ clients = [], isLoading = false }: ClientTableProps) {
+export default function ClientTable({ clients = [], isLoading = false }: ClientTableProps) {
     const router = useRouter();
 
     if (isLoading) {

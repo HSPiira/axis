@@ -86,4 +86,6 @@ export function ClientActions() {
             </div>
         </div>
     );
-} 
+}
+
+export default ClientActions;

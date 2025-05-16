@@ -1,8 +1,8 @@
 import React from 'react';
-import { ClientTable } from '../components/ClientList/ClientTable';
-import { ClientFilters } from '../components/ClientList/ClientFilters';
-import { ClientActions } from '../components/ClientList/ClientActions';
+import { ClientTable } from '../components/ClientList';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { ClientActions } from '../components/ClientList/ClientActions';
+import { ClientFilters } from '../components/ClientList';
 
 export default function ClientListPage() {
     return (
