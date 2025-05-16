@@ -28,6 +28,41 @@ export interface ClientModel {
     metadata?: Prisma.JsonValue | null;
     createdAt: string;
     updatedAt: string;
+    staff?: Array<{
+        id: string;
+        profile: {
+            fullName: string;
+        };
+    }>;
+    contracts?: Array<{
+        id: string;
+        status: string;
+        startDate: string;
+        endDate: string;
+    }>;
+    documents?: Array<{
+        id: string;
+        title: string;
+        type: string;
+        status: string;
+    }>;
+    kpis?: Array<{
+        id: string;
+        name: string;
+        status: string;
+    }>;
+    kpiAssignments?: Array<{
+        id: string;
+        status: string;
+        startDate: string;
+        endDate: string;
+    }>;
+    serviceAssignments?: Array<{
+        id: string;
+        status: string;
+        startDate: string;
+        endDate: string;
+    }>;
 }
 
 export interface CreateClientInput {
@@ -93,10 +128,88 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
                 name: true,
                 code: true
             }
+        },
+        staff: {
+            select: {
+                id: true,
+                profile: {
+                    select: {
+                        fullName: true
+                    }
+                }
+            }
+        },
+        contracts: {
+            select: {
+                id: true,
+                status: true,
+                startDate: true,
+                endDate: true
+            }
+        },
+        documents: {
+            select: {
+                id: true,
+                title: true,
+                type: true,
+                status: true
+            }
+        },
+        kpis: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                typeId: true,
+                unit: true,
+                unitType: true,
+                targetValue: true,
+                isPublic: true,
+                calculationMethod: true,
+                frequency: true,
+                metadata: true,
+                createdAt: true,
+                updatedAt: true
+            }
+        },
+        kpiAssignments: {
+            select: {
+                id: true,
+                startDate: true,
+                endDate: true,
+                status: true
+            }
+        },
+        serviceAssignments: {
+            select: {
+                id: true,
+                startDate: true,
+                endDate: true,
+                status: true,
+                service: {
+                    select: {
+                        id: true,
+                        name: true,
+                        category: {
+                            select: {
+                                name: true
+                            }
+                        }
+                    }
+                }
+            }
         }
     };
 
-    protected transform(data: Client & { industry?: Pick<Industry, 'id' | 'name' | 'code'> | null }): ClientModel {
+    protected transform(data: Client & {
+        industry?: Pick<Industry, 'id' | 'name' | 'code'> | null;
+        staff?: Array<{ id: string; profile: { fullName: string } }>;
+        contracts?: Array<{ id: string; status: string; startDate: string; endDate: string }>;
+        documents?: Array<{ id: string; title: string; type: string; status: string }>;
+        kpis?: Array<{ id: string; name: string; status: string }>;
+        kpiAssignments?: Array<{ id: string; status: string; startDate: string; endDate: string }>;
+        serviceAssignments?: Array<{ id: string; status: string; startDate: string; endDate: string }>;
+    }): ClientModel {
         return {
             id: data.id,
             name: data.name,
@@ -121,7 +234,13 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
             notes: data.notes,
             metadata: data.metadata,
             createdAt: data.createdAt.toISOString(),
-            updatedAt: data.updatedAt.toISOString()
+            updatedAt: data.updatedAt.toISOString(),
+            staff: data.staff,
+            contracts: data.contracts,
+            documents: data.documents,
+            kpis: data.kpis,
+            kpiAssignments: data.kpiAssignments,
+            serviceAssignments: data.serviceAssignments
         };
     }
 
@@ -260,5 +379,13 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
             where: { id }
         });
         return this.transform(client);
+    }
+
+    async getById(id: string): Promise<ClientModel | null> {
+        const client = await this.client.findUnique({
+            where: { id },
+            include: this.includes
+        });
+        return client ? this.transform(client) : null;
     }
 } 

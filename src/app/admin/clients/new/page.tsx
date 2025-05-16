@@ -1,30 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { IndustrySelect } from '@/components/industries/IndustrySelect';
 import { toast } from 'sonner';
-import { Check, ChevronRight } from 'lucide-react';
 import { z } from 'zod';
-
-const container = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1
-        }
-    }
-};
-
-const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-};
 
 const formSchema = z.object({
     name: z.string().min(1, 'Company name is required'),
@@ -38,7 +21,7 @@ const formSchema = z.object({
     contactEmail: z.string().email('Invalid contact email').optional().or(z.literal('')),
     contactPhone: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid contact phone').optional().or(z.literal('')),
     industryId: z.string().optional(),
-    preferredContactMethod: z.enum(['EMAIL', 'PHONE', 'MAIL']).optional(),
+    preferredContactMethod: z.enum(['EMAIL', 'PHONE', 'SMS', 'WHATSAPP', 'OTHER']).optional(),
     timezone: z.string().optional(),
     notes: z.string().optional(),
 });
@@ -72,6 +55,12 @@ export default function NewClientPage() {
         { id: 3, title: 'Additional Information' },
     ];
 
+    // Convert steps to breadcrumb items
+    const breadcrumbItems = [
+        { label: 'Clients', href: '/admin/clients' },
+        { label: 'New Client', href: '/admin/clients/new' },
+    ];
+
     const validateStep = (step: number): boolean => {
         const stepFields: Record<number, (keyof FormData)[]> = {
             1: ['name', 'industryId', 'taxId', 'website'],
@@ -87,9 +76,7 @@ export default function NewClientPage() {
 
         try {
             const stepSchema = formSchema.pick(
-                Object.fromEntries(fieldsToValidate.map(field => [field, true])) as {
-                    [K in keyof FormData]?: true;
-                }
+                Object.fromEntries(fieldsToValidate.map(field => [field, true])) as Record<keyof FormData, true>
             );
             stepSchema.parse(stepData);
             setErrors({});
@@ -385,109 +372,28 @@ export default function NewClientPage() {
                         </div>
                     </div>
                 );
-            default:
-                return null;
         }
     };
 
     return (
-        <motion.div
-            initial="hidden"
-            animate="show"
-            variants={container}
-            className="max-w-4xl mx-auto px-4 space-y-6"
-        >
-            <Breadcrumbs
-                items={[
-                    { label: 'Clients', href: '/admin/clients' },
-                    { label: 'Client List', href: '/admin/clients/list' },
-                    { label: 'New Client' }
-                ]}
-            />
-
-            <motion.div variants={item}>
-                <h1 className="text-2xl font-bold mb-6">Create New Client</h1>
-
-                {/* Stepper */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        {steps.map((step, index) => (
-                            <div key={step.id} className="flex items-center">
-                                <div
-                                    className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= step.id
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted text-muted-foreground'
-                                        }`}
-                                >
-                                    {currentStep > step.id ? (
-                                        <Check className="w-4 h-4" />
-                                    ) : (
-                                        <span>{step.id}</span>
-                                    )}
-                                </div>
-                                <span className="ml-2 text-sm font-medium">{step.title}</span>
-                                {index < steps.length - 1 && (
-                                    <div className="w-24 h-0.5 mx-4 bg-muted" />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <form
-                    onSubmit={handleSubmit}
-                    onKeyDown={e => {
-                        if (
-                            e.key === 'Enter' &&
-                            currentStep < steps.length &&
-                            e.target instanceof HTMLElement &&
-                            e.target.tagName !== 'TEXTAREA'
-                        ) {
-                            e.preventDefault();
-                        }
-                    }}
-                    className="space-y-6"
-                >
-                    {renderStep()}
-
-                    <div className="flex justify-between gap-4 pt-6">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => router.back()}
-                        >
-                            Cancel
-                        </Button>
-                        <div className="flex gap-4">
-                            {currentStep > 1 && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={prevStep}
-                                >
-                                    Previous
-                                </Button>
-                            )}
-                            {currentStep < steps.length ? (
-                                <Button
-                                    type="button"
-                                    onClick={nextStep}
-                                >
-                                    Next
-                                    <ChevronRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            ) : (
-                                <Button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Creating...' : 'Create Client'}
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                </form>
-            </motion.div>
-        </motion.div>
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <Breadcrumbs items={breadcrumbItems} />
+                <h2 className="text-2xl font-semibold">{steps[currentStep - 1].title}</h2>
+            </div>
+            <div className="space-y-2">
+                {renderStep()}
+            </div>
+            <div className="flex gap-4">
+                <Button onClick={prevStep} disabled={currentStep === 1}>Previous</Button>
+                {currentStep < steps.length ? (
+                    <Button onClick={nextStep}>Next</Button>
+                ) : (
+                    <Button onClick={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting ? 'Creating...' : 'Create Client'}
+                    </Button>
+                )}
+            </div>
+        </div>
     );
-} 
+}

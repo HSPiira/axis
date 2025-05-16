@@ -82,6 +82,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@eslint/js": "^9.26.0",
+    "@next/eslint-plugin-next": "^15.3.2",
     "@tailwindcss/postcss": "^4.1.7",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -91,6 +92,8 @@
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
     "@types/supertest": "^6.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
     "@xata.io/cli": "^0.16.12",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",

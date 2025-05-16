@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -9,7 +9,6 @@ import {
     UserPlus,
     FileSpreadsheet,
     FileUp,
-    FileText,
     Tags,
     ChevronRight,
     Activity,
@@ -49,6 +48,36 @@ const item = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
 };
+
+function useClientAuditLog(clientId: string) {
+    const [activity, setActivity] = useState<string>('');
+    useEffect(() => {
+        async function fetchLog() {
+            try {
+                const res = await fetch(`/api/clients/${clientId}/auditlog`);
+                const logs = await res.json();
+                if (!Array.isArray(logs) || logs.length === 0) return;
+                const latest = logs.find(log => ['deleted', 'updated', 'created'].includes(log.action));
+                if (latest) {
+                    let who = 'unknown';
+                    if (latest.User) {
+                        who = latest.User.profile?.fullName || latest.User.email || latest.User.id || 'unknown';
+                    } else if (latest.userId) {
+                        who = latest.userId;
+                    }
+                    const when = formatDistanceToNow(new Date(latest.timestamp));
+                    setActivity(`${capitalize(latest.action)} by ${who} ${when} ago`);
+                }
+            } catch { }
+        }
+        fetchLog();
+    }, [clientId]);
+    return activity;
+}
+
+function capitalize(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 export default function ClientsDashboard({ clients, stats }: ClientsDashboardProps) {
     const router = useRouter();
@@ -141,7 +170,7 @@ export default function ClientsDashboard({ clients, stats }: ClientsDashboardPro
                                             {client.name}
                                         </p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                                            Updated {formatDistanceToNow(new Date(client.updatedAt))} ago
+                                            {useClientAuditLog(client.id) || `Updated ${formatDistanceToNow(new Date(client.updatedAt))} ago`}
                                         </p>
                                     </div>
                                     <ChevronRight className="text-gray-400 group-hover:text-blue-500 transition-colors" size={20} />

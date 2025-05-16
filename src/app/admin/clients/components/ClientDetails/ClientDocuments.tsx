@@ -4,7 +4,6 @@ import { FileText, UploadCloud, Download, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ClientDocumentsProps {
-    clientId: string;
     documents?: Document[];
     isLoading?: boolean;
 }
@@ -24,7 +23,7 @@ const item = {
     show: { opacity: 1, y: 0 }
 };
 
-export function ClientDocuments({ clientId, documents = [], isLoading = false }: ClientDocumentsProps) {
+export function ClientDocuments({ documents = [], isLoading = false }: ClientDocumentsProps) {
     if (isLoading) {
         return <div className="animate-pulse h-48 bg-gray-100 dark:bg-gray-900 rounded-lg"></div>;
     }

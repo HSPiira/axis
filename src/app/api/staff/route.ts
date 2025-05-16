@@ -1,49 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ClientProvider } from '@/lib/providers/client-provider';
+import { StaffProvider } from '@/lib/providers/staff-provider';
 import { auth } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { CacheControl } from '@/lib/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 
-const provider = new ClientProvider();
+const provider = new StaffProvider();
 
 // Validation schemas
 const listQuerySchema = z.object({
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(10),
     search: z.string().optional(),
-    status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING']).optional(),
-    industryId: z.string().optional(),
-    isVerified: z.enum(['true', 'false']).optional(),
-    sortBy: z.enum(['name', 'status', 'createdAt']).default('createdAt'),
+    status: z.string().optional(),
+    role: z.string().optional(),
+    clientId: z.string().optional(),
+    sortBy: z.string().default('createdAt'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
-const createClientSchema = z.object({
-    name: z.string().min(1).max(255),
-    industryId: z.string().optional(),
-    status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING']).default('PENDING'),
-    isVerified: z.boolean().default(false),
-    email: z.string().email().optional().nullable(),
-    phone: z.string().optional().nullable(),
-    website: z.string().url().optional().nullable(),
-    address: z.string().optional().nullable(),
-    billingAddress: z.string().optional().nullable(),
-    taxId: z.string().optional().nullable(),
-    contactPerson: z.string().optional().nullable(),
-    contactEmail: z.string().email().optional().nullable(),
-    contactPhone: z.string().optional().nullable(),
-    preferredContactMethod: z.enum(['EMAIL', 'PHONE', 'SMS', 'WHATSAPP', 'OTHER']).optional().nullable(),
-    timezone: z.string().optional().nullable(),
-    notes: z.string().optional().nullable(),
+const createStaffSchema = z.object({
+    profileId: z.string(),
+    clientId: z.string(),
+    role: z.string(),
+    startDate: z.string(),
+    endDate: z.string().optional().nullable(),
+    status: z.string().default('ACTIVE'),
+    qualifications: z.array(z.string()).default([]),
+    specializations: z.array(z.string()).default([]),
+    preferredWorkingHours: z.record(z.any()).optional().nullable(),
+    emergencyContactName: z.string().optional().nullable(),
+    emergencyContactPhone: z.string().optional().nullable(),
+    emergencyContactEmail: z.string().optional().nullable(),
+    metadata: z.record(z.any()).optional().nullable(),
 });
 
-const updateClientSchema = createClientSchema.partial();
+const updateStaffSchema = createStaffSchema.partial();
 
 export async function GET(request: NextRequest) {
     try {
-        // Rate limiting
         const limiter = await rateLimit.check(request, 100, '1m');
         if (!limiter.success) {
             return NextResponse.json(
@@ -57,15 +53,14 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Parse and validate query parameters
         const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
         const {
             page,
             limit,
             search,
             status,
-            industryId,
-            isVerified,
+            role,
+            clientId,
             sortBy,
             sortOrder,
         } = listQuerySchema.parse(searchParams);
@@ -76,8 +71,8 @@ export async function GET(request: NextRequest) {
             search,
             filters: {
                 status: status || undefined,
-                industryId: industryId || undefined,
-                isVerified: isVerified ? isVerified === 'true' : undefined,
+                role: role || undefined,
+                clientId: clientId || undefined,
             },
             sort: {
                 field: sortBy,
@@ -91,7 +86,7 @@ export async function GET(request: NextRequest) {
             staleWhileRevalidate: 59,
         });
     } catch (error) {
-        console.error('Error fetching clients:', error);
+        console.error('Error fetching staff:', error);
         if (error instanceof z.ZodError) {
             return NextResponse.json(
                 { error: 'Validation Error', details: error.errors },
@@ -107,7 +102,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        // Rate limiting
         const limiter = await rateLimit.check(request, 50, '1m');
         if (!limiter.success) {
             return NextResponse.json(
@@ -122,21 +116,20 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const validatedData = createClientSchema.parse(body);
+        const validatedData = createStaffSchema.parse(body);
 
         const result = await provider.create(validatedData);
-        // Audit log: client created
         await prisma.auditLog.create({
             data: {
                 action: 'CREATE',
-                entityType: 'Client',
+                entityType: 'Staff',
                 entityId: result.id,
                 userId: session.user.id,
             },
         });
         return NextResponse.json(result, { status: 201 });
     } catch (error) {
-        console.error('Error creating client:', error);
+        console.error('Error creating staff:', error);
         if (error instanceof z.ZodError) {
             return NextResponse.json(
                 { error: 'Validation Error', details: error.errors },
@@ -152,7 +145,6 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
     try {
-        // Rate limiting
         const limiter = await rateLimit.check(request, 50, '1m');
         if (!limiter.success) {
             return NextResponse.json(
@@ -168,30 +160,28 @@ export async function PUT(request: NextRequest) {
 
         const searchParams = request.nextUrl.searchParams;
         const id = searchParams.get('id');
-
         if (!id) {
             return NextResponse.json(
-                { error: 'Client ID is required' },
+                { error: 'Staff ID is required' },
                 { status: 400 }
             );
         }
 
         const body = await request.json();
-        const validatedData = updateClientSchema.parse(body);
+        const validatedData = updateStaffSchema.parse(body);
 
         const result = await provider.update(id, validatedData);
-        // Audit log: client updated
         await prisma.auditLog.create({
             data: {
                 action: 'UPDATE',
-                entityType: 'Client',
+                entityType: 'Staff',
                 entityId: result.id,
                 userId: session.user.id,
             },
         });
         return NextResponse.json(result);
     } catch (error) {
-        console.error('Error updating client:', error);
+        console.error('Error updating staff:', error);
         if (error instanceof z.ZodError) {
             return NextResponse.json(
                 { error: 'Validation Error', details: error.errors },
@@ -207,7 +197,6 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try {
-        // Rate limiting
         const limiter = await rateLimit.check(request, 50, '1m');
         if (!limiter.success) {
             return NextResponse.json(
@@ -223,31 +212,28 @@ export async function DELETE(request: NextRequest) {
 
         const searchParams = request.nextUrl.searchParams;
         const id = searchParams.get('id');
-
         if (!id) {
             return NextResponse.json(
-                { error: 'Client ID is required' },
+                { error: 'Staff ID is required' },
                 { status: 400 }
             );
         }
 
         await provider.delete(id);
-        // Audit log: client deleted
         await prisma.auditLog.create({
             data: {
                 action: 'DELETE',
-                entityType: 'Client',
+                entityType: 'Staff',
                 entityId: id,
                 userId: session.user.id,
             },
         });
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error('Error deleting client:', error);
+        console.error('Error deleting staff:', error);
         return NextResponse.json(
             { error: 'Internal Server Error' },
             { status: 500 }
         );
     }
-}
-
+} 

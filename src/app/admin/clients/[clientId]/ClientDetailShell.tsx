@@ -1,31 +1,80 @@
 "use client";
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { ClientInfo } from '../components/ClientDetails/ClientInfo';
 import { ClientContracts } from '../components/ClientDetails/ClientContracts';
 import { ClientDocuments } from '../components/ClientDetails/ClientDocuments';
+import { ClientStaff } from '../components/ClientDetails/ClientStaff';
+import { ClientBeneficiaries } from '../components/ClientDetails/ClientBeneficiaries';
 import { Card } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ClientModel } from '@/lib/providers/client-provider';
 import type { ContractModel } from '@/lib/providers/contract-provider';
 import type { Document } from '@prisma/client';
-import { UserPen, Save, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import type { StaffModel } from '@/lib/providers/staff-provider';
+import type { BeneficiaryModel } from '@/lib/providers/beneficiary-provider';
+import { UserPen, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { EditClientDialog } from '../components/ClientDetails/EditClientDialog';
+import Link from 'next/link';
 
 export interface ClientDetailShellProps {
     clientId: string;
-    client: ClientModel;
-    contracts: ContractModel[];
-    documents: Document[];
+    activeTab: string;
 }
 
-export default function ClientDetailShell({ clientId, client, contracts, documents }: ClientDetailShellProps) {
+export default function ClientDetailShell({
+    clientId,
+    activeTab
+}: ClientDetailShellProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [clientData, setClientData] = useState<{
+        client: ClientModel;
+        contracts: ContractModel[];
+        documents: Document[];
+        staff: StaffModel[];
+        beneficiaries: BeneficiaryModel[];
+    } | null>(null);
+
+    useEffect(() => {
+        const contextElement = document.querySelector('.client-data-context');
+        if (contextElement) {
+            const data = JSON.parse(contextElement.getAttribute('data-client') || '{}');
+            setClientData(data);
+        }
+    }, []);
+
+    useEffect(() => {
+        const handleRouteChangeStart = () => setIsLoading(true);
+        const handleRouteChangeComplete = () => setIsLoading(false);
+
+        router.events?.on('routeChangeStart', handleRouteChangeStart);
+        router.events?.on('routeChangeComplete', handleRouteChangeComplete);
+
+        return () => {
+            router.events?.off('routeChangeStart', handleRouteChangeStart);
+            router.events?.off('routeChangeComplete', handleRouteChangeComplete);
+        };
+    }, [router]);
+
+    if (!clientData) {
+        return <LoadingSpinner />;
+    }
+
+    const { client, contracts, documents, staff, beneficiaries } = clientData;
+
+    const tabs = [
+        { id: 'overview', label: 'Overview', href: `/admin/clients/${clientId}` },
+        { id: 'staff', label: 'Staff', href: `/admin/clients/${clientId}/staff` },
+        { id: 'beneficiaries', label: 'Beneficiaries', href: `/admin/clients/${clientId}/beneficiaries` },
+        { id: 'contracts', label: 'Contracts', href: `/admin/clients/${clientId}/contracts` },
+        { id: 'documents', label: 'Documents', href: `/admin/clients/${clientId}/documents` },
+        { id: 'settings', label: 'Settings', href: `/admin/clients/${clientId}/settings` }
+    ];
 
     return (
         <>
@@ -42,23 +91,46 @@ export default function ClientDetailShell({ clientId, client, contracts, documen
                 <div className="flex items-center gap-4">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                         {client.name}
-                        {/* Status icon */}
-                        {client.status === 'ACTIVE' && <CheckCircle2 className="w-6 h-6 text-green-500" />}
-                        {client.status === 'INACTIVE' && <AlertCircle className="w-6 h-6 text-red-500" />}
-                        {client.status === 'PENDING' && <Clock className="w-6 h-6 text-yellow-500" />}
+                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
+                            client.status === 'ACTIVE' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                : client.status === 'INACTIVE'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                        }`} title={client.status}>
+                            {client.status === 'ACTIVE' ? (
+                                <CheckCircle2 size={16} />
+                            ) : client.status === 'INACTIVE' ? (
+                                <XCircle size={16} />
+                            ) : (
+                                <Clock size={16} />
+                            )}
+                        </span>
                     </h1>
-                    <span className="text-base text-gray-500 dark:text-gray-400 font-medium ml-2">{client.industry?.name || 'No industry'}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">{client.industry?.name || 'No industry'}</span>
                 </div>
             </div>
             <div className="mt-8">
-                <Tabs defaultValue="overview" className="space-y-6">
-                    <TabsList className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="contracts">Contracts</TabsTrigger>
-                        <TabsTrigger value="documents">Documents</TabsTrigger>
-                        <TabsTrigger value="settings">Settings</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="overview" className="space-y-6">
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1 mb-6">
+                    <nav className="flex space-x-1">
+                        {tabs.map((tab) => (
+                            <Link
+                                key={tab.id}
+                                href={tab.href}
+                                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                                    activeTab === tab.id
+                                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }`}
+                            >
+                                {tab.label}
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
+
+                <div className={`transition-opacity duration-200 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+                    {activeTab === 'overview' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div className="lg:col-span-2 space-y-6">
                                 <Card className="p-6 hover:shadow-md transition-shadow relative">
@@ -82,8 +154,16 @@ export default function ClientDetailShell({ clientId, client, contracts, documen
                                     <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
                                     <div className="space-y-4">
                                         <div>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Active Staff</p>
+                                            <p className="text-2xl font-semibold">{staff.filter(s => s.status === 'ACTIVE').length}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Active Beneficiaries</p>
+                                            <p className="text-2xl font-semibold">{beneficiaries.filter(b => b.status === 'ACTIVE').length}</p>
+                                        </div>
+                                        <div>
                                             <p className="text-sm text-gray-500 dark:text-gray-400">Active Contracts</p>
-                                            <p className="text-2xl font-semibold">{contracts.filter((c: ContractModel) => c.status === 'ACTIVE').length}</p>
+                                            <p className="text-2xl font-semibold">{contracts.filter(c => c.status === 'ACTIVE').length}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 dark:text-gray-400">Total Documents</p>
@@ -97,22 +177,41 @@ export default function ClientDetailShell({ clientId, client, contracts, documen
                                 </Card>
                             </div>
                         </div>
-                    </TabsContent>
-                    <TabsContent value="contracts">
+                    )}
+
+                    {activeTab === 'staff' && (
+                        <Card className="p-6">
+                            <Suspense fallback={<LoadingSpinner />}>
+                                <ClientStaff clientId={clientId} staff={staff} />
+                            </Suspense>
+                        </Card>
+                    )}
+
+                    {activeTab === 'beneficiaries' && (
+                        <Card className="p-6">
+                            <Suspense fallback={<LoadingSpinner />}>
+                                <ClientBeneficiaries clientId={clientId} beneficiaries={beneficiaries} />
+                            </Suspense>
+                        </Card>
+                    )}
+
+                    {activeTab === 'contracts' && (
                         <Card className="p-6">
                             <Suspense fallback={<LoadingSpinner />}>
                                 <ClientContracts clientId={clientId} contracts={contracts} />
                             </Suspense>
                         </Card>
-                    </TabsContent>
-                    <TabsContent value="documents">
+                    )}
+
+                    {activeTab === 'documents' && (
                         <Card className="p-6">
                             <Suspense fallback={<LoadingSpinner />}>
-                                <ClientDocuments clientId={clientId} documents={documents} />
+                                <ClientDocuments documents={documents} />
                             </Suspense>
                         </Card>
-                    </TabsContent>
-                    <TabsContent value="settings">
+                    )}
+
+                    {activeTab === 'settings' && (
                         <Card className="p-6">
                             <div className="mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
                                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Client Settings</h3>
@@ -159,14 +258,13 @@ export default function ClientDetailShell({ clientId, client, contracts, documen
                                 </div>
                             </form>
                         </Card>
-                    </TabsContent>
-                </Tabs>
+                    )}
+                </div>
             </div>
             <EditClientDialog
                 open={editDialogOpen}
                 onOpenChange={setEditDialogOpen}
                 client={client}
-                onSuccess={() => router.refresh()}
             />
         </>
     );
