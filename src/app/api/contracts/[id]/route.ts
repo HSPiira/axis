@@ -113,8 +113,7 @@ export async function PATCH(
 }
 
 export async function GET(
-    request: NextRequest,
-    { params }: { params: { id: string } }
+    request: NextRequest
 ) {
     try {
         // Rate limiting

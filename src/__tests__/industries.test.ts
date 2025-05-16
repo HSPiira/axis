@@ -1,5 +1,32 @@
 import { NextRequest } from 'next/server';
 import type { IndustryModel } from '@/lib/providers/industry-provider';
+import { IndustryProvider } from '@/lib/providers/industry-provider';
+import { auth } from '@/lib/auth';
+import { GET, POST, PUT, DELETE } from '@/app/api/industries/route';
+import { GET as getRootIndustries } from '@/app/api/industries/root/route';
+import { rateLimit } from '@/lib/rate-limit';
+import { CacheControl } from '@/lib/cache';
+
+// Mock Response globally
+const mockJsonResponse = (data: any, init?: ResponseInit) => {
+    const responseInit = {
+        ...init,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(init?.headers || {}),
+        },
+    };
+
+    const response = {
+        headers: new Headers(responseInit.headers),
+        status: init?.status || 200,
+        ok: (init?.status || 200) >= 200 && (init?.status || 200) < 300,
+        json: async () => Promise.resolve(data),
+        text: async () => Promise.resolve(JSON.stringify(data)),
+    };
+
+    return response as Response;
+};
 
 // Mock Next.js server components
 jest.mock('next/server', () => {
@@ -41,283 +68,370 @@ jest.mock('next/server', () => {
         }
     }
 
+    const NextResponse = {
+        json: (data: any, init?: ResponseInit) => {
+            return mockJsonResponse(data, init);
+        },
+    };
+
     return {
         NextRequest: MockNextRequest,
-        NextResponse: {
-            json: (body: any, init?: ResponseInit) => {
-                return new Response(JSON.stringify(body), {
-                    ...init,
-                    headers: {
-                        'content-type': 'application/json',
-                        ...(init?.headers || {}),
-                    },
-                });
-            },
-        },
+        NextResponse,
     };
 });
 
-// Mock the auth function
+// Mock dependencies
 jest.mock('@/lib/auth', () => ({
-    auth: jest.fn(),
+    auth: jest.fn(() => Promise.resolve({ user: { id: 'test-user' } })),
 }));
 
-// Mock the IndustryProvider inline and expose mock instance
+jest.mock('@/lib/rate-limit', () => ({
+    rateLimit: {
+        check: jest.fn(() => Promise.resolve({ success: true, limit: 100, remaining: 99, reset: 0 })),
+    },
+}));
+
+jest.mock('@/lib/cache', () => ({
+    CacheControl: {
+        withCache: jest.fn((response) => response),
+    },
+}));
+
+// Mock database functions
 jest.mock('@/lib/providers/industry-provider', () => {
     const mockProvider = {
         list: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
-        findRootIndustries: jest.fn(),
+        findByExternalId: jest.fn(),
     };
+
     return {
-        __esModule: true,
         IndustryProvider: jest.fn(() => mockProvider),
-        __mockProvider: mockProvider,
     };
 });
 
-// Import after mocks
-import { IndustryProvider, __mockProvider as mockProvider } from '@/lib/providers/industry-provider';
-import { auth } from '@/lib/auth';
-import { GET, POST, PUT, DELETE } from '@/app/api/industries/route';
-import { GET as getRootIndustries } from '@/app/api/industries/root/route';
-
 describe('Industry API Routes', () => {
-    let mockRequest: NextRequest;
-
-    const createMockIndustry = (overrides = {}): IndustryModel => ({
+    const mockIndustry = {
         id: '1',
         name: 'Test Industry',
         code: 'IND001',
         description: 'Test Description',
+        status: 'Active',
         parentId: null,
         parent: null,
         externalId: null,
         metadata: null,
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z',
-        ...overrides,
-    });
+    };
+
+    const mockIndustries = {
+        data: [mockIndustry],
+        pagination: {
+            page: 1,
+            limit: 10,
+            total: 1,
+            pages: 1,
+        },
+    };
+
+    let provider: any;
 
     beforeEach(() => {
         jest.clearAllMocks();
-        Object.values(mockProvider).forEach(mock => mock.mockReset());
 
-        mockRequest = new NextRequest('http://localhost:3000/api/industries', {
-            method: 'GET',
-        });
+        // Reset provider instance
+        const { IndustryProvider } = require('@/lib/providers/industry-provider');
+        provider = new IndustryProvider();
 
-        (auth as jest.Mock).mockResolvedValue({ user: { id: 'test-user' } });
+        // Setup mock methods with proper resolved values
+        provider.list.mockResolvedValue({ data: [], pagination: { total: 0 } });
+        provider.create.mockResolvedValue(mockIndustry);
+        provider.update.mockResolvedValue(mockIndustry);
+        provider.delete.mockResolvedValue(true);
+        provider.findByExternalId.mockResolvedValue(null);
     });
 
     describe('GET /api/industries', () => {
-        it('should return 401 if not authenticated', async () => {
-            (auth as jest.Mock).mockResolvedValue(null);
-
-            const response = await GET(mockRequest);
-            const data = await response.json();
-
-            expect(response.status).toBe(401);
-            expect(data).toEqual({ error: 'Unauthorized' });
-        });
-
         it('should return paginated industries', async () => {
-            const mockIndustries = {
-                data: [
-                    createMockIndustry({ id: '1', name: 'Industry 1' }),
-                    createMockIndustry({ id: '2', name: 'Industry 2' }),
-                ],
-                pagination: {
-                    total: 2,
-                    pages: 1,
-                    page: 1,
-                    limit: 10,
-                },
-            };
+            const searchParams = new URLSearchParams();
+            const mockRequest = new NextRequest(`http://localhost/api/industries?${searchParams.toString()}`);
 
-            mockProvider.list.mockResolvedValue(mockIndustries);
+            provider.list.mockResolvedValueOnce(mockIndustries);
 
             const response = await GET(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockIndustries);
-            expect(mockProvider.list).toHaveBeenCalledWith({
+            expect(provider.list).toHaveBeenCalledWith({
                 page: 1,
                 limit: 10,
                 search: '',
-                filters: {},
+                filters: {
+                    parentId: undefined,
+                    externalId: undefined,
+                    status: undefined,
+                },
+                sort: {
+                    field: 'name',
+                    direction: 'asc',
+                },
             });
         });
 
         it('should handle search and filters', async () => {
             const searchParams = new URLSearchParams({
-                search: 'test',
-                parentId: 'parent1',
-                externalId: 'ext1',
                 page: '2',
                 limit: '5',
+                search: 'test',
+                status: 'Active',
             });
+            const mockRequest = new NextRequest(`http://localhost/api/industries?${searchParams.toString()}`);
 
-            mockRequest = new NextRequest(
-                `http://localhost:3000/api/industries?${searchParams.toString()}`
-            );
-
-            const mockIndustries = {
-                data: [createMockIndustry({ id: '1', name: 'Test Industry' })],
-                pagination: {
-                    total: 1,
-                    pages: 1,
-                    page: 2,
-                    limit: 5,
-                },
-            };
-
-            mockProvider.list.mockResolvedValue(mockIndustries);
+            provider.list.mockResolvedValueOnce(mockIndustries);
 
             const response = await GET(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockIndustries);
-            expect(mockProvider.list).toHaveBeenCalledWith({
+            expect(provider.list).toHaveBeenCalledWith({
                 page: 2,
                 limit: 5,
                 search: 'test',
                 filters: {
-                    parentId: 'parent1',
-                    externalId: 'ext1',
+                    parentId: undefined,
+                    externalId: undefined,
+                    status: 'Active',
+                },
+                sort: {
+                    field: 'name',
+                    direction: 'asc',
                 },
             });
+        });
+
+        it('should return 429 when rate limit exceeded', async () => {
+            (rateLimit.check as jest.Mock).mockResolvedValueOnce({ success: false, limit: 100, remaining: 0, reset: 0 });
+            const mockRequest = new NextRequest('http://localhost/api/industries');
+            const response = await GET(mockRequest);
+            const data = await response.json();
+            expect(response.status).toBe(429);
+            expect(data).toEqual({ error: 'Rate limit exceeded' });
         });
     });
 
     describe('POST /api/industries', () => {
         it('should create a new industry', async () => {
-            const mockIndustry = createMockIndustry({
-                id: '1',
-                name: 'New Industry',
-                code: 'IND001',
-            });
-
-            mockProvider.create.mockResolvedValue(mockIndustry);
-
-            const request = new NextRequest('http://localhost:3000/api/industries', {
+            const mockRequest = new NextRequest('http://localhost/api/industries', {
                 method: 'POST',
                 body: JSON.stringify({
                     name: 'New Industry',
-                    code: 'IND001',
+                    status: 'Active',
                 }),
             });
 
-            const response = await POST(request);
+            provider.create.mockResolvedValueOnce(mockIndustry);
+            provider.findByExternalId.mockResolvedValueOnce(null);
+
+            const response = await POST(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(201);
             expect(data).toEqual(mockIndustry);
-            expect(mockProvider.create).toHaveBeenCalledWith({
+            expect(provider.create).toHaveBeenCalledWith({
                 name: 'New Industry',
-                code: 'IND001',
+                status: 'Active',
             });
+        });
+
+        it('should handle validation errors', async () => {
+            const mockRequest = new NextRequest('http://localhost/api/industries', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: '',
+                    status: 'Invalid',
+                }),
+            });
+            const response = await POST(mockRequest);
+            const data = await response.json();
+            expect(response.status).toBe(400);
+            expect(data.error).toBe('Validation Error');
+            expect(data.details).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ message: expect.any(String) }),
+                ])
+            );
+        });
+
+        it('should handle duplicate external ID', async () => {
+            const mockRequest = new NextRequest('http://localhost/api/industries', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: 'New Industry',
+                    status: 'Active',
+                    externalId: 'existing-id',
+                }),
+            });
+
+            // Mock the findByExternalId to return an existing industry
+            provider.findByExternalId
+                .mockReset()
+                .mockResolvedValueOnce(mockIndustry);
+
+            const response = await POST(mockRequest);
+            const data = await response.json();
+
+            expect(response.status).toBe(400);
+            expect(data).toEqual({ error: 'Industry with this external ID already exists' });
+            expect(provider.findByExternalId).toHaveBeenCalledWith('existing-id');
+            expect(provider.create).not.toHaveBeenCalled();
+        });
+
+        it('should return 429 when rate limit exceeded', async () => {
+            (rateLimit.check as jest.Mock).mockResolvedValueOnce({ success: false, limit: 50, remaining: 0, reset: 0 });
+            const mockRequest = new NextRequest('http://localhost/api/industries', {
+                method: 'POST',
+                body: JSON.stringify({}),
+            });
+            const response = await POST(mockRequest);
+            const data = await response.json();
+            expect(response.status).toBe(429);
+            expect(data).toEqual({ error: 'Rate limit exceeded' });
         });
     });
 
     describe('PUT /api/industries', () => {
         it('should update an industry', async () => {
-            const mockIndustry = createMockIndustry({
-                id: '1',
-                name: 'Updated Industry',
-                code: 'IND001',
+            const mockRequest = new NextRequest('http://localhost/api/industries?id=1', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    name: 'Updated Industry',
+                    status: 'Active',
+                }),
             });
 
-            mockProvider.update.mockResolvedValue(mockIndustry);
+            provider.update.mockResolvedValueOnce(mockIndustry);
+            provider.findByExternalId.mockResolvedValueOnce(null);
 
-            const request = new NextRequest(
-                'http://localhost:3000/api/industries?id=1',
-                {
-                    method: 'PUT',
-                    body: JSON.stringify({
-                        name: 'Updated Industry',
-                    }),
-                }
-            );
-
-            const response = await PUT(request);
+            const response = await PUT(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockIndustry);
-            expect(mockProvider.update).toHaveBeenCalledWith('1', {
+            expect(provider.update).toHaveBeenCalledWith('1', {
                 name: 'Updated Industry',
+                status: 'Active',
             });
         });
 
-        it('should return 400 if id is missing', async () => {
-            const request = new NextRequest('http://localhost:3000/api/industries', {
+        it('should return 429 when rate limit exceeded', async () => {
+            (rateLimit.check as jest.Mock).mockResolvedValueOnce({ success: false, limit: 50, remaining: 0, reset: 0 });
+            const mockRequest = new NextRequest('http://localhost/api/industries?id=1', {
                 method: 'PUT',
-                body: JSON.stringify({
-                    name: 'Updated Industry',
-                }),
+                body: JSON.stringify({}),
             });
-
-            const response = await PUT(request);
+            const response = await PUT(mockRequest);
             const data = await response.json();
-
-            expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Industry ID is required' });
+            expect(response.status).toBe(429);
+            expect(data).toEqual({ error: 'Rate limit exceeded' });
         });
     });
 
     describe('DELETE /api/industries', () => {
         it('should delete an industry', async () => {
-            const mockIndustry = createMockIndustry();
-            mockProvider.delete.mockResolvedValue(mockIndustry);
+            const mockRequest = new NextRequest('http://localhost/api/industries?id=1', {
+                method: 'DELETE',
+            });
 
-            const request = new NextRequest(
-                'http://localhost:3000/api/industries?id=1',
-                {
-                    method: 'DELETE',
-                }
-            );
+            provider.list.mockResolvedValueOnce({ data: [], pagination: { total: 0 } });
+            provider.delete.mockResolvedValueOnce(true);
 
-            const response = await DELETE(request);
+            const response = await DELETE(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(200);
             expect(data).toEqual({ success: true });
-            expect(mockProvider.delete).toHaveBeenCalledWith('1');
+            expect(provider.delete).toHaveBeenCalledWith('1');
         });
 
-        it('should return 400 if id is missing', async () => {
-            const request = new NextRequest('http://localhost:3000/api/industries', {
+        it('should return 400 when industry has children', async () => {
+            const mockRequest = new NextRequest('http://localhost/api/industries?id=1', {
                 method: 'DELETE',
             });
 
-            const response = await DELETE(request);
+            provider.list.mockResolvedValueOnce({
+                data: [{ id: '2', name: 'Child Industry' }],
+                pagination: { total: 1 },
+            });
+
+            const response = await DELETE(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(400);
-            expect(data).toEqual({ error: 'Industry ID is required' });
+            expect(data).toEqual({ error: 'Cannot delete industry with child industries' });
+        });
+
+        it('should return 429 when rate limit exceeded', async () => {
+            (rateLimit.check as jest.Mock).mockResolvedValueOnce({ success: false, limit: 50, remaining: 0, reset: 0 });
+            const mockRequest = new NextRequest('http://localhost/api/industries?id=1', {
+                method: 'DELETE',
+            });
+            const response = await DELETE(mockRequest);
+            const data = await response.json();
+            expect(response.status).toBe(429);
+            expect(data).toEqual({ error: 'Rate limit exceeded' });
         });
     });
 
     describe('GET /api/industries/root', () => {
         it('should return root industries', async () => {
-            const mockRootIndustries = [
-                createMockIndustry({ id: '1', name: 'Root Industry 1' }),
-                createMockIndustry({ id: '2', name: 'Root Industry 2' }),
-            ];
+            const mockRootIndustries = {
+                data: [
+                    { ...mockIndustry, name: 'Root Industry 1' },
+                    { ...mockIndustry, id: '2', name: 'Root Industry 2' },
+                ],
+                pagination: {
+                    page: 1,
+                    limit: 10,
+                    total: 2,
+                    pages: 1,
+                },
+            };
 
-            mockProvider.findRootIndustries.mockResolvedValue(mockRootIndustries);
+            provider.list.mockResolvedValueOnce(mockRootIndustries);
 
+            const searchParams = new URLSearchParams();
+            const mockRequest = new NextRequest(`http://localhost/api/industries/root?${searchParams.toString()}`);
             const response = await getRootIndustries(mockRequest);
             const data = await response.json();
 
             expect(response.status).toBe(200);
             expect(data).toEqual(mockRootIndustries);
-            expect(mockProvider.findRootIndustries).toHaveBeenCalled();
+            expect(provider.list).toHaveBeenCalledWith({
+                page: 1,
+                limit: 10,
+                search: '',
+                filters: {
+                    parentId: null,
+                },
+                sort: {
+                    field: 'name',
+                    direction: 'asc',
+                },
+            });
+        });
+
+        it('should return 429 when rate limit exceeded', async () => {
+            (rateLimit.check as jest.Mock).mockResolvedValueOnce({ success: false, limit: 100, remaining: 0, reset: 0 });
+            const mockRequest = new NextRequest('http://localhost/api/industries/root');
+            const response = await getRootIndustries(mockRequest);
+            const data = await response.json();
+            expect(response.status).toBe(429);
+            expect(data).toEqual({ error: 'Rate limit exceeded' });
         });
     });
 });

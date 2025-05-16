@@ -3,7 +3,7 @@ import type { ContractModel } from '@/lib/providers/contract-provider';
 import type { ContractStatus, PaymentStatus } from '@prisma/client';
 
 // Mock Response globally
-const mockJsonResponse = (data: any, init?: ResponseInit) => {
+const mockJsonResponse = (data: unknown, init?: ResponseInit) => {
     const response = new Response(JSON.stringify(data), {
         ...init,
         headers: {
@@ -11,10 +11,10 @@ const mockJsonResponse = (data: any, init?: ResponseInit) => {
             ...init?.headers,
         },
     });
-    
+
     // Add json method to Response instance
     response.json = async () => data;
-    
+
     return response;
 };
 
@@ -44,13 +44,15 @@ jest.mock('next/server', () => {
         public readonly headers: MockHeaders;
         public readonly nextUrl: URL;
         private readonly method: string;
-        private readonly bodyContent: any;
+        private readonly bodyContent: unknown;
 
         constructor(input: string | Request | URL, init?: RequestInit) {
-            this.nextUrl = new URL(
-                typeof input === 'string' ? input : input.url,
-                'http://localhost'
-            );
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : input.url;
+            this.nextUrl = new URL(url, 'http://localhost');
             this.headers = new MockHeaders(init?.headers as Record<string, string>);
             this.method = init?.method || 'GET';
             this.bodyContent = init?.body ? JSON.parse(init.body as string) : undefined;
@@ -64,7 +66,7 @@ jest.mock('next/server', () => {
     return {
         NextRequest: MockNextRequest,
         NextResponse: {
-            json: (data: any, init?: ResponseInit) => mockJsonResponse(data, init),
+            json: (data: unknown, init?: ResponseInit) => mockJsonResponse(data, init),
         },
     };
 });
@@ -243,13 +245,23 @@ describe('Client Contracts API Routes', () => {
             mockRequest = new NextRequest('http://localhost/api/clients/client-1/contracts', {
                 method: 'POST',
                 body: JSON.stringify({
-                    startDate: 'invalid-date',
-                    endDate: 'invalid-date',
+                    startDate: '2024-01-01T00:00:00.000Z',
+                    endDate: '2023-12-31T23:59:59.999Z',
                     billingRate: -100,
+                    paymentStatus: 'INVALID',
+                    documentUrl: 'not-a-url',
                 }),
             });
             const response = await POST(mockRequest, { params: mockParams });
+            const data = await response.json();
+
             expect(response.status).toBe(400);
+            expect(data.error).toBe('Validation Error');
+            expect(data.details).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ message: expect.any(String) }),
+                ])
+            );
         });
     });
 

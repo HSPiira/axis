@@ -15,13 +15,16 @@ const listQuerySchema = z.object({
     sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
-export async function GET(request: NextRequest) {
+export async function GET(
+    request: NextRequest,
+    { params }: { params: { parentId: string } }
+) {
     try {
         // Rate limiting
         const limiter = await rateLimit.check(request, 100, '1m');
         if (!limiter.success) {
             return NextResponse.json(
-                { error: 'Rate limit exceeded' },
+                { error: 'Too Many Requests' },
                 { status: 429 }
             );
         }
@@ -31,6 +34,15 @@ export async function GET(request: NextRequest) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
                 { status: 401 }
+            );
+        }
+
+        // Validate parent industry exists
+        const parentIndustry = await provider.findById(params.parentId);
+        if (!parentIndustry) {
+            return NextResponse.json(
+                { error: 'Parent industry not found' },
+                { status: 404 }
             );
         }
 
@@ -47,9 +59,9 @@ export async function GET(request: NextRequest) {
         const result = await provider.list({
             page,
             limit,
-            search: search || '',
+            search,
             filters: {
-                parentId: null, // Only root industries
+                parentId: params.parentId,
             },
             sort: {
                 field: sortBy,
@@ -64,7 +76,7 @@ export async function GET(request: NextRequest) {
             isPrivate: false,
         });
     } catch (error) {
-        console.error('Error fetching root industries:', error);
+        console.error('Error fetching industries by parent:', error);
         if (error instanceof z.ZodError) {
             return NextResponse.json(
                 { error: 'Validation Error', details: error.errors },

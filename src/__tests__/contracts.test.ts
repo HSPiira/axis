@@ -3,7 +3,7 @@ import type { ContractModel } from '@/lib/providers/contract-provider';
 import type { ContractStatus, PaymentStatus } from '@prisma/client';
 
 // Mock Response globally
-const mockJsonResponse = (data: any, init?: ResponseInit) => {
+const mockJsonResponse = (data: unknown, init?: ResponseInit) => {
     const response = new Response(JSON.stringify(data), {
         ...init,
         headers: {
@@ -11,10 +11,10 @@ const mockJsonResponse = (data: any, init?: ResponseInit) => {
             ...init?.headers,
         },
     });
-    
+
     // Add json method to Response instance
     response.json = async () => data;
-    
+
     return response;
 };
 
@@ -44,13 +44,15 @@ jest.mock('next/server', () => {
         public readonly headers: MockHeaders;
         public readonly nextUrl: URL;
         private readonly method: string;
-        private readonly bodyContent: any;
+        private readonly bodyContent: unknown;
 
         constructor(input: string | Request | URL, init?: RequestInit) {
-            this.nextUrl = new URL(
-                typeof input === 'string' ? input : input.url,
-                'http://localhost'
-            );
+            const url = typeof input === 'string'
+                ? input
+                : input instanceof URL
+                    ? input.toString()
+                    : input.url;
+            this.nextUrl = new URL(url, 'http://localhost');
             this.headers = new MockHeaders(init?.headers as Record<string, string>);
             this.method = init?.method || 'GET';
             this.bodyContent = init?.body ? JSON.parse(init.body as string) : undefined;
@@ -64,7 +66,7 @@ jest.mock('next/server', () => {
     return {
         NextRequest: MockNextRequest,
         NextResponse: {
-            json: (data: any, init?: ResponseInit) => mockJsonResponse(data, init),
+            json: (data: unknown, init?: ResponseInit) => mockJsonResponse(data, init),
         },
     };
 });
@@ -158,7 +160,7 @@ describe('Contract API Routes', () => {
             });
 
             mockRequest = new NextRequest(
-                'http://localhost/api/contracts?page=1&limit=10&search=test&status=ACTIVE'
+                'http://localhost/api/contracts?page=1&limit=10&search=test&status=Active'
             );
             const response = await GET(mockRequest);
             const result = await response.json();
@@ -340,19 +342,17 @@ describe('Contract API Routes', () => {
     });
 
     describe('GET /api/contracts/[id]', () => {
-        const mockParams = { id: '1' };
-
         it('should return 401 when not authenticated', async () => {
             (auth as jest.Mock).mockResolvedValueOnce(null);
             mockRequest = new NextRequest('http://localhost/api/contracts/1?action=expiring');
-            const response = await GET_BY_ID(mockRequest, { params: mockParams });
+            const response = await GET_BY_ID(mockRequest);
             expect(response.status).toBe(401);
         });
 
         it('should return 429 when rate limit exceeded', async () => {
             (rateLimit.check as jest.Mock).mockResolvedValueOnce({ success: false, limit: 100, remaining: 0, reset: 0 });
             mockRequest = new NextRequest('http://localhost/api/contracts/1?action=expiring');
-            const response = await GET_BY_ID(mockRequest, { params: mockParams });
+            const response = await GET_BY_ID(mockRequest);
             expect(response.status).toBe(429);
         });
 
@@ -363,7 +363,7 @@ describe('Contract API Routes', () => {
             );
 
             mockRequest = new NextRequest('http://localhost/api/contracts/1?action=expiring&days=30');
-            const response = await GET_BY_ID(mockRequest, { params: mockParams });
+            const response = await GET_BY_ID(mockRequest);
             const result = await response.json();
 
             expect(response.status).toBe(200);
@@ -373,7 +373,7 @@ describe('Contract API Routes', () => {
 
         it('should handle validation errors', async () => {
             mockRequest = new NextRequest('http://localhost/api/contracts/1?action=invalid');
-            const response = await GET_BY_ID(mockRequest, { params: mockParams });
+            const response = await GET_BY_ID(mockRequest);
             expect(response.status).toBe(400);
         });
     });
@@ -432,5 +432,4 @@ describe('Contract API Routes', () => {
             expect(response.status).toBe(400);
         });
     });
-}); 
 }); 
