@@ -137,7 +137,6 @@ describe('Client API Routes', () => {
         jest.clearAllMocks();
 
         // Reset provider instance
-        const { ClientProvider } = require('@/lib/providers/client-provider');
         mockProvider = new ClientProvider();
 
         // Setup mock methods with proper resolved values

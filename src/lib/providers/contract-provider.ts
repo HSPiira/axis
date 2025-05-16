@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { BaseProvider, PrismaClient, PaginatedResponse } from "./base-provider";
+import { BaseProvider, PaginatedResponse } from "./base-provider";
 import type { Contract, ContractStatus, PaymentStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { PrismaWrapper } from "@/lib/prisma-wrapper";
 
 // Types for contract management
 export interface ContractModel {
@@ -57,11 +59,14 @@ export interface UpdateContractInput extends Partial<CreateContractInput> {
 }
 
 export interface ContractFilters {
+    clientId?: string;
     status?: ContractStatus;
     paymentStatus?: PaymentStatus;
     isRenewable?: boolean;
     startDate?: Date;
     endDate?: Date;
+    endDateBefore?: Date;
+    endDateAfter?: Date;
 }
 
 interface ListOptions {
@@ -80,7 +85,7 @@ interface ListOptions {
 }
 
 export class ContractProvider extends BaseProvider<ContractModel, CreateContractInput, UpdateContractInput> {
-    protected client = new PrismaClient(prisma.contract);
+    protected client = new PrismaWrapper(prisma.contract);
     protected searchFields = ['notes', 'terminationReason'];
     protected defaultSort = { field: 'createdAt', direction: 'desc' as const };
     protected includes = {
@@ -92,68 +97,61 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
         }
     };
 
-    protected transform(data: Contract & { metadata?: Record<string, any> | null } & { client?: { id: string; name: string } }): ContractModel {
+    protected transform(contract: Contract & { metadata?: Record<string, any> | null } & { client?: { id: string; name: string } }): ContractModel {
         return {
-            id: data.id,
-            clientId: data.clientId,
-            startDate: data.startDate.toISOString(),
-            endDate: data.endDate.toISOString(),
-            renewalDate: data.renewalDate?.toISOString() || null,
-            billingRate: data.billingRate,
-            paymentStatus: data.paymentStatus,
-            paymentFrequency: data.paymentFrequency,
-            paymentTerms: data.paymentTerms,
-            currency: data.currency,
-            status: data.status,
-            isRenewable: data.isRenewable,
-            isAutoRenew: data.isAutoRenew,
-            lastBillingDate: data.lastBillingDate?.toISOString() || null,
-            nextBillingDate: data.nextBillingDate?.toISOString() || null,
-            documentUrl: data.documentUrl,
-            signedBy: data.signedBy,
-            signedAt: data.signedAt?.toISOString() || null,
-            terminationReason: data.terminationReason,
-            notes: data.notes,
-            createdAt: data.createdAt.toISOString(),
-            updatedAt: data.updatedAt.toISOString(),
-            client: data.client ? {
-                id: data.client.id,
-                name: data.client.name,
+            id: contract.id,
+            clientId: contract.clientId,
+            startDate: contract.startDate.toISOString(),
+            endDate: contract.endDate.toISOString(),
+            renewalDate: contract.renewalDate?.toISOString() || null,
+            billingRate: contract.billingRate,
+            paymentStatus: contract.paymentStatus,
+            paymentFrequency: contract.paymentFrequency,
+            paymentTerms: contract.paymentTerms,
+            currency: contract.currency,
+            status: contract.status,
+            isRenewable: contract.isRenewable,
+            isAutoRenew: contract.isAutoRenew,
+            lastBillingDate: contract.lastBillingDate?.toISOString() || null,
+            nextBillingDate: contract.nextBillingDate?.toISOString() || null,
+            documentUrl: contract.documentUrl,
+            signedBy: contract.signedBy,
+            signedAt: contract.signedAt?.toISOString() || null,
+            terminationReason: contract.terminationReason,
+            notes: contract.notes,
+            createdAt: contract.createdAt.toISOString(),
+            updatedAt: contract.updatedAt.toISOString(),
+            client: contract.client ? {
+                id: contract.client.id,
+                name: contract.client.name,
             } : undefined,
         };
     }
 
-    protected buildWhereClause(filters: ContractFilters, search: string): any {
-        const where: any = {};
-
-        // Apply filters
-        if (filters.status) {
-            where.status = filters.status;
-        }
-        if (filters.paymentStatus) {
-            where.paymentStatus = filters.paymentStatus;
-        }
-        if (filters.isRenewable !== undefined) {
-            where.isRenewable = filters.isRenewable;
-        }
-        if (filters.startDate) {
-            where.startDate = { gte: filters.startDate };
-        }
-        if (filters.endDate) {
-            where.endDate = { lte: filters.endDate };
-        }
-
-        // Apply search
-        if (search) {
-            where.OR = this.searchFields.map(field => ({
-                [field]: { contains: search, mode: 'insensitive' }
-            }));
-        }
-
-        // Exclude soft-deleted records
-        where.deletedAt = null;
-
-        return where;
+    protected buildWhereClause(filters: ContractFilters, search: string): Prisma.ContractWhereInput {
+        return {
+            deletedAt: null,
+            ...(search
+                ? {
+                    OR: [
+                        { notes: { contains: search, mode: 'insensitive' } },
+                        { client: { is: { name: { contains: search, mode: 'insensitive' } } } },
+                    ],
+                }
+                : {}),
+            ...(filters.clientId ? { clientId: filters.clientId } : {}),
+            ...(filters.status ? { status: filters.status } : {}),
+            ...(filters.paymentStatus ? { paymentStatus: filters.paymentStatus } : {}),
+            ...(filters.isRenewable !== undefined ? { isRenewable: filters.isRenewable } : {}),
+            ...(filters.endDateBefore || filters.endDateAfter
+                ? {
+                    endDate: {
+                        ...(filters.endDateBefore ? { lte: filters.endDateBefore } : {}),
+                        ...(filters.endDateAfter ? { gte: filters.endDateAfter } : {}),
+                    },
+                }
+                : {}),
+        };
     }
 
     // Additional contract-specific methods
@@ -162,7 +160,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             where: { clientId, deletedAt: null },
             include: this.includes
         });
-        return contracts.map(this.transform);
+        return contracts.map((contract: Contract & { client?: { id: string; name: string } }) => this.transform(contract));
     }
 
     async findActive(): Promise<ContractModel[]> {
@@ -174,7 +172,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             },
             include: this.includes
         });
-        return contracts.map(this.transform);
+        return contracts.map((contract: Contract & { client?: { id: string; name: string } }) => this.transform(contract));
     }
 
     async findExpiringSoon(days: number = 30): Promise<ContractModel[]> {
@@ -192,7 +190,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             },
             include: this.includes
         });
-        return contracts.map(this.transform);
+        return contracts.map((contract: Contract & { client?: { id: string; name: string } }) => this.transform(contract));
     }
 
     async renew(contractId: string, newEndDate: Date): Promise<ContractModel> {
@@ -290,7 +288,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             by: ['status'],
             where: { clientId, deletedAt: null },
             _count: true,
-        }).then(groups => groups.reduce((acc, { status, _count }) => {
+        }).then((groups: Array<{ status: ContractStatus; _count: number }>) => groups.reduce((acc: Record<string, number>, { status, _count }) => {
             acc[status] = _count;
             return acc;
         }, {} as Record<string, number>));
@@ -300,7 +298,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             by: ['paymentStatus'],
             where: { clientId, deletedAt: null },
             _count: true,
-        }).then(groups => groups.reduce((acc, { paymentStatus, _count }) => {
+        }).then((groups: Array<{ paymentStatus: PaymentStatus; _count: number }>) => groups.reduce((acc: Record<string, number>, { paymentStatus, _count }) => {
             acc[paymentStatus] = _count;
             return acc;
         }, {} as Record<string, number>));
@@ -313,7 +311,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
                 avg: activeValue._avg.billingRate || 0,
             },
             expiringSoon,
-            upcomingRenewals: upcomingRenewals.map(r => ({
+            upcomingRenewals: upcomingRenewals.map((r: { id: string; endDate: Date; billingRate: number; isAutoRenew: boolean }) => ({
                 id: r.id,
                 endDate: r.endDate.toISOString(),
                 billingRate: r.billingRate,
@@ -331,30 +329,8 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             sort = { field: 'createdAt', direction: 'desc' }
         } = options;
 
-        // Build the where clause
-        const where = {
-            deletedAt: null,
-            ...(search
-                ? {
-                    OR: [
-                        { notes: { contains: search, mode: 'insensitive' } },
-                        { client: { name: { contains: search, mode: 'insensitive' } } },
-                    ],
-                }
-                : {}),
-            ...(filters.clientId ? { clientId: filters.clientId } : {}),
-            ...(filters.status ? { status: filters.status } : {}),
-            ...(filters.paymentStatus ? { paymentStatus: filters.paymentStatus } : {}),
-            ...(filters.isRenewable !== undefined ? { isRenewable: filters.isRenewable } : {}),
-            ...(filters.endDateBefore || filters.endDateAfter
-                ? {
-                    endDate: {
-                        ...(filters.endDateBefore ? { lte: filters.endDateBefore } : {}),
-                        ...(filters.endDateAfter ? { gte: filters.endDateAfter } : {}),
-                    },
-                }
-                : {}),
-        };
+        // Build the where clause using the shared method
+        const where = this.buildWhereClause(filters, search);
 
         // Use Promise.all for parallel execution
         const [data, total] = await Promise.all([
@@ -369,7 +345,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
         ]);
 
         return {
-            data: data.map(this.transform),
+            data: data.map(contract => this.transform(contract)),
             pagination: {
                 total,
                 pages: Math.ceil(total / limit),
@@ -445,7 +421,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             orderBy: { endDate: 'asc' },
         });
 
-        return contracts.map((contract) => ({
+        return contracts.map((contract: Contract & { client?: { id: string; name: string } }) => ({
             ...contract,
             startDate: contract.startDate.toISOString(),
             endDate: contract.endDate.toISOString(),

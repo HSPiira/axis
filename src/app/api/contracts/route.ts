@@ -82,8 +82,14 @@ export async function GET(request: NextRequest) {
                 clientId: clientId || undefined,
                 paymentStatus: paymentStatus || undefined,
                 isRenewable: isRenewable ? isRenewable === 'true' : undefined,
-                endDateBefore: endDateBefore ? new Date(endDateBefore) : undefined,
-                endDateAfter: endDateAfter ? new Date(endDateAfter) : undefined,
+                endDateBefore: endDateBefore ? (() => {
+                    const date = new Date(endDateBefore);
+                    return isNaN(date.valueOf()) ? undefined : date;
+                })() : undefined,
+                endDateAfter: endDateAfter ? (() => {
+                    const date = new Date(endDateAfter);
+                    return isNaN(date.valueOf()) ? undefined : date;
+                })() : undefined,
             },
             sort: {
                 field: sortBy,
@@ -134,6 +140,13 @@ export async function POST(request: NextRequest) {
         const startDate = new Date(validatedData.startDate);
         const endDate = new Date(validatedData.endDate);
 
+        if (isNaN(startDate.valueOf()) || isNaN(endDate.valueOf())) {
+            return NextResponse.json(
+                { error: 'Invalid date format' },
+                { status: 400 }
+            );
+        }
+
         if (startDate >= endDate) {
             return NextResponse.json(
                 { error: 'Start date must be before end date' },
@@ -141,13 +154,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const contractData = {
-            ...validatedData,
-            startDate: validatedData.startDate,
-            endDate: validatedData.endDate,
-        };
-
-        const result = await provider.create(contractData);
+        const result = await provider.create(validatedData);
         return NextResponse.json(result, { status: 201 });
     } catch (error) {
         console.error('Error creating contract:', error);
@@ -193,14 +200,37 @@ export async function PUT(request: NextRequest) {
         const body = await request.json();
         const validatedData = updateContractSchema.parse(body);
 
-        // Convert dates if they exist
-        const updateData = {
-            ...validatedData,
-            startDate: validatedData.startDate,
-            endDate: validatedData.endDate,
-        };
+        // Validate dates if they exist
+        if (validatedData.startDate && validatedData.endDate) {
+            const startDate = new Date(validatedData.startDate);
+            const endDate = new Date(validatedData.endDate);
 
-        const result = await provider.update(id, updateData);
+            if (isNaN(startDate.valueOf()) || isNaN(endDate.valueOf())) {
+                return NextResponse.json(
+                    { error: 'Invalid date format' },
+                    { status: 400 }
+                );
+            }
+
+            if (startDate >= endDate) {
+                return NextResponse.json(
+                    { error: 'Start date must be before end date' },
+                    { status: 400 }
+                );
+            }
+        } else if (validatedData.startDate || validatedData.endDate) {
+            // If only one date is provided, validate its format
+            const dateToValidate = validatedData.startDate || validatedData.endDate;
+            const date = new Date(dateToValidate!);
+            if (isNaN(date.valueOf())) {
+                return NextResponse.json(
+                    { error: 'Invalid date format' },
+                    { status: 400 }
+                );
+            }
+        }
+
+        const result = await provider.update(id, validatedData);
         return NextResponse.json(result);
     } catch (error) {
         console.error('Error updating contract:', error);

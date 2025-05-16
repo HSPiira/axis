@@ -97,17 +97,17 @@ export class IndustryProvider extends BaseProvider<IndustryModel, CreateIndustry
     async findByParent(parentId: string): Promise<IndustryModel[]> {
         const industries = await this.client.findMany({
             where: { parentId, deletedAt: null },
-            include: this.includes
+            include: this.includes,
         });
-        return industries.map(this.transform);
+        return industries.map(industry => this.transform(industry));
     }
 
-    async findRootIndustries(): Promise<IndustryModel[]> {
+    async findRoot(): Promise<IndustryModel[]> {
         const industries = await this.client.findMany({
             where: { parentId: null, deletedAt: null },
-            include: this.includes
+            include: this.includes,
         });
-        return industries.map(this.transform);
+        return industries.map(industry => this.transform(industry));
     }
 
     async findByExternalId(externalId: string): Promise<IndustryModel | null> {

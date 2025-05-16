@@ -143,7 +143,6 @@ describe('Industry API Routes', () => {
         jest.clearAllMocks();
 
         // Reset provider instance
-        const { IndustryProvider } = require('@/lib/providers/industry-provider');
         provider = new IndustryProvider();
 
         // Setup mock methods with proper resolved values

@@ -1,5 +1,5 @@
 // Database-agnostic interfaces
-interface DatabaseClient {
+export interface DatabaseClient {
     findMany(params: QueryParams): Promise<any[]>;
     findUnique(params: { where: any; include?: any }): Promise<any | null>;
     create(params: { data: any; include?: any }): Promise<any>;
@@ -77,7 +77,7 @@ export abstract class BaseProvider<T, C, U> {
 
         // Transform and return
         return {
-            data: items.map(this.transform),
+            data: items.map(item => this.transform(item)),
             pagination: {
                 total,
                 pages: Math.ceil(total / limit),
