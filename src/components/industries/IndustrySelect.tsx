@@ -78,19 +78,24 @@ export function IndustrySelect({
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0">
+            <PopoverContent className="w-full p-0 z-[9999] pointer-events-auto" forceMount>
                 <Command>
                     <CommandInput
                         placeholder="Search industries..."
                         onValueChange={setSearch}
                     />
-                    <CommandEmpty>No industry found.</CommandEmpty>
-                    <CommandGroup>
-                        {industries?.map((industry) => (
-                            <CommandItem
+                    {industries && industries.length === 0 && (
+                        <CommandEmpty>No industry found.</CommandEmpty>
+                    )}
+                    <CommandGroup className="max-h-[200px] overflow-y-auto">
+                        {industries && industries.length > 0 && industries.map((industry) => (
+                            <div
                                 key={industry.id}
-                                value={industry.id}
-                                onSelect={() => {
+                                className={cn(
+                                    'flex items-center px-4 py-2 cursor-pointer hover:bg-blue-100',
+                                    value === industry.id && 'bg-blue-50'
+                                )}
+                                onClick={() => {
                                     onChange(industry.id === value ? undefined : industry.id);
                                     setOpen(false);
                                 }}
@@ -109,7 +114,7 @@ export function IndustrySelect({
                                         ({industry.code})
                                     </span>
                                 )}
-                            </CommandItem>
+                            </div>
                         ))}
                     </CommandGroup>
                 </Command>

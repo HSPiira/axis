@@ -208,14 +208,14 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
         const where = this.buildWhereClause(filters, search);
 
         const [data, total] = await Promise.all([
-            prisma.client.findMany({
+            this.client.findMany({
                 where,
                 take: limit,
                 skip: (page - 1) * limit,
                 orderBy: { [sort.field]: sort.direction },
                 include: this.includes
             }),
-            prisma.client.count({ where })
+            this.client.count({ where })
         ]);
 
         return {
@@ -230,9 +230,10 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
     }
 
     async create(data: CreateClientInput): Promise<ClientModel> {
+        const { industryId, ...rest } = data;
         const createData: Prisma.ClientCreateInput = {
-            ...data,
-            industry: data.industryId ? { connect: { id: data.industryId } } : undefined
+            ...rest,
+            industry: industryId ? { connect: { id: industryId } } : undefined
         };
         const client = await this.client.create({
             data: createData,

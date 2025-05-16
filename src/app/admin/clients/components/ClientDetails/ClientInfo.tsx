@@ -5,19 +5,22 @@ interface ClientInfoProps {
     clientId: string;
     client?: ClientModel;
     isLoading?: boolean;
+    hideTitle?: boolean;
 }
 
-export function ClientInfo({ client, isLoading = false }: ClientInfoProps) {
+export function ClientInfo({ client, isLoading = false, hideTitle = false }: ClientInfoProps) {
     if (isLoading) {
         return <div className="animate-pulse h-48 bg-gray-100 dark:bg-gray-900 rounded-lg"></div>;
     }
 
     return (
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                    Client Information
-                </h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg">
+            <div className="px-4 py-2 sm:p-6">
+                {!hideTitle && (
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                        Client Information
+                    </h3>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>

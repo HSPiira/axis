@@ -94,22 +94,22 @@ export default function ClientTable({ clients = [], isLoading = false }: ClientT
             >
                 <thead className="bg-gray-50 dark:bg-gray-900/50">
                     <tr>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-gray-200 dark:border-gray-600">
                             Name
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-gray-200 dark:border-gray-600">
                             Industry
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-gray-200 dark:border-gray-600">
                             Status
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-gray-200 dark:border-gray-600">
                             Contact
                         </th>
-                        <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-gray-200 dark:border-gray-600">
                             Verified
                         </th>
-                        <th scope="col" className="relative px-6 py-4">
+                        <th scope="col" className="relative px-6 py-3 border-gray-200 dark:border-gray-600">
                             <span className="sr-only">Actions</span>
                         </th>
                     </tr>
@@ -120,20 +120,20 @@ export default function ClientTable({ clients = [], isLoading = false }: ClientT
                             key={client.id}
                             variants={rowVariants}
                             onClick={() => router.push(`/admin/clients/${client.id}`)}
-                            className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors duration-200"
+                            className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors duration-200 border-gray-200 dark:border-gray-700"
                         >
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-6 py-1 whitespace-nowrap border-gray-200 dark:border-gray-700">
                                 <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                     {client.name}
                                 </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-6 py-1 whitespace-nowrap border-gray-200 dark:border-gray-700">
                                 <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                                     <Building2 className="w-4 h-4 mr-2" />
                                     {client.industry?.name || '-'}
                                 </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-6 py-1 whitespace-nowrap border-gray-200 dark:border-gray-700">
                                 <span className={`px-3 py-1 inline-flex items-center gap-1.5 text-xs font-medium rounded-full
                                     ${client.status === 'ACTIVE'
                                         ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
@@ -151,17 +151,17 @@ export default function ClientTable({ clients = [], isLoading = false }: ClientT
                                     {client.status}
                                 </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700">
                                 {getContactInfo(client)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-6 py-1 whitespace-nowrap border-gray-200 dark:border-gray-700">
                                 {client.isVerified ? (
                                     <CheckCircle2 className="w-5 h-5 text-green-500" />
                                 ) : (
                                     <AlertCircle className="w-5 h-5 text-gray-300 dark:text-gray-600" />
                                 )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium border-gray-200 dark:border-gray-700">
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();

@@ -124,7 +124,7 @@ export default function ClientsDashboard({ clients, stats }: ClientsDashboardPro
                     <div className="flex justify-between items-center mb-6">
                         <div className="flex items-center gap-3">
                             <Clock className="text-blue-500" size={24} />
-                            <h2 className="text-xl font-semibold">Recent Clients</h2>
+                            <h2 className="text-lg font-semibold">Recent Clients</h2>
                         </div>
                     </div>
                     <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
@@ -132,15 +132,15 @@ export default function ClientsDashboard({ clients, stats }: ClientsDashboardPro
                             <motion.div
                                 variants={item}
                                 key={client.id}
-                                className="group p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 cursor-pointer"
+                                className="group p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 cursor-pointer"
                                 onClick={() => router.push(`/admin/clients/${client.id}`)}
                             >
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                        <p className="text-sm text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                             {client.name}
                                         </p>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">
                                             Updated {formatDistanceToNow(new Date(client.updatedAt))} ago
                                         </p>
                                     </div>

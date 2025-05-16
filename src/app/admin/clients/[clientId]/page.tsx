@@ -1,77 +1,74 @@
 import { Metadata } from 'next';
 import { Suspense } from 'react';
-import { ClientHeader } from '../../components/ClientDetails/ClientHeader';
-import { ClientInfo } from '../../components/ClientDetails/ClientInfo';
-import { ClientContracts } from '../../components/ClientDetails/ClientContracts';
-import { ClientDocuments } from '../../components/ClientDetails/ClientDocuments';
-import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { QuickActions } from '../../components/ClientDetails/QuickActions';
+import { ClientHeader } from '../components/ClientDetails/ClientHeader';
+import { ClientInfo } from '../components/ClientDetails/ClientInfo';
+import { ClientContracts } from '../components/ClientDetails/ClientContracts';
+import { ClientDocuments } from '../components/ClientDetails/ClientDocuments';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import ClientActions from '../components/ClientList/ClientActions';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
+import { ClientProvider } from '@/lib/providers/client-provider';
+import { ContractProvider } from '@/lib/providers/contract-provider';
+import { DocumentProvider } from '@/lib/providers/document-provider';
+import type { Document } from '@prisma/client';
+import ClientDetailShell from './ClientDetailShell';
 
 type ClientDetailPageProps = {
-    params: { clientId: string };
+    params: Promise<{ clientId: string }>;
     searchParams?: { [key: string]: string | string[] | undefined };
 }
 
 export async function generateMetadata({ params }: ClientDetailPageProps): Promise<Metadata> {
-    const { clientId } = params;
+    const { clientId } = await params;
     return {
         title: `Client Details - ${clientId}`,
         description: `View and manage client details, contracts, and documents for client ${clientId}`,
     };
 }
 
-function ClientDashboardContent({ clientId }: { clientId: string }) {
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <Breadcrumb
-                    items={[
-                        { label: 'Clients', href: '/admin/clients' },
-                        { label: clientId, href: `/admin/clients/${clientId}` },
-                    ]}
-                />
-                <QuickActions clientId={clientId} />
-            </div>
+async function getClientData(clientId: string) {
+    const clientProvider = new ClientProvider();
+    const contractProvider = new ContractProvider();
+    const documentProvider = new DocumentProvider();
 
-            <ClientHeader clientId={clientId} />
+    const [client, contracts, documents] = await Promise.all([
+        clientProvider.get(clientId),
+        contractProvider.list({ filters: { clientId } }),
+        documentProvider.list({ clientId })
+    ]);
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    <ErrorBoundary fallback={<div>Error loading client information</div>}>
-                        <Suspense fallback={<LoadingSpinner />}>
-                            <ClientInfo clientId={clientId} />
-                        </Suspense>
-                    </ErrorBoundary>
+    console.log('Fetched client:', client);
 
-                    <ErrorBoundary fallback={<div>Error loading contracts</div>}>
-                        <Suspense fallback={<LoadingSpinner />}>
-                            <ClientContracts clientId={clientId} />
-                        </Suspense>
-                    </ErrorBoundary>
-                </div>
-
-                <div className="space-y-6">
-                    <ErrorBoundary fallback={<div>Error loading documents</div>}>
-                        <Suspense fallback={<LoadingSpinner />}>
-                            <ClientDocuments clientId={clientId} />
-                        </Suspense>
-                    </ErrorBoundary>
-                </div>
-            </div>
-        </div>
-    );
+    return {
+        client,
+        contracts: contracts.data,
+        documents: documents.data
+    };
 }
 
-export default function ClientDetailPage({ params }: ClientDetailPageProps) {
-    const { clientId } = params;
+export default async function ClientDetailPage({ params }: ClientDetailPageProps) {
+    const { clientId } = await params;
+    const { client, contracts, documents } = await getClientData(clientId);
+
+    if (!client) {
+        return (
+            <div className="max-w-2xl mx-auto mt-16 p-8 bg-white dark:bg-gray-900 rounded-xl shadow text-center">
+                <h2 className="text-2xl font-bold mb-2">Client Not Found</h2>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">The client you are looking for does not exist or has been deleted.</p>
+                <a href="/admin/clients/list" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition">Back to Client List</a>
+            </div>
+        );
+    }
 
     return (
-        <ErrorBoundary fallback={<div>Error loading client dashboard</div>}>
-            <Suspense fallback={<LoadingSpinner />}>
-                <ClientDashboardContent clientId={clientId} />
-            </Suspense>
-        </ErrorBoundary>
+        <ClientDetailShell
+            clientId={clientId}
+            client={client}
+            contracts={contracts}
+            documents={documents}
+        />
     );
 } 

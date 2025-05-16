@@ -24,11 +24,18 @@ const createClientSchema = z.object({
     industryId: z.string().optional(),
     status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING']).default('PENDING'),
     isVerified: z.boolean().default(false),
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-    website: z.string().url().optional(),
-    notes: z.string().optional(),
+    email: z.string().email().optional().nullable(),
+    phone: z.string().optional().nullable(),
+    website: z.string().url().optional().nullable(),
+    address: z.string().optional().nullable(),
+    billingAddress: z.string().optional().nullable(),
+    taxId: z.string().optional().nullable(),
+    contactPerson: z.string().optional().nullable(),
+    contactEmail: z.string().email().optional().nullable(),
+    contactPhone: z.string().optional().nullable(),
+    preferredContactMethod: z.enum(['EMAIL', 'PHONE', 'SMS', 'WHATSAPP', 'OTHER']).optional().nullable(),
+    timezone: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
 });
 
 const updateClientSchema = createClientSchema.partial();
@@ -51,10 +58,10 @@ export async function GET(request: NextRequest) {
 
         // Parse and validate query parameters
         const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-        const { 
-            page, 
-            limit, 
-            search, 
+        const {
+            page,
+            limit,
+            search,
             status,
             industryId,
             isVerified,
@@ -215,4 +222,4 @@ export async function DELETE(request: NextRequest) {
         );
     }
 }
-    
+

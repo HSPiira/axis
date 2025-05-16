@@ -60,7 +60,7 @@ export function ClientContracts({ clientId, contracts = [], isLoading = false }:
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden"
+            className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden"
         >
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">

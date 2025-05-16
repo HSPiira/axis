@@ -84,8 +84,8 @@ export default function IndustriesPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 space-y-6 lg:ml-56">
+            <div className="flex justify-between items-center mt-8 sm:mt-10 md:mt-12">
                 <div>
                     <h1 className="text-2xl font-bold">Industries</h1>
                     <p className="text-sm text-muted-foreground">
@@ -163,8 +163,8 @@ export default function IndustriesPage() {
                 </div>
             </div>
 
-            <div className="border rounded-lg">
-                <Table>
+            <div className="border rounded-lg overflow-x-auto">
+                <Table className="min-w-full">
                     <TableHeader>
                         <TableRow>
                             <TableHead>Name</TableHead>
@@ -201,9 +201,7 @@ export default function IndustriesPage() {
                                     <TableCell>
                                         {industry.parent?.name || '-'}
                                     </TableCell>
-                                    <TableCell>
-                                        {industry.description || '-'}
-                                    </TableCell>
+                                    <TableCell className="truncate max-w-xs">{industry.description || '-'}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
                                             <Button
@@ -242,6 +240,30 @@ export default function IndustriesPage() {
                     </TableBody>
                 </Table>
             </div>
+            {/* Pagination Controls */}
+            {data?.total && data?.limit && (
+                <div className="flex justify-end items-center gap-2 mt-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page === 1}
+                        onClick={() => setPage(page - 1)}
+                    >
+                        Previous
+                    </Button>
+                    <span className="text-sm">
+                        Page {page} of {Math.ceil(data.total / data.limit)}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page >= Math.ceil(data.total / data.limit)}
+                        onClick={() => setPage(page + 1)}
+                    >
+                        Next
+                    </Button>
+                </div>
+            )}
 
             <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <DialogContent>

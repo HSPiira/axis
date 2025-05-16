@@ -24,7 +24,7 @@ const AppearanceSettingsPage = () => {
     const hasChanges = JSON.stringify(localSettings) !== JSON.stringify(settings);
 
     return (
-        <div className="max-w-2xl mx-auto bg-white dark:bg-black rounded-lg shadow p-6 mt-6">
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 space-y-6 lg:ml-56">
             <h1 className="text-2xl font-semibold mb-1 text-gray-900 dark:text-white">Appearance</h1>
             <p className="text-gray-500 dark:text-gray-400 mb-6">Customize how careAxis looks and feels</p>
 

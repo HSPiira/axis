@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, ChevronDown, FileUp, FileDown, MoreHorizontal } from 'lucide-react';
 
-export function ClientActions() {
+export default function ClientActions() {
     const router = useRouter();
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -87,5 +87,3 @@ export function ClientActions() {
         </div>
     );
 }
-
-export default ClientActions;
