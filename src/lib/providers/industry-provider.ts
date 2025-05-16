@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { BaseProvider, PrismaClient } from "./base-provider";
-import type { Industry } from "@/generated/prisma";
+import type { Industry } from "@prisma/client";
 
 // Types for industry management
 export interface IndustryModel {

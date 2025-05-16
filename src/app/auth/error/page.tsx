@@ -14,13 +14,11 @@ const errorMessages: ErrorMessages = {
     'RateLimit': 'Too many sign in attempts. Please try again later.',
 }
 
-export default function AuthErrorPage({
-    searchParams,
-}: {
-    searchParams: { error?: string }
-}) {
-    const error = searchParams.error
-    const errorMessage = error ? errorMessages[error] || errorMessages.Default : errorMessages.Default
+export default async function AuthErrorPage({ searchParams }: any) {
+    const params = await searchParams;
+    const errorParam = params.error;
+    const error = Array.isArray(errorParam) ? errorParam[0] : errorParam;
+    const errorMessage = error ? errorMessages[error] || errorMessages.Default : errorMessages.Default;
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-100 dark:from-gray-950 dark:via-black dark:to-gray-900">

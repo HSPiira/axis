@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { BaseProvider, PrismaClient } from "./base-provider";
-import type { Client, Industry, BaseStatus, ContactMethod } from "@/generated/prisma";
+import type { Client, Industry, BaseStatus, ContactMethod } from "@prisma/client"
 
 // Types for client management
 export interface ClientModel {
@@ -20,8 +20,8 @@ export interface ClientModel {
         name: string;
         code?: string | null;
     } | null;
-    status: BaseStatus;
-    preferredContactMethod?: ContactMethod | null;
+    status: any;
+    preferredContactMethod?: any | null;
     timezone?: string | null;
     isVerified: boolean;
     notes?: string | null;
@@ -42,22 +42,22 @@ export interface CreateClientInput {
     contactEmail?: string;
     contactPhone?: string;
     industryId?: string;
-    preferredContactMethod?: ContactMethod;
+    preferredContactMethod?: any;
     timezone?: string;
     notes?: string;
     metadata?: Record<string, any>;
 }
 
 export interface UpdateClientInput extends Partial<CreateClientInput> {
-    status?: BaseStatus;
+    status?: any;
     isVerified?: boolean;
 }
 
 export interface ClientFilters {
-    status?: BaseStatus;
+    status?: any;
     isVerified?: boolean;
     industryId?: string;
-    preferredContactMethod?: ContactMethod;
+    preferredContactMethod?: any;
 }
 
 export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput, UpdateClientInput> {
@@ -74,7 +74,7 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
         }
     };
 
-    protected transform(data: Client & { industry?: Industry | null }): ClientModel {
+    protected transform(data: any): ClientModel {
         return {
             id: data.id,
             name: data.name,
@@ -142,7 +142,7 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
         return clients.map(this.transform);
     }
 
-    async findByStatus(status: BaseStatus): Promise<ClientModel[]> {
+    async findByStatus(status: any): Promise<ClientModel[]> {
         const clients = await this.client.findMany({
             where: { status, deletedAt: null },
             include: this.includes
@@ -154,7 +154,7 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
         return this.update(id, { isVerified: true });
     }
 
-    async updateStatus(id: string, status: BaseStatus): Promise<ClientModel> {
+    async updateStatus(id: string, status: any): Promise<ClientModel> {
         return this.update(id, { status });
     }
 } 

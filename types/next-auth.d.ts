@@ -1,5 +1,5 @@
 import type { DefaultSession } from "next-auth"
-import type { UserStatus } from "@/generated/prisma"
+import type { UserStatus } from "@prisma/client"
 
 declare module "next-auth" {
     /**

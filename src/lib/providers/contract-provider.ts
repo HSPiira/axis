@@ -1,32 +1,32 @@
 import { prisma } from "@/lib/prisma";
 import { BaseProvider, PrismaClient } from "./base-provider";
-import type { Contract, ContractStatus, PaymentStatus } from "@/generated/prisma";
+import type { Contract, ContractStatus, PaymentStatus } from "@prisma/client";
 
 // Types for contract management
 export interface ContractModel {
     id: string;
     clientId: string;
-    startDate: string;
-    endDate: string;
-    renewalDate?: string | null;
+    startDate: Date;
+    endDate: Date;
+    renewalDate?: Date | null;
     billingRate: number;
-    isRenewable: boolean;
-    isAutoRenew: boolean;
     paymentStatus: PaymentStatus;
     paymentFrequency?: string | null;
     paymentTerms?: string | null;
     currency?: string | null;
-    lastBillingDate?: string | null;
-    nextBillingDate?: string | null;
-    documentUrl?: string | null;
     status: ContractStatus;
+    isRenewable: boolean;
+    isAutoRenew: boolean;
+    lastBillingDate?: Date | null;
+    nextBillingDate?: Date | null;
+    documentUrl?: string | null;
     signedBy?: string | null;
-    signedAt?: string | null;
+    signedAt?: Date | null;
     terminationReason?: string | null;
     notes?: string | null;
     metadata?: Record<string, any> | null;
-    createdAt: string;
-    updatedAt: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface CreateContractInput {
@@ -79,27 +79,27 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
         return {
             id: data.id,
             clientId: data.clientId,
-            startDate: data.startDate.toISOString(),
-            endDate: data.endDate.toISOString(),
-            renewalDate: data.renewalDate?.toISOString() || null,
+            startDate: new Date(data.startDate),
+            endDate: new Date(data.endDate),
+            renewalDate: data.renewalDate ? new Date(data.renewalDate) : null,
             billingRate: data.billingRate,
-            isRenewable: data.isRenewable,
-            isAutoRenew: data.isAutoRenew,
             paymentStatus: data.paymentStatus,
             paymentFrequency: data.paymentFrequency,
             paymentTerms: data.paymentTerms,
             currency: data.currency,
-            lastBillingDate: data.lastBillingDate?.toISOString() || null,
-            nextBillingDate: data.nextBillingDate?.toISOString() || null,
-            documentUrl: data.documentUrl,
             status: data.status,
+            isRenewable: data.isRenewable,
+            isAutoRenew: data.isAutoRenew,
+            lastBillingDate: data.lastBillingDate ? new Date(data.lastBillingDate) : null,
+            nextBillingDate: data.nextBillingDate ? new Date(data.nextBillingDate) : null,
+            documentUrl: data.documentUrl,
             signedBy: data.signedBy,
-            signedAt: data.signedAt?.toISOString() || null,
+            signedAt: data.signedAt ? new Date(data.signedAt) : null,
             terminationReason: data.terminationReason,
             notes: data.notes,
             metadata: data.metadata,
-            createdAt: data.createdAt.toISOString(),
-            updatedAt: data.updatedAt.toISOString()
+            createdAt: new Date(data.createdAt),
+            updatedAt: new Date(data.updatedAt)
         };
     }
 

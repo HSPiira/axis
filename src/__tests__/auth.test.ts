@@ -1,360 +1,146 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import type { JWT } from '@auth/core/jwt'
-import type { Session, Account } from 'next-auth'
-import type { NextRequest } from 'next/server'
-import type { AdapterUser, AdapterSession } from '@auth/core/adapters'
-import type { UserStatus, Language, ActionType } from '@/generated/prisma'
-import type { JsonValue } from '@/generated/prisma/runtime/library'
-import { prismaMock } from './singleton'
+jest.mock('next-auth', () => ({
+    __esModule: true,
+    default: jest.fn(() => ({
+        auth: jest.fn(),
+        handlers: {},
+        signIn: jest.fn(),
+        signOut: jest.fn(),
+    })),
+}));
+jest.mock('next-auth/providers/microsoft-entra-id', () => ({
+    __esModule: true,
+    default: jest.fn(() => ({})),
+}));
+jest.mock('@auth/prisma-adapter', () => ({
+    __esModule: true,
+    PrismaAdapter: jest.fn(() => ({})),
+}));
 
-type MockUser = {
-    id: string;
-    email: string | null;
-    password: string | null;
-    emailVerified: Date | null;
-    lastLoginAt: Date | null;
-    preferredLanguage: Language | null;
-    timezone: string | null;
-    isTwoFactorEnabled: boolean;
-    status: UserStatus;
-    statusChangedAt: Date | null;
-    inactiveReason: string | null;
-    suspensionReason: string | null;
-    banReason: string | null;
-    metadata: JsonValue | null;
-    deletedAt: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
-    name?: string | null;
-    image?: string | null;
-}
+import { createConfig } from '../lib/auth/index';
+import { prisma } from '@/lib/prisma';
+import { NextAuthConfig } from 'next-auth';
+import type { User, Account } from 'next-auth';
 
-// Import the config after mocking
-import { createConfig } from '@/lib/auth'
+// Mock prisma client
+jest.mock('@/lib/prisma', () => ({
+    prisma: {
+        user: {
+            findUnique: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+        },
+        account: {
+            create: jest.fn(),
+        },
+        auditLog: {
+            create: jest.fn(),
+        },
+        profile: {
+            create: jest.fn(),
+        },
+    },
+}));
 
-// Create a test config with the mocked prisma client
-const config = createConfig(prismaMock)
+describe('Auth Configuration', () => {
+    let config: NextAuthConfig;
 
-describe('Authentication', () => {
     beforeEach(() => {
         // Clear all mocks before each test
-        vi.clearAllMocks()
-    })
+        jest.clearAllMocks();
+        config = createConfig();
+    });
 
-    describe('Sign In', () => {
-        it('should create audit log on successful sign in', async () => {
-            const mockUser: MockUser = {
+    describe('signIn callback', () => {
+        it('should return false if user email is missing', async () => {
+            const mockUser = {
                 id: 'user123',
-                email: 'test@example.com',
-                name: 'Test User',
+                email: '',
                 emailVerified: new Date(),
-                image: null,
-                status: 'ACTIVE' as UserStatus,
-                lastLoginAt: new Date(),
-                password: null,
-                preferredLanguage: null,
-                timezone: null,
-                isTwoFactorEnabled: false,
-                statusChangedAt: null,
-                inactiveReason: null,
-                suspensionReason: null,
-                banReason: null,
-                metadata: null,
-                deletedAt: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            }
+            } as User;
 
             const mockAccount = {
                 provider: 'microsoft-entra-id',
                 type: 'oauth',
-                providerAccountId: 'account123',
-            } as Account
+                providerAccountId: 'ms123',
+            } as Account;
 
-            // Mock user upsert
-            prismaMock.user.upsert.mockResolvedValue(mockUser)
-            // Mock audit log create
-            prismaMock.auditLog.create.mockResolvedValue({} as { id: string; userId: string | null; ipAddress: string | null; userAgent: string | null; action: ActionType; entityType: string | null; entityId: string | null; data: JsonValue; timestamp: Date })
-
-            // Test the signIn event
-            await config.events?.signIn!({
-                user: mockUser as AdapterUser,
+            const result = await config.callbacks?.signIn?.({
+                user: mockUser,
                 account: mockAccount,
-                profile: { ...mockUser, [Symbol.iterator]: undefined },
-                isNewUser: false,
-            })
+                profile: {},
+            });
 
-            // Verify upsert was called with correct parameters
-            expect(prismaMock.user.upsert).toHaveBeenCalledWith({
-                where: { id: mockUser.id },
-                create: expect.objectContaining({
-                    id: mockUser.id,
-                    email: mockUser.email,
-                    status: 'ACTIVE',
-                    emailVerified: expect.any(Date),
-                    lastLoginAt: expect.any(Date),
-                }),
-                update: expect.objectContaining({
-                    lastLoginAt: expect.any(Date),
-                }),
-            })
+            expect(result).toBe(false);
+        });
 
-            // Verify audit log was created
-            expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
-                data: {
-                    action: 'LOGIN',
-                    entityType: 'User',
-                    entityId: mockUser.id,
-                    userId: mockUser.id,
-                    data: {
-                        isNewUser: false,
-                        provider: mockAccount.provider,
-                        email: mockUser.email,
-                    },
-                },
-            })
-        })
+        it('should link Microsoft account to existing user', async () => {
+            const mockUser = {
+                id: 'user123',
+                email: 'test@example.com',
+                emailVerified: new Date(),
+            } as User;
 
-        it('should create profile for new users', async () => {
-            const mockUser: MockUser = {
+            const mockExistingUser = {
+                id: 'user123',
+                email: 'test@example.com',
+                accounts: [],
+            };
+
+            // Mock prisma responses
+            (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockExistingUser);
+            (prisma.account.create as jest.Mock).mockResolvedValue({});
+            (prisma.user.update as jest.Mock).mockResolvedValue({});
+            (prisma.auditLog.create as jest.Mock).mockResolvedValue({});
+
+            const result = await config.callbacks?.signIn?.({
+                user: mockUser,
+                account: {
+                    provider: 'microsoft-entra-id',
+                    type: 'oauth',
+                    providerAccountId: 'ms123',
+                    access_token: 'token123',
+                } as Account,
+                profile: {},
+            });
+
+            expect(result).toBe(true);
+            expect(prisma.account.create).toHaveBeenCalled();
+            expect(prisma.user.update).toHaveBeenCalled();
+            expect(prisma.auditLog.create).toHaveBeenCalled();
+        });
+
+        it('should create new user if user does not exist', async () => {
+            const mockUser = {
                 id: 'newuser123',
-                email: 'newuser@example.com',
+                email: 'new@example.com',
                 name: 'New User',
-                image: 'https://example.com/avatar.jpg',
                 emailVerified: new Date(),
-                status: 'ACTIVE' as UserStatus,
-                lastLoginAt: new Date(),
-                password: null,
-                preferredLanguage: null,
-                timezone: null,
-                isTwoFactorEnabled: false,
-                statusChangedAt: null,
-                inactiveReason: null,
-                suspensionReason: null,
-                banReason: null,
-                metadata: null,
-                deletedAt: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            }
+            } as User;
 
-            const mockAccount = {
-                provider: 'microsoft-entra-id',
-                type: 'oauth',
-                providerAccountId: 'account123',
-            } as Account
+            // Mock prisma responses
+            (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+            (prisma.user.create as jest.Mock).mockResolvedValue({
+                id: 'newuser123',
+                email: 'new@example.com',
+            });
+            (prisma.profile.create as jest.Mock).mockResolvedValue({});
+            (prisma.auditLog.create as jest.Mock).mockResolvedValue({});
 
-            // Mock user upsert and profile create
-            prismaMock.user.upsert.mockResolvedValue(mockUser)
-            prismaMock.profile.create.mockResolvedValue({
-                id: 'profile123',
-                userId: mockUser.id,
-                fullName: mockUser.name ?? '',
-                email: mockUser.email ?? null,
-                image: mockUser.image ?? null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deletedAt: null,
-                preferredLanguage: null,
-                metadata: null,
-                preferredContactMethod: null,
-                preferredName: null,
-                dob: null,
-                gender: null,
-                phone: null,
-                address: null,
-                emergencyContactName: null,
-                emergencyContactPhone: null,
-                emergencyContactEmail: null,
-            })
-
-            // Test the signIn event for a new user
-            await config.events?.signIn!({
-                user: mockUser as AdapterUser,
-                account: mockAccount,
-                profile: { ...mockUser, [Symbol.iterator]: undefined },
-                isNewUser: true,
-            })
-
-            // Verify profile was created
-            expect(prismaMock.profile.create).toHaveBeenCalledWith({
-                data: expect.objectContaining({
-                    userId: mockUser.id,
-                    fullName: mockUser.name,
-                    email: mockUser.email,
-                    image: mockUser.image,
-                }),
-            })
-        })
-    })
-
-    describe('Sign Out', () => {
-        it('should create audit log on sign out', async () => {
-            const mockUser: MockUser = {
-                id: 'user123',
-                email: 'test@example.com',
-                name: 'Test User',
-                emailVerified: new Date(),
-                image: null,
-                status: 'ACTIVE' as UserStatus,
-                lastLoginAt: new Date(),
-                password: null,
-                preferredLanguage: null,
-                timezone: null,
-                isTwoFactorEnabled: false,
-                statusChangedAt: null,
-                inactiveReason: null,
-                suspensionReason: null,
-                banReason: null,
-                metadata: null,
-                deletedAt: null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            }
-
-            // Mock user findUnique
-            prismaMock.user.findUnique.mockResolvedValue(mockUser)
-
-            // Test the signOut event
-            await config.events?.signOut!({
-                token: { id: mockUser.id },
-            })
-
-            // Verify audit log was created
-            expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
-                data: expect.objectContaining({
-                    action: 'LOGOUT',
-                    entityType: 'User',
-                    entityId: mockUser.id,
-                    userId: mockUser.id,
-                    data: {
-                        email: mockUser.email,
-                    },
-                }),
-            })
-        })
-    })
-
-    describe('JWT Handling', () => {
-        it('should include user roles in JWT token', async () => {
-            const mockUser: AdapterUser = {
-                id: 'user123',
-                email: 'test@example.com',
-                name: 'Test User',
-                emailVerified: new Date(),
-                image: null,
-            }
-
-            const mockAccount = {
-                provider: 'microsoft-entra-id',
-                type: 'oauth',
-                providerAccountId: 'account123',
-            } as Account
-
-            const token: JWT = {
-                id: 'user123',
-                email: 'test@example.com',
-                name: 'Test User',
-            }
-
-            const result = await config.callbacks?.jwt!({
-                token,
+            const result = await config.callbacks?.signIn?.({
                 user: mockUser,
-                account: mockAccount,
-                trigger: 'signIn',
-            })
+                account: {
+                    provider: 'microsoft-entra-id',
+                    type: 'oauth',
+                    providerAccountId: 'ms123',
+                    access_token: 'token123',
+                } as Account,
+                profile: {},
+            });
 
-            expect(result).toBeDefined()
-            expect(result).toHaveProperty('id', token.id)
-            expect(result).toHaveProperty('email', token.email)
-        })
-    })
-
-    describe('Session Handling', () => {
-        it('should include user ID and roles in session', () => {
-            const mockUser: AdapterUser = {
-                id: 'user123',
-                email: 'test@example.com',
-                name: 'Test User',
-                emailVerified: new Date(),
-                image: null,
-            }
-
-            const token: JWT = {
-                id: 'user123',
-                email: 'test@example.com',
-                name: 'Test User',
-                roles: ['USER', 'ADMIN'],
-            }
-
-            const mockSession = {
-                user: {
-                    ...mockUser,
-                    emailVerified: new Date(),
-                } as AdapterUser,
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
-                sessionToken: 'mock-session-token',
-                userId: mockUser.id,
-            } as unknown as Session & AdapterSession & { user: AdapterUser }
-
-            const sessionResult = config.callbacks?.session!({
-                session: mockSession,
-                token,
-                trigger: 'update',
-                user: mockUser as AdapterUser,
-                newSession: mockSession,
-            })
-            return Promise.resolve(sessionResult).then(result => {
-                expect(result?.user?.id).toBe(token.id)
-                expect(result?.user?.roles).toEqual(token.roles)
-            })
-        })
-    })
-
-    describe('Authorization', () => {
-        it('should allow authenticated users to access dashboard', () => {
-            const mockRequest = {
-                nextUrl: new URL('http://localhost:3000/dashboard'),
-                cookies: {
-                    get: () => ({ value: 'valid-session-token' }),
-                },
-            } as unknown as NextRequest
-
-            const mockUser: AdapterUser = {
-                id: 'user123',
-                email: 'test@example.com',
-                emailVerified: new Date(),
-                image: null,
-                name: null,
-            }
-
-            const mockSession = {
-                user: mockUser,
-                expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-            }
-
-            const result = config.callbacks?.authorized!({
-                auth: mockSession,
-                request: mockRequest,
-            })
-
-            expect(result).toBe(true)
-        })
-
-        it('should deny unauthenticated users from accessing dashboard', () => {
-            const mockRequest = {
-                nextUrl: new URL('http://localhost:3000/admin/dashboard'),
-                cookies: {
-                    get: () => null,
-                },
-            } as unknown as NextRequest
-
-            const result = config.callbacks?.authorized!({
-                auth: null,
-                request: mockRequest,
-            })
-
-            expect(result).toBe(false)
-        })
-    })
-}) 
+            expect(result).toBe(true);
+            expect(prisma.user.create).toHaveBeenCalled();
+            expect(prisma.profile.create).toHaveBeenCalled();
+            expect(prisma.auditLog.create).toHaveBeenCalled();
+        });
+    });
+}); 

@@ -2,7 +2,6 @@ import NextAuth from "next-auth"
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
-import type { UserStatus } from "@/generated/prisma"
 import type { NextAuthConfig } from "next-auth"
 import type { DefaultSession } from "next-auth"
 
@@ -12,7 +11,7 @@ declare module "next-auth" {
         user: {
             id: string
             roles?: string[]
-            status?: UserStatus
+            status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
             access_token?: string
         } & DefaultSession["user"]
     }
@@ -23,7 +22,7 @@ declare module "next-auth" {
         email: string
         name?: string | null
         image?: string | null
-        status?: UserStatus
+        status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
         access_token?: string
     }
 }
@@ -104,7 +103,7 @@ export const createConfig = (prismaClient = prisma): NextAuthConfig => ({
                         where: { id: existingUser.id },
                         data: {
                             lastLoginAt: new Date(),
-                            status: 'ACTIVE' as UserStatus,
+                            status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED',
                         },
                     })
 
@@ -131,7 +130,7 @@ export const createConfig = (prismaClient = prisma): NextAuthConfig => ({
                     data: {
                         id: user.id,
                         email: user.email,
-                        status: 'ACTIVE' as UserStatus,
+                        status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED',
                         emailVerified: new Date(),
                         lastLoginAt: new Date(),
                     },
@@ -183,7 +182,7 @@ export const createConfig = (prismaClient = prisma): NextAuthConfig => ({
                     select: { status: true },
                 })
                 if (dbUser?.status) {
-                    session.user.status = dbUser.status
+                    session.user.status = dbUser.status as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
                 }
             }
             return session
