@@ -13,7 +13,7 @@ const Header: React.FC<HeaderProps> = ({ logo, user }) => {
     return (
         <header className="flex items-center justify-between px-4 h-14 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800 shadow-sm fixed top-0 left-0 right-0 z-30 md:hidden">
             <div className="flex items-center gap-2">
-                {logo || <span className="font-bold text-lg">Cal.com</span>}
+                {logo || <span className="font-bold text-lg">careAxis</span>}
             </div>
             <div className="flex items-center gap-3">
                 <button
