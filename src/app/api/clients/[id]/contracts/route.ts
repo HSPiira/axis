@@ -38,7 +38,7 @@ const createContractSchema = z.object({
 
 export async function GET(
     request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+    context: { params: Promise<{ clientId: string }> }
 ) {
     try {
         // Rate limiting
@@ -73,14 +73,14 @@ export async function GET(
             sortOrder,
         } = listQuerySchema.parse(searchParams);
 
-        const { id } = await context.params;
+        const { clientId } = await context.params;
 
         const result = await provider.list({
             page,
             limit,
             search,
             filters: {
-                clientId: id,
+                clientId,
                 status: status || undefined,
                 paymentStatus: paymentStatus || undefined,
                 isRenewable: isRenewable ? isRenewable === 'true' : undefined,
@@ -115,7 +115,7 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+    context: { params: Promise<{ clientId: string }> }
 ) {
     try {
         // Rate limiting
@@ -149,11 +149,11 @@ export async function POST(
             );
         }
 
-        const { id } = await context.params;
+        const { clientId } = await context.params;
 
         const contractData = {
             ...validatedData,
-            clientId: id,
+            clientId,
             startDate: validatedData.startDate,
             endDate: validatedData.endDate,
         };

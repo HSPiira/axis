@@ -57,6 +57,10 @@ export interface ClientFilters {
     isVerified?: boolean;
     industryId?: string;
     preferredContactMethod?: ContactMethod;
+    createdAt?: {
+        gte?: string;
+        lte?: string;
+    };
 }
 
 interface ListOptions {
@@ -67,6 +71,10 @@ interface ListOptions {
         status?: BaseStatus;
         industryId?: string;
         isVerified?: boolean;
+        createdAt?: {
+            gte?: string;
+            lte?: string;
+        };
     };
     sort?: {
         field: string;
@@ -132,6 +140,12 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
         }
         if (filters.preferredContactMethod) {
             where.preferredContactMethod = filters.preferredContactMethod;
+        }
+        if (filters.createdAt) {
+            where.createdAt = {
+                ...(filters.createdAt.gte ? { gte: new Date(filters.createdAt.gte) } : {}),
+                ...(filters.createdAt.lte ? { lte: new Date(filters.createdAt.lte) } : {})
+            };
         }
 
         // Apply search

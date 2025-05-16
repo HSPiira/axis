@@ -80,34 +80,35 @@
 .dark {
   --background: #000;
   --foreground: #fff;
-  --card: #000;
+  --card: #0A0A0A;
   --card-foreground: #fff;
-  --popover: #000;
+  --popover: #0A0A0A;
   --popover-foreground: #fff;
   --primary: #0079FF;
   --primary-foreground: #fff;
-  --secondary: #0a0a0a;
+  --secondary: #111111;
   --secondary-foreground: #fff;
-  --muted: #0a0a0a;
+  --muted: #111111;
   --muted-foreground: #b0b3b8;
-  --accent: #0a0a0a;
+  --accent: #111111;
   --accent-foreground: #38a6ff;
   --destructive: #ff4d4f;
   --border: #1a1a1a;
-  --input: #0a0a0a;
+  --input: #111111;
   --ring: #0079FF;
   --chart-1: #0079FF;
   --chart-2: #01C700;
   --chart-3: #faad14;
   --chart-4: #ff4d4f;
   --chart-5: #13c2c2;
-  --sidebar: #171717;
+  --sidebar: #0A0A0A;
   --sidebar-foreground: #fff;
   --sidebar-primary: #0079FF;
   --sidebar-primary-foreground: #fff;
-  --sidebar-accent: #333333;
+  --sidebar-accent: #111111;
   --sidebar-accent-foreground: #38a6ff;
   --sidebar-ring: #0079FF;
+  --radius: 0.5rem;
 }
 
 @layer base {
@@ -176,16 +177,18 @@
   .dark .bg-card,
   .dark .bg-popover,
   .dark .bg-input {
-    background-color: var(--card) !important;
-    border-color: var(--border) !important;
+    background-color: var(--card);
+    border-color: var(--border);
+    border-radius: var(--radius);
   }
 
   .dark input,
   .dark .input,
   .dark .bg-input {
-    background-color: var(--input) !important;
-    color: var(--foreground) !important;
-    border-color: var(--border) !important;
+    background-color: var(--input);
+    color: var(--foreground);
+    border-color: var(--border);
+    border-radius: var(--radius);
   }
 
   .dark .text-muted-foreground {
@@ -197,7 +200,7 @@
   }
 
   .dark .shadow-sm {
-    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.5);
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.3);
   }
 
   .btn-white-blue {
@@ -225,6 +228,18 @@
   .dark .btn-inverse:hover,
   .dark .btn-inverse:focus {
     @apply bg-primary text-white;
+  }
+
+  .dark .rounded-lg {
+    border-radius: var(--radius);
+  }
+
+  .dark .rounded-xl {
+    border-radius: var(--radius);
+  }
+
+  .dark .rounded-2xl {
+    border-radius: var(--radius);
   }
 }
 
