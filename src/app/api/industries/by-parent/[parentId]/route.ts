@@ -17,7 +17,7 @@ const listQuerySchema = z.object({
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { parentId: string } }
+    context: { params: Promise<{ parentId: string }> }
 ) {
     try {
         // Rate limiting
@@ -37,8 +37,10 @@ export async function GET(
             );
         }
 
+        const { parentId } = await context.params;
+
         // Validate parent industry exists
-        const parentIndustry = await provider.findById(params.parentId);
+        const parentIndustry = await provider.get(parentId);
         if (!parentIndustry) {
             return NextResponse.json(
                 { error: 'Parent industry not found' },
@@ -48,9 +50,9 @@ export async function GET(
 
         // Parse and validate query parameters
         const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-        const { 
-            page, 
-            limit, 
+        const {
+            page,
+            limit,
             search,
             sortBy,
             sortOrder,
@@ -61,7 +63,7 @@ export async function GET(
             limit,
             search,
             filters: {
-                parentId: params.parentId,
+                parentId,
             },
             sort: {
                 field: sortBy,

@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { CacheControl } from '@/lib/cache';
 import { z } from 'zod';
+import type { ContractStatus, PaymentStatus } from '@prisma/client';
 
 const provider = new ContractProvider();
 
@@ -12,9 +13,9 @@ const listQuerySchema = z.object({
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(10),
     search: z.string().optional(),
-    status: z.enum(['Active', 'Expired', 'Terminated', 'Renewed']).optional(),
+    status: z.string().transform(val => val?.toUpperCase() as ContractStatus).pipe(z.enum(['ACTIVE', 'EXPIRED', 'TERMINATED', 'RENEWED'])).optional(),
     clientId: z.string().optional(),
-    paymentStatus: z.enum(['Pending', 'Paid', 'Overdue', 'Cancelled']).optional(),
+    paymentStatus: z.enum(['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']).optional(),
     isRenewable: z.enum(['true', 'false']).optional(),
     endDateBefore: z.string().datetime().optional(),
     endDateAfter: z.string().datetime().optional(),
@@ -27,6 +28,7 @@ const createContractSchema = z.object({
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
     billingRate: z.number().positive(),
+    status: z.enum(['ACTIVE', 'EXPIRED', 'TERMINATED', 'RENEWED']).default('ACTIVE'),
     isRenewable: z.boolean().default(false),
     isAutoRenew: z.boolean().default(false),
     paymentStatus: z.enum(['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']).default('PENDING'),
@@ -57,13 +59,13 @@ export async function GET(request: NextRequest) {
 
         // Parse and validate query parameters
         const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-        const { 
-            page, 
-            limit, 
-            search, 
-            status, 
+        const {
+            page,
+            limit,
+            search,
+            status,
             clientId,
-            paymentStatus, 
+            paymentStatus,
             isRenewable,
             endDateBefore,
             endDateAfter,
@@ -131,7 +133,7 @@ export async function POST(request: NextRequest) {
         // Additional validation
         const startDate = new Date(validatedData.startDate);
         const endDate = new Date(validatedData.endDate);
-        
+
         if (startDate >= endDate) {
             return NextResponse.json(
                 { error: 'Start date must be before end date' },
@@ -139,7 +141,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const result = await provider.create(validatedData);
+        const contractData = {
+            ...validatedData,
+            startDate: validatedData.startDate,
+            endDate: validatedData.endDate,
+        };
+
+        const result = await provider.create(contractData);
         return NextResponse.json(result, { status: 201 });
     } catch (error) {
         console.error('Error creating contract:', error);
@@ -185,20 +193,14 @@ export async function PUT(request: NextRequest) {
         const body = await request.json();
         const validatedData = updateContractSchema.parse(body);
 
-        // Additional validation if dates are provided
-        if (validatedData.startDate && validatedData.endDate) {
-            const startDate = new Date(validatedData.startDate);
-            const endDate = new Date(validatedData.endDate);
-            
-            if (startDate >= endDate) {
-                return NextResponse.json(
-                    { error: 'Start date must be before end date' },
-                    { status: 400 }
-                );
-            }
-        }
+        // Convert dates if they exist
+        const updateData = {
+            ...validatedData,
+            startDate: validatedData.startDate,
+            endDate: validatedData.endDate,
+        };
 
-        const result = await provider.update(id, validatedData);
+        const result = await provider.update(id, updateData);
         return NextResponse.json(result);
     } catch (error) {
         console.error('Error updating contract:', error);

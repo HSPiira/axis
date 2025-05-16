@@ -23,7 +23,7 @@ const querySchema = z.object({
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         // Rate limiting
@@ -44,6 +44,8 @@ export async function PATCH(
         const validatedData = actionSchema.parse(body);
         const { action, ...data } = validatedData;
 
+        const { id } = await context.params;
+
         let result;
         switch (action) {
             case 'updateStatus':
@@ -53,7 +55,7 @@ export async function PATCH(
                         { status: 400 }
                     );
                 }
-                result = await provider.updateStatus(params.id, data.status);
+                result = await provider.updateStatus(id, data.status);
                 break;
 
             case 'updatePaymentStatus':
@@ -64,7 +66,7 @@ export async function PATCH(
                     );
                 }
                 result = await provider.updatePaymentStatus(
-                    params.id,
+                    id,
                     data.paymentStatus
                 );
                 break;
@@ -76,7 +78,7 @@ export async function PATCH(
                         { status: 400 }
                     );
                 }
-                result = await provider.terminate(params.id, data.reason);
+                result = await provider.terminate(id, data.reason);
                 break;
 
             case 'renew':
@@ -86,7 +88,7 @@ export async function PATCH(
                         { status: 400 }
                     );
                 }
-                result = await provider.renew(params.id, new Date(data.newEndDate));
+                result = await provider.renew(id, new Date(data.newEndDate));
                 break;
 
             default:

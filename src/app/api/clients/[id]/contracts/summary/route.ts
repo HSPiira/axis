@@ -8,7 +8,7 @@ const provider = new ContractProvider();
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         // Rate limiting
@@ -28,8 +28,9 @@ export async function GET(
             );
         }
 
-        const summary = await provider.getClientSummary(params.id);
-        
+        const { id } = await context.params;
+        const summary = await provider.getClientSummary(id);
+
         const response = NextResponse.json(summary);
         return CacheControl.withCache(response, summary, {
             maxAge: 30,

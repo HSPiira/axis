@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { withSecurityHeaders } from "./middleware/security"
-import { rateLimit } from "./lib/rate-limit"
+import { rateLimit } from "@/lib/rate-limit"
 
 // Auth-specific rate limit configuration
 const authRateLimit = {
@@ -14,8 +14,13 @@ export default async function middleware(request: NextRequest) {
     // Apply rate limiting for auth endpoints
     if (request.nextUrl.pathname.startsWith('/auth') ||
         request.nextUrl.pathname.startsWith('/api/auth')) {
-        const rateLimitResult = await rateLimit(request, authRateLimit)
-        if (rateLimitResult) return rateLimitResult
+        const rateLimitResult = await rateLimit.check(request, authRateLimit.maxRequests, `${authRateLimit.windowMs}ms`);
+        if (!rateLimitResult.success) {
+            return new NextResponse(
+                JSON.stringify({ error: 'Too Many Requests' }),
+                { status: 429, headers: { 'Content-Type': 'application/json' } }
+            );
+        }
     }
 
     const session = await auth()

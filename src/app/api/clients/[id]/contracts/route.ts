@@ -25,9 +25,10 @@ const createContractSchema = z.object({
     startDate: z.string().datetime(),
     endDate: z.string().datetime(),
     billingRate: z.number().positive(),
-    isRenewable: z.boolean().default(false),
-    isAutoRenew: z.boolean().default(false),
-    paymentStatus: z.enum(['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']).default('PENDING'),
+    isRenewable: z.boolean().optional(),
+    isAutoRenew: z.boolean().optional(),
+    status: z.enum(['ACTIVE', 'EXPIRED', 'TERMINATED', 'RENEWED']).optional(),
+    paymentStatus: z.enum(['PENDING', 'PAID', 'OVERDUE', 'CANCELLED']).optional(),
     paymentFrequency: z.string().optional(),
     paymentTerms: z.string().optional(),
     currency: z.string().optional(),
@@ -37,7 +38,7 @@ const createContractSchema = z.object({
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         // Rate limiting
@@ -59,12 +60,12 @@ export async function GET(
 
         // Parse and validate query parameters
         const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-        const { 
-            page, 
-            limit, 
-            search, 
-            status, 
-            paymentStatus, 
+        const {
+            page,
+            limit,
+            search,
+            status,
+            paymentStatus,
             isRenewable,
             endDateBefore,
             endDateAfter,
@@ -72,12 +73,14 @@ export async function GET(
             sortOrder,
         } = listQuerySchema.parse(searchParams);
 
+        const { id } = await context.params;
+
         const result = await provider.list({
             page,
             limit,
             search,
             filters: {
-                clientId: params.id,
+                clientId: id,
                 status: status || undefined,
                 paymentStatus: paymentStatus || undefined,
                 isRenewable: isRenewable ? isRenewable === 'true' : undefined,
@@ -112,7 +115,7 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         // Rate limiting
@@ -138,7 +141,7 @@ export async function POST(
         // Additional validation
         const startDate = new Date(validatedData.startDate);
         const endDate = new Date(validatedData.endDate);
-        
+
         if (startDate >= endDate) {
             return NextResponse.json(
                 { error: 'Start date must be before end date' },
@@ -146,9 +149,13 @@ export async function POST(
             );
         }
 
+        const { id } = await context.params;
+
         const contractData = {
             ...validatedData,
-            clientId: params.id,
+            clientId: id,
+            startDate: validatedData.startDate,
+            endDate: validatedData.endDate,
         };
 
         const result = await provider.create(contractData);

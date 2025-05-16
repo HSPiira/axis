@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { BaseProvider, PrismaClient } from "./base-provider";
+import { BaseProvider, PrismaClient, PaginatedResponse } from "./base-provider";
 import type { Contract, ContractStatus, PaymentStatus } from "@prisma/client";
 
 // Types for contract management
@@ -34,9 +34,9 @@ export interface ContractModel {
 
 export interface CreateContractInput {
     clientId: string;
-    startDate: Date;
-    endDate: Date;
-    renewalDate?: Date;
+    startDate: string;
+    endDate: string;
+    renewalDate?: string;
     billingRate: number;
     isRenewable?: boolean;
     isAutoRenew?: boolean;
@@ -52,7 +52,7 @@ export interface CreateContractInput {
 
 export interface UpdateContractInput extends Partial<CreateContractInput> {
     signedBy?: string;
-    signedAt?: Date;
+    signedAt?: string;
     terminationReason?: string;
 }
 
@@ -88,12 +88,11 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             select: {
                 id: true,
                 name: true,
-                email: true
             }
         }
     };
 
-    protected transform(data: Contract & { metadata?: Record<string, any> | null }): ContractModel {
+    protected transform(data: Contract & { metadata?: Record<string, any> | null } & { client?: { id: string; name: string } }): ContractModel {
         return {
             id: data.id,
             clientId: data.clientId,
@@ -115,7 +114,6 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             signedAt: data.signedAt?.toISOString() || null,
             terminationReason: data.terminationReason,
             notes: data.notes,
-            metadata: data.metadata,
             createdAt: data.createdAt.toISOString(),
             updatedAt: data.updatedAt.toISOString(),
             client: data.client ? {
@@ -227,103 +225,104 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
         const now = new Date();
         const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-        // Single query to get all necessary counts and sums
-        const [summaryData] = await this.client.aggregateRaw({
-            pipeline: [
-                { $match: { clientId, deletedAt: null } },
-                {
-                    $facet: {
-                        statusCounts: [
-                            {
-                                $group: {
-                                    _id: '$status',
-                                    count: { $sum: 1 }
-                                }
-                            }
-                        ],
-                        paymentStatusCounts: [
-                            {
-                                $group: {
-                                    _id: '$paymentStatus',
-                                    count: { $sum: 1 }
-                                }
-                            }
-                        ],
-                        activeValue: [
-                            {
-                                $match: { status: 'ACTIVE' }
-                            },
-                            {
-                                $group: {
-                                    _id: null,
-                                    total: { $sum: '$billingRate' },
-                                    avg: { $avg: '$billingRate' }
-                                }
-                            }
-                        ],
-                        expiringSoon: [
-                            {
-                                $match: {
-                                    status: 'ACTIVE',
-                                    endDate: {
-                                        $gt: now,
-                                        $lte: thirtyDaysFromNow
-                                    }
-                                }
-                            },
-                            {
-                                $count: 'total'
-                            }
-                        ],
-                        upcomingRenewals: [
-                            {
-                                $match: {
-                                    status: 'ACTIVE',
-                                    isRenewable: true,
-                                    endDate: { $gt: now }
-                                }
-                            },
-                            {
-                                $project: {
-                                    id: 1,
-                                    endDate: 1,
-                                    billingRate: 1,
-                                    isAutoRenew: 1
-                                }
-                            },
-                            {
-                                $sort: { endDate: 1 }
-                            }
-                        ]
-                    }
-                }
-            ]
+        // Get status counts
+        const statusCounts = await this.client.findMany({
+            where: { clientId, deletedAt: null },
+            select: {
+                status: true,
+            },
+            distinct: ['status'],
         });
 
-        // Transform the aggregation results
-        const byStatus = summaryData.statusCounts.reduce((acc, { _id, count }) => {
-            acc[_id] = count;
-            return acc;
-        }, {} as Record<string, number>);
+        // Get payment status counts
+        const paymentStatusCounts = await this.client.findMany({
+            where: { clientId, deletedAt: null },
+            select: {
+                paymentStatus: true,
+            },
+            distinct: ['paymentStatus'],
+        });
 
-        const byPaymentStatus = summaryData.paymentStatusCounts.reduce((acc, { _id, count }) => {
-            acc[_id] = count;
+        // Get active contracts value
+        const activeValue = await this.client.aggregate({
+            where: {
+                clientId,
+                status: 'ACTIVE',
+                deletedAt: null,
+            },
+            _sum: { billingRate: true },
+            _avg: { billingRate: true },
+        });
+
+        // Get expiring soon count
+        const expiringSoon = await this.client.count({
+            where: {
+                clientId,
+                status: 'ACTIVE',
+                deletedAt: null,
+                endDate: {
+                    gt: now,
+                    lte: thirtyDaysFromNow,
+                },
+            },
+        });
+
+        // Get upcoming renewals
+        const upcomingRenewals = await this.client.findMany({
+            where: {
+                clientId,
+                status: 'ACTIVE',
+                isRenewable: true,
+                endDate: { gt: now },
+                deletedAt: null,
+            },
+            select: {
+                id: true,
+                endDate: true,
+                billingRate: true,
+                isAutoRenew: true,
+            },
+            orderBy: { endDate: 'asc' },
+        });
+
+        // Count contracts by status
+        const byStatus = await this.client.groupBy({
+            by: ['status'],
+            where: { clientId, deletedAt: null },
+            _count: true,
+        }).then(groups => groups.reduce((acc, { status, _count }) => {
+            acc[status] = _count;
             return acc;
-        }, {} as Record<string, number>);
+        }, {} as Record<string, number>));
+
+        // Count contracts by payment status
+        const byPaymentStatus = await this.client.groupBy({
+            by: ['paymentStatus'],
+            where: { clientId, deletedAt: null },
+            _count: true,
+        }).then(groups => groups.reduce((acc, { paymentStatus, _count }) => {
+            acc[paymentStatus] = _count;
+            return acc;
+        }, {} as Record<string, number>));
 
         return {
-            total: Object.values(byStatus).reduce((a, b) => a + b, 0),
-            active: byStatus['ACTIVE'] || 0,
-            expiringSoon: summaryData.expiringSoon[0]?.total || 0,
-            byStatus,
-            byPaymentStatus,
-            totalValue: summaryData.activeValue[0]?.total || 0,
-            averageValue: summaryData.activeValue[0]?.avg || 0,
-            upcomingRenewals: summaryData.upcomingRenewals || []
+            statusCounts: byStatus,
+            paymentStatusCounts: byPaymentStatus,
+            activeValue: {
+                total: activeValue._sum.billingRate || 0,
+                avg: activeValue._avg.billingRate || 0,
+            },
+            expiringSoon,
+            upcomingRenewals: upcomingRenewals.map(r => ({
+                id: r.id,
+                endDate: r.endDate.toISOString(),
+                billingRate: r.billingRate,
+                isAutoRenew: r.isAutoRenew,
+            })),
         };
     }
 
-    async list(options: ListOptions = {}) {
+    async list(options: ListOptions = {}): Promise<PaginatedResponse<ContractModel>> {
         const {
             page = 1,
             limit = 10,
@@ -337,11 +336,11 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             deletedAt: null,
             ...(search
                 ? {
-                      OR: [
-                          { notes: { contains: search, mode: 'insensitive' } },
-                          { client: { name: { contains: search, mode: 'insensitive' } } },
-                      ],
-                  }
+                    OR: [
+                        { notes: { contains: search, mode: 'insensitive' } },
+                        { client: { name: { contains: search, mode: 'insensitive' } } },
+                    ],
+                }
                 : {}),
             ...(filters.clientId ? { clientId: filters.clientId } : {}),
             ...(filters.status ? { status: filters.status } : {}),
@@ -349,11 +348,11 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
             ...(filters.isRenewable !== undefined ? { isRenewable: filters.isRenewable } : {}),
             ...(filters.endDateBefore || filters.endDateAfter
                 ? {
-                      endDate: {
-                          ...(filters.endDateBefore ? { lte: filters.endDateBefore } : {}),
-                          ...(filters.endDateAfter ? { gte: filters.endDateAfter } : {}),
-                      },
-                  }
+                    endDate: {
+                        ...(filters.endDateBefore ? { lte: filters.endDateBefore } : {}),
+                        ...(filters.endDateAfter ? { gte: filters.endDateAfter } : {}),
+                    },
+                }
                 : {}),
         };
 
@@ -371,47 +370,33 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
 
         return {
             data: data.map(this.transform),
-            total,
-            page,
-            limit,
+            pagination: {
+                total,
+                pages: Math.ceil(total / limit),
+                page,
+                limit,
+            },
         };
     }
 
-    async create(data: Omit<ContractModel, 'id' | 'createdAt' | 'updatedAt'>) {
+    async create(data: CreateContractInput): Promise<ContractModel> {
         const contract = await this.client.create({
             data: {
                 ...data,
                 startDate: new Date(data.startDate),
                 endDate: new Date(data.endDate),
                 renewalDate: data.renewalDate ? new Date(data.renewalDate) : null,
-                lastBillingDate: data.lastBillingDate
-                    ? new Date(data.lastBillingDate)
-                    : null,
-                nextBillingDate: data.nextBillingDate
-                    ? new Date(data.nextBillingDate)
-                    : null,
-                signedAt: data.signedAt ? new Date(data.signedAt) : null,
             },
             include: this.includes,
         });
 
-        return {
-            ...contract,
-            startDate: contract.startDate.toISOString(),
-            endDate: contract.endDate.toISOString(),
-            renewalDate: contract.renewalDate?.toISOString() || null,
-            lastBillingDate: contract.lastBillingDate?.toISOString() || null,
-            nextBillingDate: contract.nextBillingDate?.toISOString() || null,
-            signedAt: contract.signedAt?.toISOString() || null,
-            createdAt: contract.createdAt.toISOString(),
-            updatedAt: contract.updatedAt.toISOString(),
-        };
+        return this.transform(contract);
     }
 
     async update(
         id: string,
-        data: Partial<Omit<ContractModel, 'id' | 'createdAt' | 'updatedAt'>>
-    ) {
+        data: UpdateContractInput
+    ): Promise<ContractModel> {
         const contract = await this.client.update({
             where: { id },
             data: {
@@ -419,28 +404,12 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
                 startDate: data.startDate ? new Date(data.startDate) : undefined,
                 endDate: data.endDate ? new Date(data.endDate) : undefined,
                 renewalDate: data.renewalDate ? new Date(data.renewalDate) : undefined,
-                lastBillingDate: data.lastBillingDate
-                    ? new Date(data.lastBillingDate)
-                    : undefined,
-                nextBillingDate: data.nextBillingDate
-                    ? new Date(data.nextBillingDate)
-                    : undefined,
                 signedAt: data.signedAt ? new Date(data.signedAt) : undefined,
             },
             include: this.includes,
         });
 
-        return {
-            ...contract,
-            startDate: contract.startDate.toISOString(),
-            endDate: contract.endDate.toISOString(),
-            renewalDate: contract.renewalDate?.toISOString() || null,
-            lastBillingDate: contract.lastBillingDate?.toISOString() || null,
-            nextBillingDate: contract.nextBillingDate?.toISOString() || null,
-            signedAt: contract.signedAt?.toISOString() || null,
-            createdAt: contract.createdAt.toISOString(),
-            updatedAt: contract.updatedAt.toISOString(),
-        };
+        return this.transform(contract);
     }
 
     async delete(id: string) {

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { BaseProvider, PrismaClient } from "./base-provider";
-import type { Client, Industry, BaseStatus, ContactMethod } from "@prisma/client"
+import type { Client, Industry, BaseStatus, ContactMethod, Prisma } from "@prisma/client"
 
 // Types for client management
 export interface ClientModel {
@@ -25,39 +25,38 @@ export interface ClientModel {
     timezone?: string | null;
     isVerified: boolean;
     notes?: string | null;
-    metadata?: Record<string, any> | null;
+    metadata?: Prisma.JsonValue | null;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface CreateClientInput {
     name: string;
-    email?: string;
-    phone?: string;
-    website?: string;
-    address?: string;
-    billingAddress?: string;
-    taxId?: string;
-    contactPerson?: string;
-    contactEmail?: string;
-    contactPhone?: string;
+    email?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    address?: string | null;
+    billingAddress?: string | null;
+    taxId?: string | null;
+    contactPerson?: string | null;
+    contactEmail?: string | null;
+    contactPhone?: string | null;
     industryId?: string;
-    preferredContactMethod?: any;
-    timezone?: string;
-    notes?: string;
-    metadata?: Record<string, any>;
+    preferredContactMethod?: ContactMethod | null;
+    timezone?: string | null;
+    notes?: string | null;
+    metadata?: Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue;
+    status: BaseStatus;
+    isVerified: boolean;
 }
 
-export interface UpdateClientInput extends Partial<CreateClientInput> {
-    status?: any;
-    isVerified?: boolean;
-}
+export interface UpdateClientInput extends Partial<CreateClientInput> { }
 
 export interface ClientFilters {
-    status?: any;
+    status?: BaseStatus;
     isVerified?: boolean;
     industryId?: string;
-    preferredContactMethod?: any;
+    preferredContactMethod?: ContactMethod;
 }
 
 interface ListOptions {
@@ -68,6 +67,10 @@ interface ListOptions {
         status?: BaseStatus;
         industryId?: string;
         isVerified?: boolean;
+    };
+    sort?: {
+        field: string;
+        direction: 'asc' | 'desc';
     };
 }
 
@@ -85,7 +88,7 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
         }
     };
 
-    protected transform(data: any): ClientModel {
+    protected transform(data: Client & { industry?: Pick<Industry, 'id' | 'name' | 'code'> | null }): ClientModel {
         return {
             id: data.id,
             name: data.name,
@@ -108,14 +111,14 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
             timezone: data.timezone,
             isVerified: data.isVerified,
             notes: data.notes,
-            metadata: data.metadata as Record<string, any> | null,
+            metadata: data.metadata,
             createdAt: data.createdAt.toISOString(),
             updatedAt: data.updatedAt.toISOString()
         };
     }
 
-    protected buildWhereClause(filters: ClientFilters, search: string): any {
-        const where: any = {};
+    protected buildWhereClause(filters: Record<string, any>, search: string): Prisma.ClientWhereInput {
+        const where: Prisma.ClientWhereInput = {};
 
         // Apply filters
         if (filters.status) {
@@ -134,7 +137,7 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
         // Apply search
         if (search) {
             where.OR = this.searchFields.map(field => ({
-                [field]: { contains: search, mode: 'insensitive' }
+                [field]: { contains: search, mode: 'insensitive' as Prisma.QueryMode }
             }));
         }
 
@@ -150,23 +153,33 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
             where: { industryId, deletedAt: null },
             include: this.includes
         });
-        return clients.map(this.transform);
+        return clients.map(client => this.transform(client));
     }
 
-    async findByStatus(status: any): Promise<ClientModel[]> {
+    async findByStatus(status: BaseStatus): Promise<ClientModel[]> {
         const clients = await this.client.findMany({
             where: { status, deletedAt: null },
             include: this.includes
         });
-        return clients.map(this.transform);
+        return clients.map(client => this.transform(client));
     }
 
     async verifyClient(id: string): Promise<ClientModel> {
-        return this.update(id, { isVerified: true });
+        const client = await this.client.update({
+            where: { id },
+            data: { isVerified: true },
+            include: this.includes
+        });
+        return this.transform(client);
     }
 
-    async updateStatus(id: string, status: any): Promise<ClientModel> {
-        return this.update(id, { status });
+    async updateStatus(id: string, status: BaseStatus): Promise<ClientModel> {
+        const client = await this.client.update({
+            where: { id },
+            data: { status },
+            include: this.includes
+        });
+        return this.transform(client);
     }
 
     async list(options: ListOptions = {}) {
@@ -175,122 +188,62 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
             limit = 10,
             search = '',
             filters = {},
+            sort = this.defaultSort,
         } = options;
 
-        const where = {
-            deletedAt: null,
-            ...(search
-                ? {
-                      OR: [
-                          { name: { contains: search, mode: 'insensitive' } },
-                          { email: { contains: search, mode: 'insensitive' } },
-                          { phone: { contains: search, mode: 'insensitive' } },
-                      ],
-                  }
-                : {}),
-            ...(filters.status ? { status: filters.status } : {}),
-            ...(filters.industryId ? { industryId: filters.industryId } : {}),
-            ...(filters.isVerified !== undefined
-                ? { isVerified: filters.isVerified }
-                : {}),
-        };
+        const where = this.buildWhereClause(filters, search);
 
         const [data, total] = await Promise.all([
             prisma.client.findMany({
                 where,
-                include: {
-                    industry: {
-                        select: {
-                            id: true,
-                            name: true,
-                            code: true,
-                        },
-                    },
-                },
-                skip: (page - 1) * limit,
                 take: limit,
-                orderBy: { createdAt: 'desc' },
+                skip: (page - 1) * limit,
+                orderBy: { [sort.field]: sort.direction },
+                include: this.includes
             }),
-            prisma.client.count({ where }),
+            prisma.client.count({ where })
         ]);
 
         return {
-            data: data.map((client) => ({
-                ...client,
-                createdAt: client.createdAt.toISOString(),
-                updatedAt: client.updatedAt.toISOString(),
-            })),
-            total,
-            page,
-            limit,
+            data: data.map(client => this.transform(client)),
+            pagination: {
+                total,
+                pages: Math.ceil(total / limit),
+                page,
+                limit
+            }
         };
     }
 
-    async create(data: Omit<ClientModel, 'id' | 'createdAt' | 'updatedAt'>) {
-        const client = await prisma.client.create({
-            data: {
-                ...data,
-                industry: data.industry
-                    ? {
-                          connect: { id: data.industry.id },
-                      }
-                    : undefined,
-            },
-            include: {
-                industry: {
-                    select: {
-                        id: true,
-                        name: true,
-                        code: true,
-                    },
-                },
-            },
+    async create(data: CreateClientInput): Promise<ClientModel> {
+        const createData: Prisma.ClientCreateInput = {
+            ...data,
+            industry: data.industryId ? { connect: { id: data.industryId } } : undefined
+        };
+        const client = await this.client.create({
+            data: createData,
+            include: this.includes
         });
-
-        return {
-            ...client,
-            createdAt: client.createdAt.toISOString(),
-            updatedAt: client.updatedAt.toISOString(),
-        };
+        return this.transform(client);
     }
 
-    async update(
-        id: string,
-        data: Partial<Omit<ClientModel, 'id' | 'createdAt' | 'updatedAt'>>
-    ) {
-        const client = await prisma.client.update({
+    async update(id: string, data: UpdateClientInput): Promise<ClientModel> {
+        const updateData: Prisma.ClientUpdateInput = {
+            ...data,
+            industry: data.industryId ? { connect: { id: data.industryId } } : undefined
+        };
+        const client = await this.client.update({
             where: { id },
-            data: {
-                ...data,
-                industry: data.industry
-                    ? {
-                          connect: { id: data.industry.id },
-                      }
-                    : undefined,
-            },
-            include: {
-                industry: {
-                    select: {
-                        id: true,
-                        name: true,
-                        code: true,
-                    },
-                },
-            },
+            data: updateData,
+            include: this.includes
         });
-
-        return {
-            ...client,
-            createdAt: client.createdAt.toISOString(),
-            updatedAt: client.updatedAt.toISOString(),
-        };
+        return this.transform(client);
     }
 
-    async delete(id: string) {
-        const now = new Date();
-        return prisma.client.update({
-            where: { id },
-            data: { deletedAt: now },
+    async delete(id: string): Promise<ClientModel> {
+        const client = await this.client.delete({
+            where: { id }
         });
+        return this.transform(client);
     }
 } 

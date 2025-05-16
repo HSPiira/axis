@@ -6,6 +6,8 @@ interface DatabaseClient {
     update(params: { where: any; data: any; include?: any }): Promise<any>;
     delete(params: { where: any }): Promise<any>;
     count(params: { where: any }): Promise<number>;
+    aggregate(params: { where?: any; _sum?: any; _avg?: any; _count?: any }): Promise<any>;
+    groupBy(params: { by: string[]; where?: any; _count?: boolean }): Promise<any[]>;
 }
 
 interface QueryParams {
@@ -14,6 +16,8 @@ interface QueryParams {
     skip?: number;
     orderBy?: any;
     include?: any;
+    select?: any;
+    distinct?: string[];
 }
 
 // List parameters interface
@@ -29,7 +33,7 @@ interface ListParams {
 }
 
 // Paginated response interface
-interface PaginatedResponse<T> {
+export interface PaginatedResponse<T> {
     data: T[];
     pagination: {
         total: number;
@@ -142,5 +146,13 @@ export class PrismaClient implements DatabaseClient {
 
     async count(params: { where: any }): Promise<number> {
         return this.model.count(params);
+    }
+
+    async aggregate(params: { where?: any; _sum?: any; _avg?: any; _count?: any }): Promise<any> {
+        return this.model.aggregate(params);
+    }
+
+    async groupBy(params: { by: string[]; where?: any; _count?: boolean }): Promise<any[]> {
+        return this.model.groupBy(params);
     }
 } 

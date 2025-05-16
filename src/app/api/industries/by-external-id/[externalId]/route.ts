@@ -8,7 +8,7 @@ const provider = new IndustryProvider();
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { externalId: string } }
+    context: { params: Promise<{ externalId: string }> }
 ) {
     try {
         // Rate limiting
@@ -28,8 +28,9 @@ export async function GET(
             );
         }
 
-        const industry = await provider.findByExternalId(params.externalId);
-        
+        const { externalId } = await context.params;
+        const industry = await provider.findByExternalId(externalId);
+
         if (!industry) {
             return NextResponse.json(
                 { error: 'Industry not found' },
