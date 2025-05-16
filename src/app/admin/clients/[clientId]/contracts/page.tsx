@@ -3,20 +3,20 @@ import { ClientHeader } from '../../components/ClientDetails/ClientHeader';
 import { ContractList } from './components/ContractList';
 import { ContractStats } from './components/ContractStats';
 
-interface Props {
-    params: Promise<{ clientId: string }>;
-    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+type Props = {
+    params: { clientId: string };
+    searchParams?: { [key: string]: string | string[] | undefined };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { clientId } = await params;
+    const { clientId } = params;
     return {
         title: `Contracts for Client ${clientId}`,
     };
 }
 
-export default async function ClientContractsPage({ params }: Props) {
-    const { clientId } = await params;
+export default function ClientContractsPage({ params }: Props) {
+    const { clientId } = params;
 
     return (
         <div className="space-y-6">

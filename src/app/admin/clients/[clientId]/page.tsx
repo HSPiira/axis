@@ -9,12 +9,12 @@ import { QuickActions } from '../../components/ClientDetails/QuickActions';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-interface PageProps {
+type ClientDetailPageProps = {
     params: { clientId: string };
     searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ClientDetailPageProps): Promise<Metadata> {
     const { clientId } = params;
     return {
         title: `Client Details - ${clientId}`,
@@ -64,7 +64,7 @@ function ClientDashboardContent({ clientId }: { clientId: string }) {
     );
 }
 
-export default function ClientDetailPage({ params }: PageProps) {
+export default function ClientDetailPage({ params }: ClientDetailPageProps) {
     const { clientId } = params;
 
     return (

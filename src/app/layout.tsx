@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/ui";
 import { AuthProvider } from "@/components/auth/session-provider";
 import { Inter } from "next/font/google";
 import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
+import { SettingsProvider } from '@/contexts/SettingsContext';
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -50,7 +51,9 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              {children}
+              <SettingsProvider>
+                {children}
+              </SettingsProvider>
             </ThemeProvider>
           </ReactQueryProvider>
         </AuthProvider>
