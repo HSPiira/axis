@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ui";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 import { AuthProvider } from "@/components/auth/session-provider";
 import { Inter } from "next/font/google";
 import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { Toaster } from "sonner";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -53,6 +54,7 @@ export default function RootLayout({
             >
               <SettingsProvider>
                 {children}
+                <Toaster />
               </SettingsProvider>
             </ThemeProvider>
           </ReactQueryProvider>

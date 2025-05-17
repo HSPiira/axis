@@ -32,7 +32,7 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const limiter = await rateLimit.check(request, 100, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -69,7 +69,7 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const limiter = await rateLimit.check(request, 50, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -116,7 +116,7 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const limiter = await rateLimit.check(request, 50, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },

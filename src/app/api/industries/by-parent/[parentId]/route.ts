@@ -18,7 +18,7 @@ const listQuerySchema = z.object({
 export async function GET(request: NextRequest, { params }: { params: Promise<{ parentId: string }> }) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 100, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },

@@ -15,8 +15,9 @@ import { EditClientDialog } from '../components/ClientDetails/EditClientDialog';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import ClientActivityWrapper from '../components/ClientDetails/ClientActivityWrapper';
-import { ClientStatsWrapper } from '../components/ClientDetails/ClientStatsWrapper';
+import { ClientActivitySection } from '../components/ClientDetails/ClientActivitySection';
+import { ClientStatsSection } from '../components/ClientDetails/ClientStatsSection';
+import { ClientSettings } from '../components/ClientDetails/ClientSettings';
 
 function SkeletonCard() {
     return (
@@ -178,13 +179,13 @@ export default function ClientDetailShell({
                                 <Card className="p-6">
                                     <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
                                     <Suspense fallback={<SkeletonCard />}>
-                                        <ClientStatsWrapper clientId={clientId} />
+                                        <ClientStatsSection clientId={clientId} />
                                     </Suspense>
                                 </Card>
                                 <Card className="p-6">
                                     <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
                                     <Suspense fallback={<SkeletonCard />}>
-                                        <ClientActivityWrapper clientId={clientId} />
+                                        <ClientActivitySection clientId={clientId} />
                                     </Suspense>
                                 </Card>
                             </div>

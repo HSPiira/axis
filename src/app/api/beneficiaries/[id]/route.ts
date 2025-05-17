@@ -22,7 +22,8 @@ const updateBeneficiarySchema = z.object({
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const limiter = await rateLimit.check(request, 100, "1m");
+    // const limiter = await rateLimit.check(request, 100, "1m");
+    const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
     if (!limiter.success) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
     }
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const limiter = await rateLimit.check(request, 50, "1m");
+    // const limiter = await rateLimit.check(request, 50, "1m");
+    const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
     if (!limiter.success) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
     }
@@ -85,7 +87,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const limiter = await rateLimit.check(request, 50, "1m");
+    // const limiter = await rateLimit.check(request, 50, "1m");
+    const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
     if (!limiter.success) {
       return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
     }

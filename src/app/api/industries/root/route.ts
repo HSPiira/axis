@@ -18,7 +18,7 @@ const listQuerySchema = z.object({
 export async function GET(request: NextRequest) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 100, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Rate limit exceeded' },
@@ -36,9 +36,9 @@ export async function GET(request: NextRequest) {
 
         // Parse and validate query parameters
         const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-        const { 
-            page, 
-            limit, 
+        const {
+            page,
+            limit,
             search,
             sortBy,
             sortOrder,
