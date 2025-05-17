@@ -37,7 +37,7 @@ export default function ClientNav({ user }: { user: any }) {
         <>
             {/* Sidebar for large screens - with fixed positioning */}
             <div className="hidden md:flex fixed left-0 top-0 flex-col w-16 lg:w-56 h-screen bg-[#f8f4fc] dark:bg-[#171717] shadow-sm z-10">
-                <UserProfile user={user} />
+                <UserProfile user={user.user} />
                 <SidebarNav>
                     {navItems.map((item) => (
                         <SidebarNavItem

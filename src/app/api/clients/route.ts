@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { CacheControl } from '@/lib/cache';
 import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
 
 const provider = new ClientProvider();
 
@@ -24,11 +25,18 @@ const createClientSchema = z.object({
     industryId: z.string().optional(),
     status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING']).default('PENDING'),
     isVerified: z.boolean().default(false),
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-    website: z.string().url().optional(),
-    notes: z.string().optional(),
+    email: z.string().email().optional().nullable(),
+    phone: z.string().optional().nullable(),
+    website: z.string().url().optional().nullable(),
+    address: z.string().optional().nullable(),
+    billingAddress: z.string().optional().nullable(),
+    taxId: z.string().optional().nullable(),
+    contactPerson: z.string().optional().nullable(),
+    contactEmail: z.string().email().optional().nullable(),
+    contactPhone: z.string().optional().nullable(),
+    preferredContactMethod: z.enum(['EMAIL', 'PHONE', 'SMS', 'WHATSAPP', 'OTHER']).optional().nullable(),
+    timezone: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
 });
 
 const updateClientSchema = createClientSchema.partial();
@@ -36,7 +44,7 @@ const updateClientSchema = createClientSchema.partial();
 export async function GET(request: NextRequest) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 100, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -51,10 +59,10 @@ export async function GET(request: NextRequest) {
 
         // Parse and validate query parameters
         const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries());
-        const { 
-            page, 
-            limit, 
-            search, 
+        const {
+            page,
+            limit,
+            search,
             status,
             industryId,
             isVerified,
@@ -100,7 +108,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 50, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -117,6 +125,15 @@ export async function POST(request: NextRequest) {
         const validatedData = createClientSchema.parse(body);
 
         const result = await provider.create(validatedData);
+        // Audit log: client created
+        await prisma.auditLog.create({
+            data: {
+                action: 'CREATE',
+                entityType: 'Client',
+                entityId: result.id,
+                userId: session.user.id,
+            },
+        });
         return NextResponse.json(result, { status: 201 });
     } catch (error) {
         console.error('Error creating client:', error);
@@ -136,7 +153,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 50, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -163,6 +180,15 @@ export async function PUT(request: NextRequest) {
         const validatedData = updateClientSchema.parse(body);
 
         const result = await provider.update(id, validatedData);
+        // Audit log: client updated
+        await prisma.auditLog.create({
+            data: {
+                action: 'UPDATE',
+                entityType: 'Client',
+                entityId: result.id,
+                userId: session.user.id,
+            },
+        });
         return NextResponse.json(result);
     } catch (error) {
         console.error('Error updating client:', error);
@@ -182,7 +208,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 50, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -206,6 +232,15 @@ export async function DELETE(request: NextRequest) {
         }
 
         await provider.delete(id);
+        // Audit log: client deleted
+        await prisma.auditLog.create({
+            data: {
+                action: 'DELETE',
+                entityType: 'Client',
+                entityId: id,
+                userId: session.user.id,
+            },
+        });
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error deleting client:', error);
@@ -215,4 +250,4 @@ export async function DELETE(request: NextRequest) {
         );
     }
 }
-    
+

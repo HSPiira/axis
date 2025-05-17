@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ui";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 import { AuthProvider } from "@/components/auth/session-provider";
 import { Inter } from "next/font/google";
+import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
+import { SettingsProvider } from '@/contexts/SettingsContext';
+import { Toaster } from "sonner";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -42,14 +45,19 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${montserrat.variable} ${inter.className}`}>
         <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
+          <ReactQueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <SettingsProvider>
+                {children}
+                <Toaster />
+              </SettingsProvider>
+            </ThemeProvider>
+          </ReactQueryProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { Industry } from "@prisma/client"
+import type { Industry } from "@prisma/client";
 
 export type ClientIndustryCreateInput = {
     clientId: string;
@@ -11,7 +11,7 @@ export type ClientIndustryUpdateInput = {
 };
 
 export class ClientIndustryProvider {
-    async findByClient(clientId: string): Promise<any> {
+    async findByClient(clientId: string): Promise<Industry | null> {
         const client = await prisma.client.findUnique({
             where: { id: clientId },
             include: { industry: true }
@@ -19,7 +19,7 @@ export class ClientIndustryProvider {
         return client?.industry || null;
     }
 
-    async create(data: ClientIndustryCreateInput): Promise<any> {
+    async create(data: ClientIndustryCreateInput): Promise<Industry> {
         const client = await prisma.client.update({
             where: { id: data.clientId },
             data: { industryId: data.industryId },
@@ -28,7 +28,7 @@ export class ClientIndustryProvider {
         return client.industry!;
     }
 
-    async update(clientId: string, data: ClientIndustryUpdateInput): Promise<any> {
+    async update(clientId: string, data: ClientIndustryUpdateInput): Promise<Industry> {
         const client = await prisma.client.update({
             where: { id: clientId },
             data: { industryId: data.industryId },
@@ -37,7 +37,7 @@ export class ClientIndustryProvider {
         return client.industry!;
     }
 
-    async delete(clientId: string): Promise<any> {
+    async delete(clientId: string): Promise<Industry | null> {
         const client = await prisma.client.update({
             where: { id: clientId },
             data: { industryId: null },

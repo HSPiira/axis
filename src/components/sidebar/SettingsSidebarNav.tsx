@@ -22,7 +22,7 @@ const SettingsSidebarNav = () => {
                 </div>
                 {settingsSections.map((section, idx) => (
                     <div key={idx} className="mb-2">
-                        {section.title && <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1 mt-2">{section.title}</div>}
+                        {section.title && <div className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 mb-1 mt-2">{section.title}</div>}
                         <nav className="flex flex-col gap-1">
                             {section.items.map((item) => {
                                 const Icon = (Icons as Record<string, React.ElementType>)[item.icon] || Icons.FiUser;
@@ -31,7 +31,7 @@ const SettingsSidebarNav = () => {
                                     <Link
                                         key={item.label}
                                         href={item.href}
-                                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-200 ${isActive ? 'bg-gray-100 dark:bg-gray-900 font-semibold' : ''}`}
+                                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-gray-100 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-200 ${isActive ? 'bg-gray-100 dark:bg-gray-900 font-semibold' : ''}`}
                                     >
                                         <Icon className="w-4 h-4" />
                                         <span>{item.label}</span>

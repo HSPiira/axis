@@ -1,13 +1,11 @@
 import { NextRequest } from 'next/server';
-import type { ClientModel } from '@/lib/providers/client-provider';
 import { ClientProvider } from '@/lib/providers/client-provider';
 import { auth } from '@/lib/auth';
 import { GET, POST, PUT, DELETE } from '@/app/api/clients/route';
 import { rateLimit } from '@/lib/rate-limit';
-import { CacheControl } from '@/lib/cache';
 
 // Mock Response globally
-const mockJsonResponse = (data: any, init?: ResponseInit) => {
+const mockJsonResponse = (data: unknown, init?: ResponseInit) => {
     const responseInit = {
         ...init,
         headers: {
@@ -87,12 +85,6 @@ jest.mock('@/lib/auth', () => ({
 jest.mock('@/lib/rate-limit', () => ({
     rateLimit: {
         check: jest.fn(() => Promise.resolve({ success: true, limit: 100, remaining: 99, reset: 0 })),
-    },
-}));
-
-jest.mock('@/lib/cache', () => ({
-    CacheControl: {
-        withCache: jest.fn((response) => response),
     },
 }));
 
