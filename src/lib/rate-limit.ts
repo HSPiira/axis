@@ -14,7 +14,7 @@ class RateLimiter {
 
     constructor() {
         this.store = new Map();
-        
+
         // Initialize Redis if UPSTASH_REDIS_URL is available
         if (process.env.UPSTASH_REDIS_URL) {
             this.redis = new Redis({
@@ -29,7 +29,7 @@ class RateLimiter {
         const ip = request.headers.get('x-forwarded-for') ||
             request.headers.get('x-real-ip') ||
             '127.0.0.1';
-            
+
         return `${prefix}:${ip}`;
     }
 
@@ -46,7 +46,7 @@ class RateLimiter {
 
     private async checkRedis(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
         const now = Date.now();
-        const reset = Math.floor(now / windowMs) * windowMs + windowMs;
+        // const reset = Math.floor(now / windowMs) * windowMs + windowMs;
 
         if (!this.redis) {
             throw new Error('Redis not initialized');
@@ -58,7 +58,7 @@ class RateLimiter {
         }
 
         const ttl = await this.redis.pttl(key);
-        
+
         return {
             success: count <= limit,
             limit,
@@ -69,27 +69,27 @@ class RateLimiter {
 
     private checkMemory(key: string, limit: number, windowMs: number): RateLimitResult {
         const now = Date.now();
-        const reset = Math.floor(now / windowMs) * windowMs + windowMs;
+        const resetTime = Math.floor(now / windowMs) * windowMs + windowMs;
 
         const current = this.store.get(key);
         if (!current || current.reset <= now) {
-            this.store.set(key, { count: 1, reset });
+            this.store.set(key, { count: 1, reset: resetTime });
             return {
                 success: true,
                 limit,
                 remaining: limit - 1,
-                reset: Math.floor(reset / 1000),
+                reset: Math.floor(resetTime / 1000),
             };
         }
 
         const count = current.count + 1;
-        this.store.set(key, { count, reset });
+        this.store.set(key, { count, reset: resetTime });
 
         return {
             success: count <= limit,
             limit,
             remaining: Math.max(0, limit - count),
-            reset: Math.floor(reset / 1000),
+            reset: Math.floor(resetTime / 1000),
         };
     }
 
@@ -112,4 +112,5 @@ class RateLimiter {
     }
 }
 
-export const rateLimit = new RateLimiter(); 
+export const
+    rateLimit = new RateLimiter(); 

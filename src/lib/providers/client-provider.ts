@@ -244,7 +244,7 @@ export class ClientProvider extends BaseProvider<ClientModel, CreateClientInput,
         };
     }
 
-    protected buildWhereClause(filters: Record<string, any>, search: string): Prisma.ClientWhereInput {
+    protected buildWhereClause(filters: ClientFilters, search: string): Prisma.ClientWhereInput {
         const where: Prisma.ClientWhereInput = {};
 
         // Apply filters

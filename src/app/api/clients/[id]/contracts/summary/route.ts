@@ -6,10 +6,7 @@ import { CacheControl } from '@/lib/cache';
 
 const provider = new ContractProvider();
 
-export async function GET(
-    request: NextRequest,
-    context: { params: Promise<{ clientId: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ clientId: string }> }) {
     try {
         // Rate limiting
         const limiter = await rateLimit.check(request, 100, '1m');
@@ -28,7 +25,7 @@ export async function GET(
             );
         }
 
-        const { clientId } = await context.params;
+        const { clientId } = await params;
         const summary = await provider.getClientSummary(clientId);
 
         const response = NextResponse.json(summary);

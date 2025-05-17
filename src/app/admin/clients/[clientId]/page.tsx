@@ -1,41 +1,16 @@
-import React from 'react';
+import { getClientData } from './layout';
+import { ClientModel } from '@/lib/providers/client-provider';
 import ClientDetailShell from './ClientDetailShell';
-import { ClientProvider } from '@/lib/providers/client-provider';
-import { ContractProvider } from '@/lib/providers/contract-provider';
-import { DocumentProvider } from '@/lib/providers/document-provider';
-import { StaffProvider } from '@/lib/providers/staff-provider';
-import { BeneficiaryProvider } from '@/lib/providers/beneficiary-provider';
-
-async function getClientData(clientId: string) {
-    const clientProvider = new ClientProvider();
-    const contractProvider = new ContractProvider();
-    const staffProvider = new StaffProvider();
-    const beneficiaryProvider = new BeneficiaryProvider();
-    const documentProvider = new DocumentProvider();
-
-    const [client, contracts, staff, beneficiaries, documents] = await Promise.all([
-        clientProvider.get(clientId),
-        contractProvider.list({ filters: { clientId } }),
-        staffProvider.list({ filters: { clientId } }),
-        beneficiaryProvider.list({ filters: { clientId } }),
-        documentProvider.list({ clientId })
-    ]);
-
-    return {
-        client,
-        contracts: contracts.data,
-        documents: documents.data,
-        staff: staff.data,
-        beneficiaries: beneficiaries.data
-    };
-}
 
 export default async function ClientPage({ params }: { params: Promise<{ clientId: string }> }) {
-    const { clientId } = await params;
-    return (
-        <ClientDetailShell
-            clientId={clientId}
-            activeTab="overview"
-        />
-    );
-} 
+  const { clientId } = await params;
+  const client = await getClientData(clientId);
+
+  return (
+    <ClientDetailShell
+      clientId={clientId}
+      activeTab="overview"
+      client={client as ClientModel}
+    />
+  );
+}

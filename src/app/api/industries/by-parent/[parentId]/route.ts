@@ -15,10 +15,7 @@ const listQuerySchema = z.object({
     sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
-export async function GET(
-    request: NextRequest,
-    context: { params: Promise<{ parentId: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ parentId: string }> }) {
     try {
         // Rate limiting
         const limiter = await rateLimit.check(request, 100, '1m');
@@ -37,7 +34,7 @@ export async function GET(
             );
         }
 
-        const { parentId } = await context.params;
+        const { parentId } = await params;
 
         // Validate parent industry exists
         const parentIndustry = await provider.get(parentId);

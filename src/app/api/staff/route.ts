@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { CacheControl } from '@/lib/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { BaseStatus, StaffRole, WorkStatus } from '@prisma/client';
 
 const provider = new StaffProvider();
 
@@ -13,8 +14,8 @@ const listQuerySchema = z.object({
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(10),
     search: z.string().optional(),
-    status: z.string().optional(),
-    role: z.string().optional(),
+    status: z.nativeEnum(BaseStatus).optional(),
+    role: z.nativeEnum(StaffRole).optional(),
     clientId: z.string().optional(),
     sortBy: z.string().default('createdAt'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -23,10 +24,10 @@ const listQuerySchema = z.object({
 const createStaffSchema = z.object({
     profileId: z.string(),
     clientId: z.string(),
-    role: z.string(),
+    role: z.nativeEnum(StaffRole),
     startDate: z.string(),
     endDate: z.string().optional().nullable(),
-    status: z.string().default('ACTIVE'),
+    status: z.nativeEnum(WorkStatus).default(WorkStatus.ACTIVE),
     qualifications: z.array(z.string()).default([]),
     specializations: z.array(z.string()).default([]),
     preferredWorkingHours: z.record(z.any()).optional().nullable(),

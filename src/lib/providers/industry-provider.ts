@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { BaseProvider, PrismaClient } from "./base-provider";
-import type { Industry } from "@prisma/client";
+import type { Industry, Prisma } from "@prisma/client";
 
 // Types for industry management
 export interface IndustryModel {
@@ -15,7 +15,7 @@ export interface IndustryModel {
         code?: string | null;
     } | null;
     externalId?: string | null;
-    metadata?: Record<string, any> | null;
+    metadata?: Record<string, unknown> | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -26,7 +26,7 @@ export interface CreateIndustryInput {
     description?: string;
     parentId?: string;
     externalId?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface UpdateIndustryInput extends Partial<CreateIndustryInput> { }
@@ -63,14 +63,14 @@ export class IndustryProvider extends BaseProvider<IndustryModel, CreateIndustry
                 code: data.parent.code
             } : null,
             externalId: data.externalId,
-            metadata: data.metadata as Record<string, any> | null,
+            metadata: data.metadata as Record<string, unknown> | null,
             createdAt: data.createdAt.toISOString(),
             updatedAt: data.updatedAt.toISOString()
         };
     }
 
-    protected buildWhereClause(filters: IndustryFilters, search: string): any {
-        const where: any = {};
+    protected buildWhereClause(filters: IndustryFilters, search: string): Prisma.IndustryWhereInput {
+        const where: Prisma.IndustryWhereInput = {};
 
         // Apply filters
         if (filters.parentId !== undefined) {

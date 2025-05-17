@@ -113,10 +113,10 @@ export class ServiceSessionProvider extends BaseProvider<ServiceSessionModel, Cr
     };
 
     protected transform(data: ServiceSession & {
-        service?: any;
-        provider?: any;
-        staff?: any;
-        beneficiary?: any;
+        service?: { id: string; name: string; category: { name: string } };
+        provider?: { id: string; name: string; type: string };
+        staff?: { id: string; profile: { fullName: string } };
+        beneficiary?: { id: string; profile: { fullName: string } };
     }): ServiceSessionModel {
         return {
             id: data.id,

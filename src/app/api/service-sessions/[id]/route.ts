@@ -29,7 +29,7 @@ const updateServiceSessionSchema = z.object({
 
 export async function GET(
     request: NextRequest,
-    context: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const limiter = await rateLimit.check(request, 100, '1m');
@@ -45,7 +45,8 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const result = await provider.getById(context.params.id);
+        const { id } = await params;
+        const result = await provider.get(id);
         if (!result) {
             return NextResponse.json(
                 { error: 'Service session not found' },
@@ -65,7 +66,7 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    context: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const limiter = await rateLimit.check(request, 50, '1m');
@@ -84,7 +85,8 @@ export async function PUT(
         const body = await request.json();
         const validatedData = updateServiceSessionSchema.parse(body);
 
-        const result = await provider.update(context.params.id, validatedData);
+        const { id } = await params;
+        const result = await provider.update(id, validatedData);
         await prisma.auditLog.create({
             data: {
                 action: 'UPDATE',
@@ -111,7 +113,7 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    context: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const limiter = await rateLimit.check(request, 50, '1m');
@@ -127,12 +129,13 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await provider.delete(context.params.id);
+        const { id } = await params;
+        await provider.delete(id);
         await prisma.auditLog.create({
             data: {
                 action: 'DELETE',
                 entityType: 'ServiceSession',
-                entityId: context.params.id,
+                entityId: id,
                 userId: session.user.id,
             },
         });

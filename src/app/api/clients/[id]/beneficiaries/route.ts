@@ -36,7 +36,7 @@ const createBeneficiarySchema = z.object({
 
 export async function GET(
     request: NextRequest,
-    context: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const limiter = await rateLimit.check(request, 100, '1m');
@@ -59,15 +59,16 @@ export async function GET(
             search,
             status,
             relation,
-            staffId,
             guardianId,
             sortBy,
             sortOrder,
         } = listQuerySchema.parse(searchParams);
 
+        const { id } = await params;
+
         // First, get all staff members for this client
         const staffMembers = await prisma.staff.findMany({
-            where: { clientId: context.params.id },
+            where: { clientId: id },
             select: { id: true },
         });
         const staffIds = staffMembers.map(staff => staff.id);
@@ -110,7 +111,7 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    context: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const limiter = await rateLimit.check(request, 50, '1m');
@@ -129,11 +130,13 @@ export async function POST(
         const body = await request.json();
         const validatedData = createBeneficiarySchema.parse(body);
 
+        const { id } = await params;
+
         // Verify that the staff member belongs to this client
         const staffMember = await prisma.staff.findFirst({
             where: {
                 id: validatedData.staffId,
-                clientId: context.params.id,
+                clientId: id,
             },
         });
 

@@ -5,6 +5,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { CacheControl } from '@/lib/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import { BaseStatus, Language, RelationType } from '@prisma/client';
 
 const provider = new BeneficiaryProvider();
 
@@ -23,13 +24,13 @@ const listQuerySchema = z.object({
 
 const createBeneficiarySchema = z.object({
     profileId: z.string(),
-    relation: z.string(),
+    relation: z.nativeEnum(RelationType),
     isStaffLink: z.boolean().default(false),
     staffId: z.string(),
     guardianId: z.string().optional().nullable(),
     userLinkId: z.string().optional().nullable(),
-    status: z.string().default('ACTIVE'),
-    preferredLanguage: z.string().optional().nullable(),
+    status: z.nativeEnum(BaseStatus).default(BaseStatus.ACTIVE),
+    preferredLanguage: z.nativeEnum(Language).optional().nullable(),
     notes: z.string().optional().nullable(),
 });
 

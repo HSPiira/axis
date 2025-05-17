@@ -62,6 +62,13 @@ export interface CreateBeneficiaryInput {
 
 export interface UpdateBeneficiaryInput extends Partial<CreateBeneficiaryInput> { }
 
+export interface BeneficiaryFilters {
+    status?: BaseStatus;
+    relation?: RelationType;
+    staffId?: string | string[];
+    guardianId?: string;
+}
+
 export class BeneficiaryProvider extends BaseProvider<BeneficiaryModel, CreateBeneficiaryInput, UpdateBeneficiaryInput> {
     protected client = new PrismaClient(prisma.beneficiary);
     protected searchFields = ['profile.fullName', 'profile.email', 'profile.phone'];
@@ -143,7 +150,7 @@ export class BeneficiaryProvider extends BaseProvider<BeneficiaryModel, CreateBe
         return data ? this.transform(data as any) : null;
     }
 
-    protected buildWhereClause(filters: Record<string, any>, search: string): Prisma.BeneficiaryWhereInput {
+    protected buildWhereClause(filters: BeneficiaryFilters, search: string): Prisma.BeneficiaryWhereInput {
         const where: Prisma.BeneficiaryWhereInput = {};
 
         // Apply filters

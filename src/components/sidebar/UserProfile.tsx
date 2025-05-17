@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
+import { User } from '@prisma/client';
 
 const fetchProfile = async () => {
     const res = await fetch('/api/auth/profile');
@@ -8,7 +9,7 @@ const fetchProfile = async () => {
     return res.json();
 };
 
-const UserProfile: React.FC = () => {
+const UserProfile: React.FC<{ user: User }> = ({ user }) => {
     const { data: session } = useSession();
 
     const { data: profile } = useQuery({

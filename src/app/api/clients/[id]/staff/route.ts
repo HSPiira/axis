@@ -37,7 +37,7 @@ const createStaffSchema = z.object({
 
 export async function GET(
     request: NextRequest,
-    context: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const limiter = await rateLimit.check(request, 100, '1m');
@@ -64,12 +64,14 @@ export async function GET(
             sortOrder,
         } = listQuerySchema.parse(searchParams);
 
+        const { id } = await params;
+
         const result = await provider.list({
             page,
             limit,
             search,
             filters: {
-                clientId: context.params.id,
+                clientId: id,
                 status: status || undefined,
                 role: role || undefined,
             },
@@ -101,7 +103,7 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    context: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const limiter = await rateLimit.check(request, 50, '1m');
@@ -120,9 +122,11 @@ export async function POST(
         const body = await request.json();
         const validatedData = createStaffSchema.parse(body);
 
+        const { id } = await params;
+
         const result = await provider.create({
             ...validatedData,
-            clientId: context.params.id,
+            clientId: id,
         });
 
         await prisma.auditLog.create({

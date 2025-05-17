@@ -6,10 +6,7 @@ import { CacheControl } from '@/lib/cache';
 
 const provider = new IndustryProvider();
 
-export async function GET(
-    request: NextRequest,
-    context: { params: Promise<{ externalId: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ externalId: string }> }) {
     try {
         // Rate limiting
         const limiter = await rateLimit.check(request, 100, '1m');
@@ -28,7 +25,7 @@ export async function GET(
             );
         }
 
-        const { externalId } = await context.params;
+        const { externalId } = await params;
         const industry = await provider.findByExternalId(externalId);
 
         if (!industry) {

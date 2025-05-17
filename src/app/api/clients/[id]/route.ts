@@ -30,10 +30,7 @@ const updateClientSchema = z.object({
     metadata: z.custom<Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue>().optional(),
 });
 
-export async function GET(
-    request: NextRequest,
-    context: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const limiter = await rateLimit.check(request, 100, '1m');
         if (!limiter.success) {
@@ -48,7 +45,8 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const result = await provider.getById(context.params.id);
+        const { id } = await params;
+        const result = await provider.get(id);
         if (!result) {
             return NextResponse.json(
                 { error: 'Client not found' },
@@ -66,10 +64,7 @@ export async function GET(
     }
 }
 
-export async function PUT(
-    request: NextRequest,
-    context: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const limiter = await rateLimit.check(request, 50, '1m');
         if (!limiter.success) {
@@ -87,7 +82,8 @@ export async function PUT(
         const body = await request.json();
         const validatedData = updateClientSchema.parse(body);
 
-        const result = await provider.update(context.params.id, validatedData);
+        const { id } = await params;
+        const result = await provider.update(id, validatedData);
         await prisma.auditLog.create({
             data: {
                 action: 'UPDATE',
@@ -112,10 +108,7 @@ export async function PUT(
     }
 }
 
-export async function DELETE(
-    request: NextRequest,
-    context: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const limiter = await rateLimit.check(request, 50, '1m');
         if (!limiter.success) {
@@ -130,12 +123,13 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await provider.delete(context.params.id);
+        const { id } = await params;
+        await provider.delete(id);
         await prisma.auditLog.create({
             data: {
                 action: 'DELETE',
                 entityType: 'Client',
-                entityId: context.params.id,
+                entityId: id,
                 userId: session.user.id,
             },
         });
@@ -152,7 +146,7 @@ export async function DELETE(
 // Additional endpoints for client-specific operations
 export async function PATCH(
     request: NextRequest,
-    context: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const limiter = await rateLimit.check(request, 50, '1m');
@@ -177,9 +171,11 @@ export async function PATCH(
 
         let result;
         let auditAction: ActionType;
+        const { id } = await params;
+
         switch (action) {
             case 'verify':
-                result = await provider.verifyClient(context.params.id);
+                result = await provider.verifyClient(id);
                 auditAction = ActionType.APPROVE;
                 break;
             case 'updateStatus':
@@ -189,7 +185,7 @@ export async function PATCH(
                         { status: 400 }
                     );
                 }
-                result = await provider.updateStatus(context.params.id, status);
+                result = await provider.updateStatus(id, status);
                 auditAction = ActionType.UPDATE;
                 break;
             default:

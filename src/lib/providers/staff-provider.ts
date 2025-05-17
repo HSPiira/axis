@@ -12,7 +12,7 @@ export interface CreateStaffInput {
     status?: WorkStatus;
     qualifications?: string[];
     specializations?: string[];
-    preferredWorkingHours?: Record<string, any> | null;
+    preferredWorkingHours?: Record<string, unknown> | null;
     emergencyContactName?: string | null;
     emergencyContactPhone?: string | null;
     emergencyContactEmail?: string | null;
@@ -31,7 +31,7 @@ export interface StaffModel {
     status: WorkStatus;
     qualifications: string[];
     specializations: string[];
-    preferredWorkingHours?: Record<string, any> | null;
+    preferredWorkingHours?: Record<string, unknown> | null;
     emergencyContactName?: string | null;
     emergencyContactPhone?: string | null;
     emergencyContactEmail?: string | null;
@@ -137,7 +137,13 @@ export class StaffProvider extends BaseProvider<StaffModel, CreateStaffInput, Up
         }
     };
 
-    protected transform(data: Staff & { profile?: any; user?: any; client?: any; beneficiaries?: any[]; ServiceSession?: any[] }): StaffModel {
+    protected transform(data: Staff & {
+        profile?: { id: string; fullName: string; email: string | null; phone: string | null; image: string | null };
+        user?: { id: string; email: string | null; status: string };
+        client?: { id: string; name: string; status: string };
+        beneficiaries?: Array<{ id: string; relation: string; status: string; profile: { fullName: string; email: string | null } }>;
+        ServiceSession?: Array<{ id: string; scheduledAt: string; status: string; service: { name: string; category: { name: string } } }>;
+    }): StaffModel {
         return {
             id: data.id,
             profileId: data.profileId,
@@ -148,7 +154,7 @@ export class StaffProvider extends BaseProvider<StaffModel, CreateStaffInput, Up
             status: data.status,
             qualifications: data.qualifications,
             specializations: data.specializations,
-            preferredWorkingHours: data.preferredWorkingHours as Record<string, any> | null,
+            preferredWorkingHours: data.preferredWorkingHours as Record<string, unknown> | null,
             emergencyContactName: data.emergencyContactName,
             emergencyContactPhone: data.emergencyContactPhone,
             emergencyContactEmail: data.emergencyContactEmail,
@@ -168,10 +174,10 @@ export class StaffProvider extends BaseProvider<StaffModel, CreateStaffInput, Up
             where: { id },
             include: this.includes,
         });
-        return data ? this.transform(data as any) : null;
+        return data ? this.transform(data) : null;
     }
 
-    protected buildWhereClause(filters: Record<string, any>, search: string): Prisma.StaffWhereInput {
+    protected buildWhereClause(filters: { status?: WorkStatus; role?: StaffRole; clientId?: string }, search: string): Prisma.StaffWhereInput {
         const where: Prisma.StaffWhereInput = {};
 
         // Apply filters

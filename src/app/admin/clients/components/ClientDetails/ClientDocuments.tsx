@@ -1,11 +1,11 @@
 import React from 'react';
-import type { Document } from '@prisma/client';
 import { FileText, UploadCloud, Download, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { DocumentProvider } from '@/lib/providers/document-provider';
 
 interface ClientDocumentsProps {
-    documents?: Document[];
-    isLoading?: boolean;
+    clientId: string;
 }
 
 const container = {
@@ -23,7 +23,16 @@ const item = {
     show: { opacity: 1, y: 0 }
 };
 
-export function ClientDocuments({ documents = [], isLoading = false }: ClientDocumentsProps) {
+export function ClientDocuments({ clientId }: ClientDocumentsProps) {
+    const { data: documents, isLoading } = useQuery({
+        queryKey: ['documents', clientId],
+        queryFn: async () => {
+            const provider = new DocumentProvider();
+            const response = await provider.list({ clientId });
+            return response.data;
+        }
+    });
+
     if (isLoading) {
         return <div className="animate-pulse h-48 bg-gray-100 dark:bg-gray-900 rounded-lg"></div>;
     }
@@ -52,7 +61,7 @@ export function ClientDocuments({ documents = [], isLoading = false }: ClientDoc
                 </div>
 
                 <motion.div variants={container} initial="hidden" animate="show" className="space-y-8">
-                    {documents.length > 0 ? (
+                    {documents && documents.length > 0 ? (
                         documents.map((doc) => (
                             <motion.div
                                 key={doc.id}

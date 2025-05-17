@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { rateLimit } from '@/lib/rate-limit';
 import { CacheControl } from '@/lib/cache';
 import { z } from 'zod';
-import type { ContractStatus, PaymentStatus } from '@prisma/client';
+import type { ContractStatus } from '@prisma/client';
 
 const provider = new ContractProvider();
 

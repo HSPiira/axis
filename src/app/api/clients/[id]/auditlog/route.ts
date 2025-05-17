@@ -26,6 +26,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
         });
         return NextResponse.json(logs);
     } catch (error) {
+        console.error('Error fetching audit log:', error);
         return NextResponse.json({ error: 'Failed to fetch audit log' }, { status: 500 });
     }
 } 

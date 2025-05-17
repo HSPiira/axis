@@ -1,14 +1,11 @@
 import { NextRequest } from 'next/server';
-import type { IndustryModel } from '@/lib/providers/industry-provider';
 import { IndustryProvider } from '@/lib/providers/industry-provider';
-import { auth } from '@/lib/auth';
 import { GET, POST, PUT, DELETE } from '@/app/api/industries/route';
 import { GET as getRootIndustries } from '@/app/api/industries/root/route';
 import { rateLimit } from '@/lib/rate-limit';
-import { CacheControl } from '@/lib/cache';
 
 // Mock Response globally
-const mockJsonResponse = (data: any, init?: ResponseInit) => {
+const mockJsonResponse = (data: unknown, init?: ResponseInit) => {
     const responseInit = {
         ...init,
         headers: {
