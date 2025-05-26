@@ -36,13 +36,10 @@ const createContractSchema = z.object({
     notes: z.string().optional(),
 });
 
-export async function GET(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ clientId: string }> }) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 100, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -73,14 +70,14 @@ export async function GET(
             sortOrder,
         } = listQuerySchema.parse(searchParams);
 
-        const { id } = await context.params;
+        const { clientId } = await params;
 
         const result = await provider.list({
             page,
             limit,
             search,
             filters: {
-                clientId: id,
+                clientId,
                 status: status || undefined,
                 paymentStatus: paymentStatus || undefined,
                 isRenewable: isRenewable ? isRenewable === 'true' : undefined,
@@ -115,11 +112,11 @@ export async function GET(
 
 export async function POST(
     request: NextRequest,
-    context: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ clientId: string }> }
 ) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 50, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -149,11 +146,11 @@ export async function POST(
             );
         }
 
-        const { id } = await context.params;
+        const { clientId } = await params;
 
         const contractData = {
             ...validatedData,
-            clientId: id,
+            clientId,
             startDate: validatedData.startDate,
             endDate: validatedData.endDate,
         };

@@ -6,13 +6,10 @@ import { CacheControl } from '@/lib/cache';
 
 const provider = new ContractProvider();
 
-export async function GET(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ clientId: string }> }) {
     try {
         // Rate limiting
-        const limiter = await rateLimit.check(request, 100, '1m');
+        const limiter = await rateLimit.check(request.headers.get('x-forwarded-for') || 'anonymous');
         if (!limiter.success) {
             return NextResponse.json(
                 { error: 'Too Many Requests' },
@@ -28,8 +25,8 @@ export async function GET(
             );
         }
 
-        const { id } = await context.params;
-        const summary = await provider.getClientSummary(id);
+        const { clientId } = await params;
+        const summary = await provider.getClientSummary(clientId);
 
         const response = NextResponse.json(summary);
         return CacheControl.withCache(response, summary, {

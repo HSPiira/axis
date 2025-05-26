@@ -15,6 +15,7 @@ export const settingsSections = [
         items: [
             { label: 'Password', icon: 'FiKey', href: '/admin/settings/password' },
             { label: 'Impersonation', icon: 'FiLock', href: '/admin/settings/impersonation' },
+            { label: 'Industries', icon: 'FiBriefcase', href: '/admin/settings/industries' },
         ],
     },
     {

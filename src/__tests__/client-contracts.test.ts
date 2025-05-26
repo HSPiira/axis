@@ -1,6 +1,20 @@
 import { NextRequest } from 'next/server';
 import type { ContractModel } from '@/lib/providers/contract-provider';
 import type { ContractStatus, PaymentStatus } from '@prisma/client';
+import type { PaginatedResponse } from '@/lib/providers/base-provider';
+
+// Add type definitions
+type ResponseInit = {
+    status?: number;
+    statusText?: string;
+    headers?: HeadersInit;
+};
+
+type RequestInit = {
+    method?: string;
+    headers?: HeadersInit;
+    body?: string;
+};
 
 // Mock Response globally
 const mockJsonResponse = (data: unknown, init?: ResponseInit) => {
@@ -100,7 +114,7 @@ import { CacheControl } from '@/lib/cache';
 
 describe('Client Contracts API Routes', () => {
     let mockRequest: NextRequest;
-    const mockParams = { id: 'client-1' };
+    const mockParams = Promise.resolve({ clientId: 'client-1' });
 
     const createMockContract = (overrides = {}): ContractModel => ({
         id: '1',
@@ -153,12 +167,16 @@ describe('Client Contracts API Routes', () => {
 
         it('should list client contracts with pagination and filters', async () => {
             const mockContracts = [createMockContract()];
-            jest.spyOn(ContractProvider.prototype, 'list').mockResolvedValueOnce({
+            const mockResponse: PaginatedResponse<ContractModel> = {
                 data: mockContracts,
-                total: 1,
-                page: 1,
-                limit: 10,
-            });
+                pagination: {
+                    total: 1,
+                    pages: 1,
+                    page: 1,
+                    limit: 10
+                }
+            };
+            jest.spyOn(ContractProvider.prototype, 'list').mockResolvedValueOnce(mockResponse);
 
             mockRequest = new NextRequest(
                 'http://localhost/api/clients/client-1/contracts?page=1&limit=10&search=test&status=ACTIVE'
@@ -168,7 +186,7 @@ describe('Client Contracts API Routes', () => {
 
             expect(response.status).toBe(200);
             expect(result.data).toEqual(mockContracts);
-            expect(result.total).toBe(1);
+            expect(result.pagination.total).toBe(1);
             expect(CacheControl.withCache).toHaveBeenCalled();
 
             expect(ContractProvider.prototype.list).toHaveBeenCalledWith(
@@ -282,14 +300,14 @@ describe('Client Contracts API Routes', () => {
 
         it('should return contract summary', async () => {
             const mockSummary = {
-                total: 1,
-                active: 1,
+                statusCounts: { ACTIVE: 1 },
+                paymentStatusCounts: { PENDING: 1 },
+                activeValue: {
+                    total: 100,
+                    avg: 100
+                },
                 expiringSoon: 0,
-                byStatus: { ACTIVE: 1 },
-                byPaymentStatus: { PENDING: 1 },
-                totalValue: 100,
-                averageValue: 100,
-                upcomingRenewals: [],
+                upcomingRenewals: []
             };
 
             jest.spyOn(ContractProvider.prototype, 'getClientSummary').mockResolvedValueOnce(mockSummary);

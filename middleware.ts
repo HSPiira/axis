@@ -14,7 +14,10 @@ export default async function middleware(request: NextRequest) {
     // Apply rate limiting for auth endpoints
     if (request.nextUrl.pathname.startsWith('/auth') ||
         request.nextUrl.pathname.startsWith('/api/auth')) {
-        const rateLimitResult = await rateLimit.check(request, authRateLimit.maxRequests, `${authRateLimit.windowMs}ms`);
+        const rateLimitResult = await rateLimit.check(
+            request.headers.get('x-forwarded-for') || 'anonymous',
+            request.headers.get('user-agent') || 'unknown'
+        );
         if (!rateLimitResult.success) {
             return new NextResponse(
                 JSON.stringify({ error: 'Too Many Requests' }),

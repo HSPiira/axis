@@ -49,7 +49,7 @@ export interface CreateContractInput {
     documentUrl?: string;
     status?: ContractStatus;
     notes?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface UpdateContractInput extends Partial<CreateContractInput> {
@@ -97,7 +97,7 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
         }
     };
 
-    protected transform(contract: Contract & { metadata?: Record<string, any> | null } & { client?: { id: string; name: string } }): ContractModel {
+    protected transform(contract: Contract & { metadata?: Record<string, unknown> | null } & { client?: { id: string; name: string } }): ContractModel {
         return {
             id: contract.id,
             clientId: contract.clientId,
@@ -222,24 +222,6 @@ export class ContractProvider extends BaseProvider<ContractModel, CreateContract
     async getClientSummary(clientId: string) {
         const now = new Date();
         const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-        // Get status counts
-        const statusCounts = await this.client.findMany({
-            where: { clientId, deletedAt: null },
-            select: {
-                status: true,
-            },
-            distinct: ['status'],
-        });
-
-        // Get payment status counts
-        const paymentStatusCounts = await this.client.findMany({
-            where: { clientId, deletedAt: null },
-            select: {
-                paymentStatus: true,
-            },
-            distinct: ['paymentStatus'],
-        });
 
         // Get active contracts value
         const activeValue = await this.client.aggregate({

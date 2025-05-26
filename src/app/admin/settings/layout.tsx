@@ -84,8 +84,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             <SettingsHeader onMenuClick={() => setDrawerOpen(true)} />
             <SettingsDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
             <AppSidebar user={user} />
-            <main className="flex-1 overflow-y-auto flex justify-center lg:pt-0">
-                <div className="max-w-2xl w-full px-1 sm:px-2 md:px-3 lg:px-4 xl:px-6 py-2">
+            <main className="flex-1 flex items-center justify-center overflow-y-visible lg:overflow-y-auto lg:pt-0">
+                <div className="max-w-6xl w-full mx-auto px-4 py-2">
                     {children}
                 </div>
             </main>

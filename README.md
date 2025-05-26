@@ -1,6 +1,6 @@
-# Care - Healthcare Management System
+# Care - EAP System
 
-A modern healthcare management system built with Next.js, Xata (PostgreSQL), and NextAuth.js.
+A modern employee assistance program system built with Next.js, Xata (PostgreSQL), and NextAuth.js.
 
 ## Prerequisites
 
